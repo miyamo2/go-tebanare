@@ -1,0 +1,4 @@
+version: 1
+rules:
+  - id: stringer
+    func: "func (_) String() string"

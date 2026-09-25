@@ -1,0 +1,41 @@
+{
+  "old": [
+    {
+      "start": 5,
+      "end": 5,
+      "hits": [
+        {
+          "ruleId": "mock-helper",
+          "target": "stmt",
+          "node": "ExprStmt",
+          "label": "m.ctrl.T.Helper()"
+        }
+      ]
+    }
+  ],
+  "new": [
+    {
+      "start": 5,
+      "end": 5,
+      "hits": [
+        {
+          "ruleId": "mock-helper",
+          "target": "stmt",
+          "node": "ExprStmt",
+          "label": "m.ctrl.T.Helper()"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "match-changed",
+      "message": "rule \"gomock\" matches MockStore.Get only on the old side, so both sides stay visible",
+      "side": "old",
+      "ruleId": "gomock",
+      "line": 3
+    }
+  ],
+  "skipped": ""
+}

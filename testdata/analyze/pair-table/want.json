@@ -1,0 +1,73 @@
+{
+  "old": [
+    {
+      "start": 3,
+      "end": 3,
+      "hits": [
+        {
+          "ruleId": "stringer",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (Point) String"
+        }
+      ]
+    },
+    {
+      "start": 7,
+      "end": 7,
+      "hits": [
+        {
+          "ruleId": "stringer",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (Circle) String"
+        }
+      ]
+    }
+  ],
+  "new": [
+    {
+      "start": 3,
+      "end": 5,
+      "hits": [
+        {
+          "ruleId": "stringer",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (Point) String"
+        }
+      ]
+    },
+    {
+      "start": 9,
+      "end": 9,
+      "hits": [
+        {
+          "ruleId": "stringer",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (Triangle) String"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "match-changed",
+      "message": "rule \"stringer\" matches Square.String only on the old side, so both sides stay visible",
+      "side": "old",
+      "ruleId": "stringer",
+      "line": 5
+    },
+    {
+      "severity": "info",
+      "code": "match-changed",
+      "message": "rule \"stringer\" matches Line.String only on the new side, so both sides stay visible",
+      "side": "new",
+      "ruleId": "stringer",
+      "line": 11
+    }
+  ],
+  "skipped": ""
+}
