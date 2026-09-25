@@ -1,0 +1,350 @@
+{
+  "presets": [
+    {
+      "name": "getter",
+      "summary": "Methods that only return a field of the receiver.",
+      "criteria": [
+        "The function is a method with a named receiver. Value, pointer, and generic receiver types all count.",
+        "It takes no parameters.",
+        "It returns exactly one value of any type. A named result is allowed.",
+        "The body is one return statement that returns a field of the receiver, such as `u.name`, or a chain of fields, such as `u.cfg.timeout`. Parentheses are ignored.",
+        "The first field after the receiver (`x` in `u.x`) is not the name of a method that the same file declares on the same type, since `u.x` would then be a method value.",
+        "No comment other than the doc comment is on the lines of the declaration."
+      ],
+      "kind": "func",
+      "settings": [
+        {
+          "name": "paths",
+          "type": "[]string",
+          "default": "none",
+          "description": "Globs that limit the files this preset applies to, on top of `files.include` and `files.exclude`."
+        },
+        {
+          "name": "exclude_paths",
+          "type": "[]string",
+          "default": "none",
+          "description": "Globs of files this preset skips, on top of `files.exclude`."
+        },
+        {
+          "name": "include_doc",
+          "type": "bool",
+          "default": "true",
+          "description": "Hide the doc comment together with the function."
+        },
+        {
+          "name": "max_depth",
+          "type": "int",
+          "default": "unlimited",
+          "description": "The maximum number of fields in the returned chain: with 1, `u.name` matches and `u.cfg.timeout` does not."
+        }
+      ],
+      "examples": [
+        {
+          "code": "func (u *User) Name() string { return u.name }",
+          "match": true
+        },
+        {
+          "code": "func (u User) ID() (id int64) { return (u.id) }",
+          "match": true,
+          "note": "A named result and parentheses are allowed."
+        },
+        {
+          "code": "func (s *Stack[T]) Len() int { return s.n }",
+          "match": true,
+          "note": "Generic receiver types are allowed."
+        },
+        {
+          "code": "// Timeout returns the request timeout.\nfunc (u *User) Timeout() time.Duration { return u.cfg.timeout }",
+          "match": true,
+          "note": "A chain of fields is allowed, and the doc comment does not affect the result."
+        },
+        {
+          "code": "func (u *User) Title() string { return strings.TrimSpace(u.title) }",
+          "match": false,
+          "note": "It does more than return a field."
+        },
+        {
+          "code": "func (u *User) NameOr(def string) string { return u.name }",
+          "match": false,
+          "note": "It takes a parameter."
+        },
+        {
+          "code": "func (u *User) Pair() (string, int) { return u.name, u.age }",
+          "match": false,
+          "note": "It returns two values."
+        },
+        {
+          "code": "func (u *User) First() string { return u.items[0] }",
+          "match": false,
+          "note": "It indexes a field."
+        },
+        {
+          "code": "func (u *User) Limit() int { return u.cfg.Limit() }",
+          "match": false,
+          "note": "It calls a method."
+        },
+        {
+          "code": "func (*User) Kind() string { return kind }",
+          "match": false,
+          "note": "`kind` is not a field of the receiver."
+        },
+        {
+          "code": "func (u *User) Age() int { return u.age /* TODO */ }",
+          "match": false,
+          "note": "It has a comment."
+        },
+        {
+          "settings": "max_depth: 1",
+          "code": "func (u *User) Name() string { return u.name }",
+          "match": true,
+          "note": "One field is within `max_depth`."
+        },
+        {
+          "settings": "max_depth: 1",
+          "code": "func (u *User) Timeout() time.Duration { return u.cfg.timeout }",
+          "match": false,
+          "note": "The chain has two fields, more than `max_depth`."
+        }
+      ]
+    },
+    {
+      "name": "iferr",
+      "summary": "`if err != nil` blocks that return the error unchanged.",
+      "criteria": [
+        "The condition is `err != nil` and nothing else. Parentheses are ignored. `nil != err` does not match.",
+        "The body is one return statement, and its last result is the identifier from the condition. Parentheses are ignored. A wrapped error, such as `fmt.Errorf(\"load: %w\", err)` or `errors.Wrap(err, \"load\")`, does not match.",
+        "The statement has no init statement (`if err := f(); ...`) and no else branch.",
+        "No comment is on the hidden lines, including a comment after the closing brace.",
+        "The other results hold no function call (except the builtin `new`), no function literal, and no channel receive. A bare return does not match."
+      ],
+      "kind": "stmt",
+      "settings": [
+        {
+          "name": "paths",
+          "type": "[]string",
+          "default": "none",
+          "description": "Globs that limit the files this preset applies to, on top of `files.include` and `files.exclude`."
+        },
+        {
+          "name": "exclude_paths",
+          "type": "[]string",
+          "default": "none",
+          "description": "Globs of files this preset skips, on top of `files.exclude`."
+        },
+        {
+          "name": "names",
+          "type": "[]string",
+          "default": "[err]",
+          "description": "Names of error variables, as globs matched against the whole name, where `*` matches any run of characters and `?` matches one."
+        },
+        {
+          "name": "allow_comments",
+          "type": "bool",
+          "default": "false",
+          "description": "Hide the statement even when a comment is on the hidden lines."
+        },
+        {
+          "name": "init",
+          "type": "string",
+          "default": "exclude",
+          "description": "How to treat if statements with an init statement: `exclude` keeps them visible; `fold-body` hides the lines from `return` to the closing brace and keeps the header line visible.",
+          "enum": [
+            "exclude",
+            "fold-body"
+          ]
+        },
+        {
+          "name": "allow_bare_return",
+          "type": "bool",
+          "default": "false",
+          "description": "Also hide a bare return."
+        },
+        {
+          "name": "allow_calls_in_results",
+          "type": "bool",
+          "default": "false",
+          "description": "Allow function calls in the results before the error; function literals and channel receives still do not match."
+        }
+      ],
+      "examples": [
+        {
+          "code": "if err != nil {\n\treturn err\n}",
+          "match": true
+        },
+        {
+          "code": "if err != nil {\n\treturn nil, err\n}",
+          "match": true
+        },
+        {
+          "code": "if err != nil {\n\treturn *new(T), err\n}",
+          "match": true
+        },
+        {
+          "code": "if err != nil {\n\treturn fmt.Errorf(\"load config: %w\", err)\n}",
+          "match": false,
+          "note": "It wraps the error."
+        },
+        {
+          "code": "if err != nil {\n\tlog.Printf(\"load: %v\", err)\n\treturn err\n}",
+          "match": false,
+          "note": "Another statement runs before `return`."
+        },
+        {
+          "code": "if err := load(); err != nil {\n\treturn err\n}",
+          "match": false,
+          "note": "It has an init statement."
+        },
+        {
+          "code": "if err != nil {\n\treturn\n}",
+          "match": false,
+          "note": "It uses a bare return."
+        },
+        {
+          "code": "if err != nil { // the caller logs it\n\treturn err\n}",
+          "match": false,
+          "note": "It has a comment."
+        },
+        {
+          "settings": "names: [err, \"*Err\"]",
+          "code": "if parseErr != nil {\n\treturn nil, parseErr\n}",
+          "match": true,
+          "note": "`\"*Err\"` in `names` adds `parseErr`."
+        },
+        {
+          "settings": "names: [err, \"*Err\"]",
+          "code": "if fooErr != nil {\n\treturn nil, barErr\n}",
+          "match": false,
+          "note": "The condition and the return use different variables."
+        },
+        {
+          "settings": "allow_comments: true",
+          "code": "if err != nil { // the caller logs it\n\treturn err\n}",
+          "match": true,
+          "note": "`allow_comments: true` hides statements with comments."
+        },
+        {
+          "settings": "init: fold-body",
+          "code": "if err := load(); err != nil {\n\treturn err\n}",
+          "match": true,
+          "note": "The header line stays visible. The lines from `return` to the closing brace are hidden."
+        },
+        {
+          "settings": "init: fold-body",
+          "code": "if err := load(); err != nil { return err }",
+          "match": false,
+          "note": "`fold-body` needs `return` on a line after the opening brace."
+        },
+        {
+          "settings": "allow_bare_return: true",
+          "code": "if err != nil {\n\treturn\n}",
+          "match": true
+        },
+        {
+          "settings": "allow_calls_in_results: true",
+          "code": "if err != nil {\n\treturn time.Now(), err\n}",
+          "match": true
+        }
+      ]
+    },
+    {
+      "name": "noop",
+      "summary": "Methods that take no parameters, return nothing, and have an empty body.",
+      "criteria": [
+        "The function is a method. The receiver may be unnamed. Value, pointer, and generic receiver types all count.",
+        "It takes no parameters.",
+        "It has no results.",
+        "It has a body, and the body holds no statements (`{}`). Comments in the body are allowed and hidden with it. A declaration without a body, such as a method implemented in assembly, does not match."
+      ],
+      "kind": "func",
+      "settings": [
+        {
+          "name": "paths",
+          "type": "[]string",
+          "default": "none",
+          "description": "Globs that limit the files this preset applies to, on top of `files.include` and `files.exclude`."
+        },
+        {
+          "name": "exclude_paths",
+          "type": "[]string",
+          "default": "none",
+          "description": "Globs of files this preset skips, on top of `files.exclude`."
+        },
+        {
+          "name": "include_doc",
+          "type": "bool",
+          "default": "true",
+          "description": "Hide the doc comment together with the function."
+        },
+        {
+          "name": "allow_comments",
+          "type": "bool",
+          "default": "true",
+          "description": "Hide the method even when a comment other than the doc comment is on its lines."
+        },
+        {
+          "name": "include_functions",
+          "type": "bool",
+          "default": "false",
+          "description": "Also hide empty functions that are not methods, such as `func noop() {}`."
+        }
+      ],
+      "examples": [
+        {
+          "code": "func (*BadExpr) exprNode() {}",
+          "match": true,
+          "note": "A marker method from `go/ast`."
+        },
+        {
+          "code": "func (s Set[T]) sealed() {}",
+          "match": true
+        },
+        {
+          "code": "func (t *noopTracer) Flush() {}",
+          "match": true
+        },
+        {
+          "code": "func (s *Server) Shutdown() { /* TODO: implement */ }",
+          "match": true,
+          "note": "A comment in the body does not matter by default."
+        },
+        {
+          "code": "func (t *Tracer) Flush() { t.buf.Reset() }",
+          "match": false,
+          "note": "The body has a statement."
+        },
+        {
+          "code": "func (nopLogger) Printf(format string, args ...any) {}",
+          "match": false,
+          "note": "It takes parameters."
+        },
+        {
+          "code": "func (nopCloser) Close() error { return nil }",
+          "match": false,
+          "note": "It returns a value."
+        },
+        {
+          "code": "func noop() {}",
+          "match": false,
+          "note": "It is not a method."
+        },
+        {
+          "code": "func (t *Timer) stop()",
+          "match": false,
+          "note": "It has no body (implemented in assembly, for example)."
+        },
+        {
+          "settings": "allow_comments: false",
+          "code": "func (s *Server) Shutdown() { /* TODO: implement */ }",
+          "match": false,
+          "note": "`allow_comments: false` keeps methods with comments visible."
+        },
+        {
+          "settings": "include_functions: true",
+          "code": "func noop() {}",
+          "match": true,
+          "note": "`include_functions: true` adds functions that are not methods."
+        }
+      ]
+    }
+  ]
+}
