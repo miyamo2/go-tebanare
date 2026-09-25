@@ -31,6 +31,13 @@ jobs:
           version: v2.5.0
       - run: go test -race ./...
       - run: make fuzz-smoke FUZZTIME=10s
+      # The fuzz-wasm job replays what the fuzzers collected through engine.wasm.
+      - run: make fuzz-vectors FUZZ_VECTORS="$RUNNER_TEMP/fuzz-vectors"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-vectors
+          path: ${{ runner.temp }}/fuzz-vectors
+          if-no-files-found: error
 
   wasm:
     runs-on: ubuntu-latest
@@ -54,6 +61,55 @@ jobs:
           name: engine-wasm
           path: packages/engine/wasm/engine.wasm
           if-no-files-found: error
+
+  fuzz-wasm:
+    needs: [go, wasm]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: engine-wasm
+          path: packages/engine/wasm
+      - uses: actions/download-artifact@v4
+        with:
+          name: fuzz-vectors
+          path: ${{ runner.temp }}/fuzz-vectors
+      - run: bun install --frozen-lockfile
+      - name: Replay the fuzz corpus through engine.wasm
+        run: |
+          GOTEBANARE_FUZZ_VECTORS="$RUNNER_TEMP/fuzz-vectors" \
+            bun run --cwd packages/engine vitest run test/fuzz-replay.test.ts
+
+  parity:
+    needs: wasm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: engine-wasm
+          path: packages/engine/wasm
+      - run: bun install --frozen-lockfile
+      - name: Compare the native and wasm results on the Go standard library
+        run: make parity TMPDIR="$RUNNER_TEMP"
+      - name: Compare them again with declarations paired across files
+        run: make parity TMPDIR="$RUNNER_TEMP" PARITY_FLAGS=-pairs
 
   ts:
     needs: wasm
