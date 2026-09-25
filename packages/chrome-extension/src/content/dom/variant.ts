@@ -4,6 +4,7 @@
 
 import type { RowKind } from '../plan.js';
 import { classicVariant } from './classic.js';
+import { reactVariant } from './react.js';
 
 export type { RowKind };
 
@@ -42,8 +43,8 @@ export interface DiffUiVariant {
   fileStatus?(container: HTMLElement): FileStatus;
 }
 
-/** The known variants, tried in order. The React UI has none yet. */
-export const variants: readonly DiffUiVariant[] = [classicVariant];
+/** The known variants, tried in order. */
+export const variants: readonly DiffUiVariant[] = [classicVariant, reactVariant];
 
 /** detectVariant returns the first variant that recognizes doc, or null. */
 export function detectVariant(doc: Document, registry: readonly DiffUiVariant[] = variants): DiffUiVariant | null {
