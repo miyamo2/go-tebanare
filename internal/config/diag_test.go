@@ -66,10 +66,12 @@ func TestDiagnostics(t *testing.T) {
 	c := &compiler{ruleID: "getter"}
 	n := &yaml.Node{Line: 2, Column: 5}
 	c.errorf(n, "presets[0](getter).max_depth", "bad %s", "depth")
+	c.warnUnanchored(nil, "x", "loose")
 	want := []result.Diagnostic{
 		{Severity: result.SeverityError, Code: result.CodeConfigInvalid, Message: "bad depth", Field: "presets[0](getter).max_depth", RuleID: "getter", Line: 2, Column: 5},
+		{Severity: result.SeverityWarning, Code: result.CodeUnanchoredRegexp, Message: "loose", Field: "x", RuleID: "getter"},
 	}
-	if got := c.errs; !slices.Equal(got, want) {
+	if got := append(c.errs, c.warns...); !slices.Equal(got, want) {
 		t.Errorf("diagnostics = %+v, want %+v", got, want)
 	}
 }

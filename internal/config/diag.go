@@ -41,14 +41,19 @@ func (f field) named(name string) field {
 type compiler struct {
 	errs  []result.Diagnostic
 	warns []result.Diagnostic
-	// ruleID is the name of the preset being decoded. Diagnostics carry
-	// it in RuleID.
+	// ruleID is the id of the rule or the name of the preset being
+	// decoded. Diagnostics carry it in RuleID.
 	ruleID string
 }
 
 // errorf reports an invalid value at the position of n.
 func (c *compiler) errorf(n *yaml.Node, f field, format string, args ...any) {
 	c.errs = append(c.errs, c.diag(result.SeverityError, result.CodeConfigInvalid, n, f, fmt.Sprintf(format, args...)))
+}
+
+// warnUnanchored reports a regular expression that is not anchored.
+func (c *compiler) warnUnanchored(n *yaml.Node, f field, msg string) {
+	c.warns = append(c.warns, c.diag(result.SeverityWarning, result.CodeUnanchoredRegexp, n, f, msg))
 }
 
 func (c *compiler) diag(sev result.Severity, code string, n *yaml.Node, f field, msg string) result.Diagnostic {
