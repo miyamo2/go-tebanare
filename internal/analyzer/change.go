@@ -20,8 +20,8 @@ type Side struct {
 // AnalyzeChange analyzes both sides of a changed file (plan 4.8).
 //
 // When a present side is not a target of the set, or when either side is
-// skipped, nothing is hidden on either side. Stmt matches count on each
-// side on its own. Func matches are paired by rule and
+// skipped, nothing is hidden on either side. Stmt and expr matches count
+// on each side on its own. Func matches are paired by rule and
 // declaration key: a declaration is hidden when it matches on both sides
 // or when the other side does not declare its key. When one side matches
 // and the other declares the key without matching (for example because

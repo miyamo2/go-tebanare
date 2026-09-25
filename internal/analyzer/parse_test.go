@@ -45,10 +45,10 @@ func TestPrepare(t *testing.T) {
 	if sk != nil {
 		t.Fatalf("got skip %+v", sk)
 	}
-	if p.rf.Path != "x.go" || p.rf.AST != p.file || p.info.lines() != 3 {
+	if p.rf.Path != "x.go" || p.rf.AST != p.file || p.rf.Canon == nil || p.info.lines() != 3 {
 		t.Errorf("parsed = %+v", p)
 	}
-	if text, ok := p.cache.Text(p.file.Decls[0]); !ok || !strings.HasPrefix(text, "var x = 1 + 1") {
+	if text, ok := p.rf.Text(p.file.Decls[0]); !ok || !strings.HasPrefix(text, "var x = 1 + 1") {
 		t.Errorf("Text = %q, %v", text, ok)
 	}
 	_, sk = prepare("x.go", []byte(plusChain(17)), opt)

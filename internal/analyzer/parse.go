@@ -44,7 +44,7 @@ func prepare(path string, src []byte, opt Options) (*parsed, *skip) {
 		}
 	}
 	cache := canon.NewCache(fset, opt.MaxNodeSize)
-	rf := &rule.File{Path: path, Fset: fset, AST: file, Src: src}
+	rf := &rule.File{Path: path, Fset: fset, AST: file, Src: src, Canon: cache.Text}
 	return &parsed{path: path, info: info, fset: fset, file: file, rf: rf, cache: cache}, nil
 }
 

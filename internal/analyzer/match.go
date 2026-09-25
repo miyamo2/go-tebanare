@@ -15,13 +15,21 @@ type analysis struct {
 	set *rule.Set
 	opt Options
 	out *fileAnalysis
+
+	aliases     map[string]string
+	aliasesDone bool
+	// tooLarge counts, per rule index, the nodes a user rule could not
+	// see because they exceed Options.MaxNodeSize.
+	tooLarge map[int]*largeNodes
 }
 
+type largeNodes struct{ count, line int }
+
 // run applies the rules that apply to the path: func rules to every
-// top-level function declaration and stmt rules to the statements in
+// top-level function declaration, stmt and expr rules to the nodes in
 // their scope (plan 4.6).
 func (a *analysis) run() {
-	var funcRules, stmtRules []int
+	var funcRules, stmtRules, exprRules []int
 	for i, r := range a.set.Rules {
 		if r == nil || !r.AppliesTo(a.path) {
 			continue
@@ -31,6 +39,8 @@ func (a *analysis) run() {
 			funcRules = append(funcRules, i)
 		case r.Target == result.TargetStmt && r.Node != nil:
 			stmtRules = append(stmtRules, i)
+		case r.Target == result.TargetExpr && r.Node != nil:
+			exprRules = append(exprRules, i)
 		}
 	}
 
@@ -53,7 +63,7 @@ func (a *analysis) run() {
 		a.matchFunc(fd, k, funcRules)
 	}
 
-	if len(stmtRules) == 0 {
+	if len(stmtRules) == 0 && len(exprRules) == 0 {
 		return
 	}
 	walk(a.file, func(n ast.Node, sc scope, bodyBlock bool) bool {
@@ -62,8 +72,19 @@ func (a *analysis) run() {
 				a.matchNode(n, i)
 			}
 		}
+		if isExprCandidate(n, sc) {
+			for _, i := range exprRules {
+				a.matchNode(n, i)
+			}
+		}
 		return true
 	})
+	for i, r := range a.set.Rules {
+		if l := a.tooLarge[i]; l != nil {
+			a.diag(result.CodeNodeTooLarge, r.ID, l.line, fmt.Sprintf(
+				"rule %q skipped %d nodes larger than %d bytes, the first on line %d", r.ID, l.count, a.opt.MaxNodeSize, l.line))
+		}
+	}
 }
 
 // matchFunc applies the func rules to fd.
@@ -71,6 +92,7 @@ func (a *analysis) matchFunc(fd *ast.FuncDecl, key string, rules []int) {
 	for _, i := range rules {
 		r := a.set.Rules[i]
 		if !r.Func.MatchFunc(fd, a.rf) {
+			a.explainMiss(fd, r)
 			continue
 		}
 		from, to := funcRange(fd, r.IncludeDoc)
@@ -83,7 +105,25 @@ func (a *analysis) matchFunc(fd *ast.FuncDecl, key string, rules []int) {
 	}
 }
 
-// matchNode applies the stmt rule with index i to n.
+// explainMiss adds an alias-not-resolved diagnostic when r would match fd
+// if the import aliases of the file named the guessed packages. The guess
+// never decides what is hidden.
+func (a *analysis) explainMiss(fd *ast.FuncDecl, r *rule.Rule) {
+	relaxed, ok := r.Func.(rule.RelaxedFuncMatcher)
+	if !ok {
+		return
+	}
+	if !a.aliasesDone {
+		a.aliases, a.aliasesDone = rule.ImportAliases(a.file), true
+	}
+	if len(a.aliases) == 0 || !relaxed.MatchFuncRelaxed(fd, a.rf, a.aliases) {
+		return
+	}
+	a.diag(result.CodeAliasNotResolved, r.ID, a.rf.Line(fd.Pos()),
+		fmt.Sprintf("%s would match rule %q if its import aliases were resolved; patterns compare package qualifiers as written", funcLabel(fd), r.ID))
+}
+
+// matchNode applies the stmt or expr rule with index i to n.
 func (a *analysis) matchNode(n ast.Node, i int) {
 	r := a.set.Rules[i]
 	if !r.Node.Accepts(n) {
@@ -91,6 +131,11 @@ func (a *analysis) matchNode(n ast.Node, i int) {
 	}
 	sp, ok := r.Node.MatchNode(n, a.rf)
 	if !ok {
+		// User rules match the normalized text, which large nodes lack.
+		// Preset matchers work on the syntax tree.
+		if _, fits := a.cache.Text(n); !fits && r.Preset == "" {
+			a.noteTooLarge(i, n)
+		}
 		return
 	}
 	label := rule.KindOf(n)
@@ -124,6 +169,18 @@ func (a *analysis) accept(i int, from, to token.Pos, hit result.Hit) (span, bool
 		start: a.rf.Line(from), end: a.rf.Line(to - 1),
 		off: start, endOff: end, rule: i, hit: hit,
 	}, true
+}
+
+func (a *analysis) noteTooLarge(i int, n ast.Node) {
+	if a.tooLarge == nil {
+		a.tooLarge = map[int]*largeNodes{}
+	}
+	l := a.tooLarge[i]
+	if l == nil {
+		l = &largeNodes{line: a.rf.Line(n.Pos())}
+		a.tooLarge[i] = l
+	}
+	l.count++
 }
 
 func (a *analysis) diag(code, ruleID string, line int, msg string) {

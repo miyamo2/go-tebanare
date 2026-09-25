@@ -7,11 +7,14 @@ type scope uint8
 
 const (
 	// outside covers package-level declarations, function signatures,
-	// type declarations, and imports. Stmt rules skip it.
+	// type declarations, and imports. Stmt and expr rules skip it.
 	outside scope = iota
 	// body covers function bodies, including the bodies of function
-	// literals. Stmt rules apply.
+	// literals. Stmt and expr rules apply.
 	body
+	// value covers the initializers of package-level var and const
+	// declarations. Expr rules apply.
+	value
 )
 
 // visitor is called for every node in depth-first order with the scope of
@@ -59,6 +62,17 @@ func childScope(parent ast.Node, ps scope, n ast.Node) (sc scope, bodyBlock bool
 		return outside, false
 	case *ast.TypeSpec:
 		return outside, false
+	case *ast.ValueSpec:
+		if ps != outside {
+			break
+		}
+		// A package-level var or const: only the values are in scope.
+		for _, v := range p.Values {
+			if n == v {
+				return value, false
+			}
+		}
+		return outside, false
 	}
 	return ps, false
 }
@@ -67,4 +81,10 @@ func childScope(parent ast.Node, ps scope, n ast.Node) (sc scope, bodyBlock bool
 func isStmtCandidate(n ast.Node, sc scope, bodyBlock bool) bool {
 	_, ok := n.(ast.Stmt)
 	return ok && sc == body && !bodyBlock
+}
+
+// isExprCandidate reports whether expr rules consider n.
+func isExprCandidate(n ast.Node, sc scope) bool {
+	_, ok := n.(ast.Expr)
+	return ok && (sc == body || sc == value)
 }
