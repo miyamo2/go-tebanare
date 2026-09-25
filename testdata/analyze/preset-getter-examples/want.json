@@ -1,0 +1,41 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 8,
+      "end": 13,
+      "hits": [
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) Name",
+          "preset": "getter"
+        },
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (User) ID",
+          "preset": "getter"
+        },
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Stack[T]) Len",
+          "preset": "getter"
+        },
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) Timeout",
+          "preset": "getter"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

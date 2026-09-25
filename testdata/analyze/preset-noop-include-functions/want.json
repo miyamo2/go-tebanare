@@ -1,0 +1,33 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 3,
+      "end": 3,
+      "hits": [
+        {
+          "ruleId": "noop",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func noop",
+          "preset": "noop"
+        }
+      ]
+    },
+    {
+      "start": 7,
+      "end": 7,
+      "hits": [
+        {
+          "ruleId": "noop",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*noopTracer) Flush",
+          "preset": "noop"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

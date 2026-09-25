@@ -1,0 +1,59 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 5,
+      "end": 7,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if err != nil { return time.Time{}, err }",
+          "preset": "iferr"
+        }
+      ]
+    },
+    {
+      "start": 9,
+      "end": 10,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if err := load(); err != nil { return time.Time{}, err }",
+          "preset": "iferr"
+        }
+      ]
+    },
+    {
+      "start": 12,
+      "end": 14,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if err != nil { return }",
+          "preset": "iferr"
+        }
+      ]
+    },
+    {
+      "start": 16,
+      "end": 18,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if err != nil { return time.Now(), err }",
+          "preset": "iferr"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

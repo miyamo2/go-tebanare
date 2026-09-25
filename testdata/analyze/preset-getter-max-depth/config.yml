@@ -1,0 +1,4 @@
+version: 1
+presets:
+  - getter:
+      max_depth: 1

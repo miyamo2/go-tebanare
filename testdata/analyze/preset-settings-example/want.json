@@ -1,0 +1,61 @@
+{
+  "old": [
+    {
+      "start": 3,
+      "end": 5,
+      "hits": [
+        {
+          "ruleId": "noop",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func noop",
+          "preset": "noop"
+        },
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) Name",
+          "preset": "getter"
+        }
+      ]
+    },
+    {
+      "start": 9,
+      "end": 11,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if parseErr != nil { return parseErr }",
+          "preset": "iferr"
+        }
+      ]
+    }
+  ],
+  "new": [
+    {
+      "start": 3,
+      "end": 5,
+      "hits": [
+        {
+          "ruleId": "noop",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func noop",
+          "preset": "noop"
+        },
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) Name",
+          "preset": "getter"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

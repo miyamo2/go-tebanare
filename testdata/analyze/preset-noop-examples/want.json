@@ -1,0 +1,41 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 3,
+      "end": 6,
+      "hits": [
+        {
+          "ruleId": "noop",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*BadExpr) exprNode",
+          "preset": "noop"
+        },
+        {
+          "ruleId": "noop",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (Set[T]) sealed",
+          "preset": "noop"
+        },
+        {
+          "ruleId": "noop",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*noopTracer) Flush",
+          "preset": "noop"
+        },
+        {
+          "ruleId": "noop",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Server) Shutdown",
+          "preset": "noop"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}
