@@ -176,6 +176,36 @@ func (b *Bridge) AnalyzeChange(handle uint32, meta, oldSrc, newSrc []byte) []byt
 	return marshal(rs.AnalyzeChange(ch))
 }
 
+type explainMeta struct {
+	Path string `json:"path"`
+	Line int    `json:"line"`
+}
+
+type explainJSON struct {
+	Nodes []tebanare.NodeInfo `json:"nodes"`
+}
+
+// Explain describes the nodes that start on meta.line of src. meta is
+// {"path","line"}. It returns {"nodes":[...]} or {"error":"..."}.
+func (b *Bridge) Explain(handle uint32, meta, src []byte) []byte {
+	rs, errJSON := b.lookup(handle)
+	if rs == nil {
+		return errJSON
+	}
+	var m explainMeta
+	if err := json.Unmarshal(meta, &m); err != nil {
+		return errorJSON(fmt.Sprintf("bad meta: %v", err))
+	}
+	nodes, err := rs.Explain(m.Path, nonNil(src), m.Line)
+	if err != nil {
+		return errorJSON(err.Error())
+	}
+	if nodes == nil {
+		nodes = []tebanare.NodeInfo{}
+	}
+	return marshal(explainJSON{Nodes: nodes})
+}
+
 // Release forgets the ruleset behind handle. Unknown handles are ignored.
 func (b *Bridge) Release(handle uint32) {
 	delete(b.rulesets, handle)

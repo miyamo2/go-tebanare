@@ -142,12 +142,28 @@ func TestErrors(t *testing.T) {
 	}{
 		{"unknown handle", b.AnalyzeChange(99, []byte(`{}`), nil, nil), "unknown handle 99"},
 		{"bad meta", b.AnalyzeChange(h, []byte(`{`), nil, nil), "bad meta"},
+		{"explain unknown handle", b.Explain(0, []byte(`{}`), nil), "unknown handle 0"},
+		{"explain bad meta", b.Explain(h, []byte(`[]`), nil), "bad meta"},
+		{"explain parse error", b.Explain(h, []byte(`{"path":"p.go","line":1}`), []byte("package")), "parse"},
 	}
 	for _, tt := range tests {
 		got := decode[errJSON](t, tt.out)
 		if !strings.Contains(got.Error, tt.want) {
 			t.Errorf("%s: error %q does not contain %q", tt.name, got.Error, tt.want)
 		}
+	}
+}
+
+func TestExplain(t *testing.T) {
+	b := New()
+	h := compile(t, b, config)
+	got := decode[explainJSON](t, b.Explain(h, []byte(`{"path":"p.go","line":5}`), []byte(getter)))
+	if len(got.Nodes) == 0 || got.Nodes[0].Kind != "FuncDecl" {
+		t.Fatalf("Explain = %+v", got)
+	}
+	empty := string(b.Explain(h, []byte(`{"path":"p.go","line":2}`), []byte(getter)))
+	if empty != `{"nodes":[]}` {
+		t.Errorf("Explain on a blank line = %s", empty)
 	}
 }
 

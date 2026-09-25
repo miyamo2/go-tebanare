@@ -17,7 +17,7 @@ const imports = WebAssembly.Module.imports(module);
 const exports = new Set(WebAssembly.Module.exports(module).map((e) => e.name));
 const required = [
   'memory', '_initialize', 'alloc', 'free', 'result_len', 'info',
-  'compile', 'analyze_change', 'release', 'presets', 'yaml_progress_ptr',
+  'compile', 'analyze_change', 'explain', 'release', 'presets', 'yaml_progress_ptr',
 ];
 const problems = [];
 if (imports.length > 0) {
