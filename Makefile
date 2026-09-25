@@ -1,4 +1,8 @@
 GO ?= go
+TINYGO ?= tinygo
+NODE ?= node
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+ENGINE_WASM := packages/engine/wasm/engine.wasm
 FUZZTIME ?= 10s
 # Minimizing a new input may take this long. Go's default of 60s stalls a
 # short run: FuzzCompile stops executing inputs after a few seconds.
@@ -30,3 +34,24 @@ fuzz-smoke:
 			$(GO) test -run '^$$' -fuzz "^$$fz$$" -fuzztime $(FUZZTIME) -fuzzminimizetime $(FUZZMINIMIZETIME) $$pkg; \
 		done; \
 	done
+
+.PHONY: wasm wasm-check wasm-wasip1
+
+wasm:
+	@mkdir -p $(dir $(ENGINE_WASM))
+	$(TINYGO) build -target=build/tinygo/engine.json -no-debug \
+		-ldflags="-X github.com/miyamo2/go-tebanare.EngineVersion=$(VERSION)" \
+		-o $(ENGINE_WASM) ./cmd/gotebanare-wasm
+
+# Builds engine.wasm only when it is missing. Run make wasm after changing
+# Go code.
+$(ENGINE_WASM):
+	$(MAKE) wasm
+
+wasm-check:
+	$(NODE) packages/engine/scripts/check-wasm.mjs $(ENGINE_WASM)
+
+# Builds the same exports with the standard Go toolchain, the fallback if
+# TinyGo cannot be used (plan 2.3).
+wasm-wasip1:
+	GOOS=wasip1 GOARCH=wasm $(GO) build -buildmode=c-shared -o /dev/null ./cmd/gotebanare-wasm
