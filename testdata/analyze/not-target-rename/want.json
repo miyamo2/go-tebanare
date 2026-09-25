@@ -1,0 +1,13 @@
+{
+  "old": [],
+  "new": [],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "skipped",
+      "message": "old side skipped (not-target): gen/user.go is not selected by files.include and files.exclude",
+      "side": "old"
+    }
+  ],
+  "skipped": "not-target"
+}

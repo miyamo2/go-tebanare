@@ -1,0 +1,35 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 9,
+      "end": 11,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if err != nil { return err }",
+          "preset": "iferr"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "duplicate-decl",
+      "message": "User.Name is declared 2 times; func rules hide none of these declarations",
+      "side": "old",
+      "line": 3
+    },
+    {
+      "severity": "info",
+      "code": "duplicate-decl",
+      "message": "load is declared 2 times; func rules hide none of these declarations",
+      "side": "new",
+      "line": 5
+    }
+  ],
+  "skipped": ""
+}

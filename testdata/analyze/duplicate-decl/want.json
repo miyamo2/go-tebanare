@@ -1,0 +1,14 @@
+{
+  "old": [],
+  "new": [],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "duplicate-decl",
+      "message": "User.Name is declared 2 times; func rules hide none of these declarations",
+      "side": "new",
+      "line": 7
+    }
+  ],
+  "skipped": ""
+}
