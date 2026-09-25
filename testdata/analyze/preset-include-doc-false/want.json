@@ -1,0 +1,33 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 3,
+      "end": 4,
+      "hits": [
+        {
+          "ruleId": "noop",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Conn) Close",
+          "preset": "noop"
+        }
+      ]
+    },
+    {
+      "start": 7,
+      "end": 7,
+      "hits": [
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) Name",
+          "preset": "getter"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

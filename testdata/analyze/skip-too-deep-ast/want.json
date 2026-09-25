@@ -1,0 +1,15 @@
+{
+  "old": [],
+  "new": [],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "skipped",
+      "message": "new side skipped (too-deep): the syntax tree is more than 1500 levels deep",
+      "side": "new",
+      "line": 5,
+      "column": 9
+    }
+  ],
+  "skipped": "too-deep"
+}

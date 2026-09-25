@@ -1,0 +1,46 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 4,
+      "end": 4,
+      "hits": [
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Parser) Pos",
+          "preset": "getter"
+        }
+      ]
+    },
+    {
+      "start": 7,
+      "end": 7,
+      "hits": [
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Parser) Tok",
+          "preset": "getter"
+        }
+      ]
+    },
+    {
+      "start": 11,
+      "end": 13,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if err != nil { return err }",
+          "preset": "iferr"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

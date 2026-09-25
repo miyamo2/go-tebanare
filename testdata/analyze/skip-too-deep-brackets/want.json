@@ -1,0 +1,15 @@
+{
+  "old": [],
+  "new": [],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "skipped",
+      "message": "new side skipped (too-deep): brackets are nested 201 deep, more than the limit of 200",
+      "side": "new",
+      "line": 5,
+      "column": 410
+    }
+  ],
+  "skipped": "too-deep"
+}
