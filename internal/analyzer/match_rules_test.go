@@ -4,6 +4,46 @@ import (
 	"testing"
 )
 
+func TestHideStatement(t *testing.T) {
+	src := `package p
+
+func f() error {
+	log.Debug("a")
+	err := log.Debug(
+		"b",
+	)
+	if logger.DebugEnabled() {
+		dump()
+	}
+	x := compute(log.Debug("c"))
+	s.err = log.Debug("d")
+	return nil, log.Debug("e")
+}
+`
+	set := ruleSet(
+		hideStatement(exprRule(t, "debug", "CallExpr", `^log\.Debug\(`)),
+		hideStatement(exprRule(t, "enabled", "CallExpr", `^logger\.DebugEnabled\(\)$`)),
+	)
+	res := AnalyzeFile(set, "x.go", []byte(src), DefaultOptions())
+	check(t, "ranges", show(res.Ranges), []string{
+		`4-7 debug:log.Debug("a"), debug:log.Debug("b")`,
+		`13-13 debug:log.Debug("e")`,
+	})
+	check(t, "diagnostics", codes(res.Diagnostics), []string{
+		"statement-not-simple enabled 8",
+		"statement-not-simple debug 11",
+		"statement-not-simple debug 12",
+	})
+}
+
+func TestHideStatementOccupancy(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\ta := 1; _ = log.Debug(\"x\")\n\t_ = a\n}\n"
+	set := ruleSet(hideStatement(exprRule(t, "debug", "CallExpr", `^log\.Debug\(`)))
+	res := AnalyzeFile(set, "x.go", []byte(src), DefaultOptions())
+	check(t, "ranges", show(res.Ranges), nil)
+	check(t, "diagnostics", codes(res.Diagnostics), []string{"line-shared debug 4"})
+}
+
 func TestPackageLevelValues(t *testing.T) {
 	src := `package p
 
@@ -81,6 +121,46 @@ func Print() {
 		`30-30 lit:"fmt"`,
 	})
 	check(t, "diagnostics", codes(res.Diagnostics), nil)
+}
+
+func TestLeadingComments(t *testing.T) {
+	src := `package p
+
+func f() {
+	// Trace the call.
+	// Second line.
+	log.Debug("a")
+	x := 1 // about x
+	log.Debug("b")
+
+	// Detached comment.
+
+	log.Debug("c")
+	_ = x
+}
+`
+	for _, tt := range []struct {
+		name    string
+		leading bool
+		want    []string
+	}{
+		{"off", false, []string{`6-6 debug:log.Debug("a")`, `8-8 debug:log.Debug("b")`, `12-12 debug:log.Debug("c")`}},
+		{"on", true, []string{`4-6 debug:log.Debug("a")`, `8-8 debug:log.Debug("b")`, `12-12 debug:log.Debug("c")`}},
+	} {
+		r := stmtRule(t, "debug", "ExprStmt", `^log\.Debug\(`)
+		if tt.leading {
+			r = withLeadingComments(r)
+		}
+		res := AnalyzeFile(ruleSet(r), "x.go", []byte(src), DefaultOptions())
+		check(t, tt.name, show(res.Ranges), tt.want)
+	}
+}
+
+func TestLeadingCommentsStatement(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\t// Log it.\n\t_ = log.Debug(\n\t\t\"x\",\n\t)\n}\n"
+	r := withLeadingComments(hideStatement(exprRule(t, "debug", "CallExpr", `^log\.Debug\(`)))
+	res := AnalyzeFile(ruleSet(r), "x.go", []byte(src), DefaultOptions())
+	check(t, "ranges", show(res.Ranges), []string{`4-7 debug:log.Debug("x")`})
 }
 
 // TestNodeTooLarge checks that a user rule reports the nodes it skipped

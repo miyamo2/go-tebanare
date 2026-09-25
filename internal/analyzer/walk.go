@@ -18,9 +18,11 @@ const (
 )
 
 // visitor is called for every node in depth-first order with the scope of
-// the node and whether the node is the body block of a FuncDecl or FuncLit
-// (which stmt rules skip). Returning false skips the children of n.
-type visitor func(n ast.Node, sc scope, bodyBlock bool) bool
+// the node, whether the node is the body block of a FuncDecl or FuncLit
+// (which stmt rules skip), and the ancestors of the node, outermost first.
+// The ancestors slice is only valid during the call. Returning false skips
+// the children of n.
+type visitor func(n ast.Node, sc scope, bodyBlock bool, ancestors []ast.Node) bool
 
 // walk visits the syntax tree of file. The file must have passed deepNode,
 // so the recursion stays within the depth limit.
@@ -37,7 +39,7 @@ func walk(file *ast.File, visit visitor) {
 		if len(stack) > 0 {
 			sc, bodyBlock = childScope(stack[len(stack)-1], scopes[len(scopes)-1], n)
 		}
-		if !visit(n, sc, bodyBlock) {
+		if !visit(n, sc, bodyBlock, stack) {
 			return false
 		}
 		stack = append(stack, n)
@@ -87,4 +89,14 @@ func isStmtCandidate(n ast.Node, sc scope, bodyBlock bool) bool {
 func isExprCandidate(n ast.Node, sc scope) bool {
 	_, ok := n.(ast.Expr)
 	return ok && (sc == body || sc == value)
+}
+
+// innermostStmt returns the innermost statement among ancestors, or nil.
+func innermostStmt(ancestors []ast.Node) ast.Stmt {
+	for i := len(ancestors) - 1; i >= 0; i-- {
+		if s, ok := ancestors[i].(ast.Stmt); ok {
+			return s
+		}
+	}
+	return nil
 }

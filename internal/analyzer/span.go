@@ -3,7 +3,10 @@ package analyzer
 import (
 	"go/ast"
 	"go/token"
+	"sort"
 	"strings"
+
+	"github.com/miyamo2/go-tebanare/internal/rule"
 )
 
 // isDirective reports whether c, the text of a // comment without the
@@ -48,6 +51,107 @@ func funcRange(fd *ast.FuncDecl, includeDoc bool) (from, to token.Pos) {
 		from = fd.Doc.Pos()
 	}
 	return from, fd.End()
+}
+
+// statementFor returns the statement that an expr rule with hide:
+// statement hides for e (plan 4.7), or nil when there is none. The
+// statement is the innermost enclosing statement, and it must be a simple
+// statement (ExprStmt, AssignStmt, DeclStmt, IncDecStmt, SendStmt, GoStmt,
+// DeferStmt, or ReturnStmt) that has e as a direct component, ignoring
+// parentheses, and only identifiers and basic literals as its other
+// components.
+func statementFor(e ast.Expr, ancestors []ast.Node) ast.Stmt {
+	s := innermostStmt(ancestors)
+	if s == nil {
+		return nil
+	}
+	parts, ok := components(s)
+	if !ok {
+		return nil
+	}
+	target := rule.StripParens(e)
+	found := false
+	for _, p := range parts {
+		p = rule.StripParens(p)
+		if p == target && !found {
+			found = true
+			continue
+		}
+		switch p.(type) {
+		case *ast.Ident, *ast.BasicLit:
+		default:
+			return nil
+		}
+	}
+	if !found {
+		return nil
+	}
+	return s
+}
+
+// components returns the expressions of a simple statement, or false for
+// other statements. A DeclStmt is simple when it declares variables or
+// constants whose types are omitted or plain identifiers; its components
+// are the values.
+func components(s ast.Stmt) ([]ast.Expr, bool) {
+	switch s := s.(type) {
+	case *ast.ExprStmt:
+		return []ast.Expr{s.X}, true
+	case *ast.AssignStmt:
+		parts := make([]ast.Expr, 0, len(s.Lhs)+len(s.Rhs))
+		return append(append(parts, s.Lhs...), s.Rhs...), true
+	case *ast.IncDecStmt:
+		return []ast.Expr{s.X}, true
+	case *ast.SendStmt:
+		return []ast.Expr{s.Chan, s.Value}, true
+	case *ast.GoStmt:
+		return []ast.Expr{s.Call}, true
+	case *ast.DeferStmt:
+		return []ast.Expr{s.Call}, true
+	case *ast.ReturnStmt:
+		return s.Results, true
+	case *ast.DeclStmt:
+		gd, ok := s.Decl.(*ast.GenDecl)
+		if !ok || (gd.Tok != token.VAR && gd.Tok != token.CONST) {
+			return nil, false
+		}
+		var parts []ast.Expr
+		for _, spec := range gd.Specs {
+			vs, ok := spec.(*ast.ValueSpec)
+			if !ok {
+				return nil, false
+			}
+			if _, ident := vs.Type.(*ast.Ident); vs.Type != nil && !ident {
+				return nil, false
+			}
+			parts = append(parts, vs.Values...)
+		}
+		return parts, true
+	}
+	return nil, false
+}
+
+// leadingComment returns the comment group that ends on the line above
+// line, provided the group has its lines to itself: no code before it on
+// its first line and none after it on its last line. It returns nil when
+// there is no such group.
+func leadingComment(f *rule.File, info *scanInfo, line int) *ast.CommentGroup {
+	groups := f.AST.Comments
+	i := sort.Search(len(groups), func(i int) bool { return f.Line(groups[i].End()) >= line })
+	if i == 0 {
+		return nil
+	}
+	g := groups[i-1]
+	if f.Line(g.End()) != line-1 {
+		return nil
+	}
+	if c := info.firstCode[f.Line(g.Pos())-1]; c >= 0 && c < f.Offset(g.Pos()) {
+		return nil
+	}
+	if c := info.lastCode[line-2]; c > f.Offset(g.End()) {
+		return nil
+	}
+	return g
 }
 
 // offsets converts the source range [from, to) to byte offsets. It
