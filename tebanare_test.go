@@ -18,6 +18,23 @@ presets:
   - getter
 `
 
+const rulesConfig = `version: 1
+presets:
+  - noop
+  - getter
+rules:
+  - id: stringer
+    description: fmt.Stringer implementations
+    func: "func (_) String() string"
+  - id: off
+    enabled: false
+    func: "func (_) Off()"
+  - id: debug-log
+    expr:
+      kind: CallExpr
+      regex: '^log\.Debug\('
+`
+
 func mustCompile(t *testing.T, src string) *tebanare.Ruleset {
 	t.Helper()
 	rs, _, err := tebanare.Compile([]byte(src))
@@ -44,6 +61,17 @@ func TestCompile(t *testing.T) {
 			name:    "errors in two sections",
 			src:     "version: 2\npresets: [nope]\n",
 			wantErr: []string{"1:10 version", "2:11 presets[0](nope)"},
+		},
+		{
+			name:      "unanchored regexp warns",
+			src:       "version: 1\nrules:\n  - id: a\n    stmt:\n      regex: 'x'\n",
+			wantWarns: []string{"unanchored-regexp"},
+		},
+		{
+			name:      "errors and warnings together",
+			src:       "version: 2\nrules:\n  - id: a\n    stmt:\n      regex: 'x'\n",
+			wantErr:   []string{"1:10 version"},
+			wantWarns: []string{"unanchored-regexp"},
 		},
 	}
 	for _, tt := range tests {
@@ -84,7 +112,7 @@ func TestCompile(t *testing.T) {
 }
 
 func TestRules(t *testing.T) {
-	rs := mustCompile(t, presetsConfig)
+	rs := mustCompile(t, rulesConfig)
 	summary := func(name string) string {
 		p, ok := presets.Lookup(name)
 		if !ok {
@@ -96,6 +124,8 @@ func TestRules(t *testing.T) {
 	// depend on how encoding/json escapes the preset summaries. A missing
 	// key checks omitempty.
 	want := []map[string]string{
+		{"id": "stringer", "description": "fmt.Stringer implementations", "target": "func"},
+		{"id": "debug-log", "target": "expr"},
 		{"id": "noop", "description": summary("noop"), "target": "func", "preset": "noop"},
 		{"id": "getter", "description": summary("getter"), "target": "func", "preset": "getter"},
 	}
@@ -124,6 +154,10 @@ func TestNilRuleset(t *testing.T) {
 	}
 	if want := `{"old":[],"new":[],"diagnostics":[],"skipped":""}`; string(b) != want {
 		t.Errorf("AnalyzeChange JSON = %s, want %s", b, want)
+	}
+	nodes, err := rs.Explain("a.go", []byte("package a\n\nvar x = 1 + 2\n"), 3)
+	if err != nil || len(nodes) == 0 {
+		t.Errorf("Explain = %v, %v; want nodes", nodes, err)
 	}
 }
 
@@ -171,6 +205,37 @@ func TestAnalyzeChange(t *testing.T) {
 				t.Errorf("got  %s\nwant %s", b, tt.want)
 			}
 		})
+	}
+}
+
+func TestExplain(t *testing.T) {
+	rs := mustCompile(t, rulesConfig)
+	src := []byte("package a\n\nimport \"log\"\n\nfunc f() {\n\tlog.Debug(\"x\")\n}\n")
+	nodes, err := rs.Explain("a.go", src, 6)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := json.Marshal(nodes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `[` +
+		`{"kind":"ExprStmt","line":6,"endLine":6,"text":"log.Debug(\"x\")","inScope":true,"rules":[]},` +
+		`{"kind":"CallExpr","line":6,"endLine":6,"text":"log.Debug(\"x\")","inScope":true,"rules":["debug-log"]},` +
+		`{"kind":"SelectorExpr","line":6,"endLine":6,"text":"log.Debug","inScope":true,"rules":[]},` +
+		`{"kind":"Ident","line":6,"endLine":6,"text":"log","inScope":true,"rules":[]},` +
+		`{"kind":"Ident","line":6,"endLine":6,"text":"Debug","inScope":true,"rules":[]},` +
+		`{"kind":"BasicLit","line":6,"endLine":6,"text":"\"x\"","inScope":true,"rules":[]}` +
+		`]`
+	if string(b) != want {
+		t.Errorf("Explain JSON =\n%s\nwant\n%s", b, want)
+	}
+
+	if _, err := rs.Explain("vendor.txt", src, 6); err == nil || !strings.HasPrefix(err.Error(), "not-target") {
+		t.Errorf("Explain on a non-Go file: err = %v, want not-target", err)
+	}
+	if _, err := rs.Explain("a.go", []byte("package"), 1); err == nil || !strings.HasPrefix(err.Error(), "parse-error") {
+		t.Errorf("Explain on a broken file: err = %v, want parse-error", err)
 	}
 }
 
