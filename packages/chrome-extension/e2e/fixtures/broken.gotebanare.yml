@@ -1,0 +1,6 @@
+# Synthetic fixture: the base config with a YAML syntax error on line 6,
+# where "- iferr" is indented less than the list above it.
+version: 1
+presets:
+  - getter
+ - iferr

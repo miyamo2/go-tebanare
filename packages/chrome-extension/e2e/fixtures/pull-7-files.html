@@ -1,0 +1,73 @@
+<!--
+  Synthetic fixture: the "Files changed" page of pull request acme/widgets#7,
+  which changes one Go file, store/store.go. The diff rows match
+  testdata/base/store/store.go and testdata/head/store/store.go.
+  It is modeled on GitHub's classic (server-rendered) markup and is not a
+  saved page, because github.com cannot be loaded where it was written.
+  Spike S2 replaces it with a saved page and its raw files.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Add store owner by octocat · Pull Request #7 · acme/widgets</title></head>
+<body>
+<main>
+<form class="js-review-form" action="/acme/widgets/pull/7/reviews" method="post">
+<input type="hidden" name="comparison_start_oid" value="6f1e0c3a9b7d4e2f8a1c5b3d7e9f0a2b4c6d8e1f">
+<input type="hidden" name="comparison_end_oid" value="c4a7e2d9f1b3a5c7e9d0b2f4a6c8e1d3f5a7b9c2">
+</form>
+<div id="files" class="diff-view js-diff-container">
+<div class="js-diff-progressive-container">
+<div class="file js-file js-details-container Details--on open" data-file-type=".go" data-tagsearch-path="store/store.go" data-tagsearch-lang="Go">
+<div class="file-header js-file-header" data-path="store/store.go" data-anchor="diff-store" data-file-type=".go" data-file-deleted="false">
+<div class="file-info"><span class="diffstat">18</span><span class="Truncate"><a title="store/store.go" class="Link--primary Truncate-text" href="#diff-store">store/store.go</a></span></div>
+</div>
+<div class="js-file-content">
+<div class="data highlight js-blob-wrapper">
+<table class="diff-table js-diff-table tab-size" data-tab-size="8">
+<thead hidden><tr><th scope="col">Original file line number</th><th scope="col">Diff line number</th><th scope="col">Diff line change</th></tr></thead>
+<tbody>
+<tr class="js-expandable-line js-skip-tagsearch"><td class="blob-num blob-num-expandable" colspan="2"><a href="#diff-store" class="js-expand directional-expander" aria-label="Expand Up" data-url="/acme/widgets/blob_excerpt/c4a7e2d9f1b3a5c7e9d0b2f4a6c8e1d3f5a7b9c2?diff=unified"></a></td><td class="blob-code blob-code-inner blob-code-hunk">@@ -12,11 +12,21 @@ var ErrEmptyKey = errors.New("empty key")</td></tr>
+<tr><td data-line-number="12" class="blob-num blob-num-context js-linkable-line-number"></td><td data-line-number="12" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" "><span class="pl-c">// Store keeps values by key.</span></span></td></tr>
+<tr><td data-line-number="13" class="blob-num blob-num-context js-linkable-line-number"></td><td data-line-number="13" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" "><span class="pl-k">type</span> Store <span class="pl-k">struct</span> {</span></td></tr>
+<tr><td data-line-number="14" class="blob-num blob-num-context js-linkable-line-number"></td><td data-line-number="14" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">	mu    sync.Mutex</span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="15" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+">	owner <span class="pl-k">string</span></span></td></tr>
+<tr><td data-line-number="15" class="blob-num blob-num-context js-linkable-line-number"></td><td data-line-number="16" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">	items <span class="pl-k">map</span>[<span class="pl-k">string</span>]<span class="pl-k">int</span></span></td></tr>
+<tr><td data-line-number="16" class="blob-num blob-num-context js-linkable-line-number"></td><td data-line-number="17" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">}</span></td></tr>
+<tr><td data-line-number="17" class="blob-num blob-num-context js-linkable-line-number"></td><td data-line-number="18" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" "></span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="19" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+"><span class="pl-c">// Owner returns the store owner.</span></span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="20" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+"><span class="pl-k">func</span> (s *Store) Owner() <span class="pl-k">string</span> {</span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="21" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+">	<span class="pl-k">return</span> s.owner</span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="22" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+">}</span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="23" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+"></span></td></tr>
+<tr><td data-line-number="18" class="blob-num blob-num-context js-linkable-line-number"></td><td data-line-number="24" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" "><span class="pl-c">// Put stores v under k.</span></span></td></tr>
+<tr><td data-line-number="19" class="blob-num blob-num-context js-linkable-line-number"></td><td data-line-number="25" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" "><span class="pl-k">func</span> (s *Store) Put(k <span class="pl-k">string</span>, v <span class="pl-k">int</span>) <span class="pl-k">error</span> {</span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="26" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+">	err := validate(k)</span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="27" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+">	<span class="pl-k">if</span> err != <span class="pl-k">nil</span> {</span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="28" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+">		<span class="pl-k">return</span> err</span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="29" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+">	}</span></td></tr>
+<tr><td data-line-number="20" class="blob-num blob-num-context js-linkable-line-number"></td><td data-line-number="30" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">	s.mu.Lock()</span></td></tr>
+<tr><td data-line-number="21" class="blob-num blob-num-context js-linkable-line-number"></td><td data-line-number="31" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">	<span class="pl-k">defer</span> s.mu.Unlock()</span></td></tr>
+<tr><td data-line-number="22" class="blob-num blob-num-context js-linkable-line-number"></td><td data-line-number="32" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">	s.items[k] = v</span></td></tr>
+<tr class="js-expandable-line js-skip-tagsearch"><td class="blob-num blob-num-expandable" colspan="2"><a href="#diff-store" class="js-expand directional-expander" aria-label="Expand All" data-url="/acme/widgets/blob_excerpt/c4a7e2d9f1b3a5c7e9d0b2f4a6c8e1d3f5a7b9c2?diff=unified"></a></td><td class="blob-code blob-code-inner blob-code-hunk">@@ -29,3 +39,11 @@ func (s *Store) Len() int {</td></tr>
+<tr><td data-line-number="29" class="blob-num blob-num-context js-linkable-line-number"></td><td data-line-number="39" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">	<span class="pl-k">defer</span> s.mu.Unlock()</span></td></tr>
+<tr><td data-line-number="30" class="blob-num blob-num-context js-linkable-line-number"></td><td data-line-number="40" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">	<span class="pl-k">return</span> len(s.items)</span></td></tr>
+<tr><td data-line-number="31" class="blob-num blob-num-context js-linkable-line-number"></td><td data-line-number="41" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">}</span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="42" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+"></span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="43" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+"><span class="pl-c">// validate returns ErrEmptyKey for an empty key.</span></span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="44" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+"><span class="pl-k">func</span> validate(k <span class="pl-k">string</span>) <span class="pl-k">error</span> {</span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="45" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+">	<span class="pl-k">if</span> k == <span class="pl-s">""</span> {</span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="46" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+">		<span class="pl-k">return</span> ErrEmptyKey</span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="47" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+">	}</span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="48" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+">	<span class="pl-k">return</span> <span class="pl-k">nil</span></span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td data-line-number="49" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+">}</span></td></tr>
+<tr class="js-expandable-line js-skip-tagsearch"><td class="blob-num blob-num-expandable" colspan="2"><a href="#diff-store" class="js-expand directional-expander" aria-label="Expand Down" data-url="/acme/widgets/blob_excerpt/c4a7e2d9f1b3a5c7e9d0b2f4a6c8e1d3f5a7b9c2?diff=unified"></a></td><td class="blob-code blob-code-inner"></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body>
+</html>
