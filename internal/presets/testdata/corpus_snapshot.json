@@ -1,0 +1,7 @@
+{
+  "goVersion": "go1.26.8",
+  "files": 4817,
+  "getter": 684,
+  "noop": 247,
+  "iferr": 2741
+}
