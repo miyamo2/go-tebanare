@@ -1,0 +1,43 @@
+{
+  "inputs": [
+    {
+      "text": "package p\n\nfunc f() {\n\tf := func(x int) int { return x + 1 }\n\tx := compute(log.Debug(\"...\"))\n\tlog.Debug(\"...\")\n\ttests := []tc{\n\t\t{name: \"legacy\", in: 1, want: 2},\n\t}\n\t_, _, _ = f, x, tests\n}\n"
+    },
+    {
+      "text": "package p\n\nimport \"fmt\"\n\ntype T struct{ F map[string]int }\n\nvar table = []T{{F: nil}}\n\nvar fn = func(x []int) int { return len(x) }\n\nvar typed map[string]int = nil\n\nconst c = 1 << 2\n\nfunc (r *T) M(a []int) (b int) {\n\tvar m map[string]int\n\ttype local struct{ G []byte }\n\tf := func(y []int) {}\n\treturn len(m)\n}\n"
+    },
+    {
+      "text": "package p\n\n// Name returns the name.\nfunc (u *User) Name() string { return u.name }\n\nfunc (u *User) Email() string { return u.email }\n\nfunc (u *User) Age() int { return u.age }\n"
+    },
+    {
+      "text": "package p\n\nfunc f() {\n\ta := 1; b := 2\n\t/* c */ g(1, 2), // comment\n\tx := `raw\nline` + y\n\th() // trailing\n}\n"
+    },
+    {
+      "text": "package p\n\nimport \"context\"\n\n// Name0 returns the name.\nfunc (u *User) Name0() string { return u.name0 }\n\nfunc (s *Service) Do0(ctx context.Context, id string) error {\n\tlog.Debug(\"do\", \"id\", id)\n\tv, err := s.repo.Find(ctx, id)\n\tif err != nil {\n\t\treturn err\n\t}\n\tlog.Printf(\"changed\")\n\tif v.n > 0 {\n\t\tlog.Printf(\"big %d\", v.n)\n\t}\n\treturn s.save(ctx, v)\n}\n\n// Name1 returns the name.\nfunc (u *User) Name1() string { return u.name1 }\n\nfunc (s *Service) Do1(ctx context.Context, id string) error {\n\tlog.Debug(\"do\", \"id\", id)\n\tv, err := s.repo.Find(ctx, id)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif v.n > 1 {\n\t\tlog.Printf(\"big %d\", v.n)\n\t}\n\treturn s.save(ctx, v)\n}\n\n// Name2 returns the name.\nfunc (u *User) Name2() string { return u.name2 }\n\nfunc (s *Service) Do2(ctx context.Context, id string) error {\n\tlog.Debug(\"do\", \"id\", id)\n\tv, err := s.repo.Find(ctx, id)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif v.n > 2 {\n\t\tlog.Printf(\"big %d\", v.n)\n\t}\n\treturn s.save(ctx, v)\n}\n\n// Name3 returns the name.\nfunc (u *User) Name3() string { return u.name3 }\n\nfunc (s *Service) Do3(ctx context.Context, id string) error {\n\tlog.Debug(\"do\", \"id\", id)\n\tv, err := s.repo.Find(ctx, id)\n\tif err != nil {\n\t\treturn err\n\t}\n\tlog.Printf(\"changed\")\n\tif v.n > 3 {\n\t\tlog.Printf(\"big %d\", v.n)\n\t}\n\treturn s.save(ctx, v)\n}\n\n"
+    },
+    {
+      "text": "package p\n\n//line gen.y:100\nfunc (T) M() {\n\tlog.Debug(\"x\")\n}\n"
+    },
+    {
+      "text": "﻿package p\r\n\r\nvar s = `a\r\nb` + x\r\nfunc F() { return }\r\n"
+    },
+    {
+      "text": "package p\n\nfunc init() {}\nfunc init() {}\nfunc _() {}\nfunc F() {}\nfunc F() {}\n"
+    },
+    {
+      "text": "package p\n\nfunc f() {\n\t// c\n\tdefer x()\n\tif err := g(); err != nil {\n\t\treturn err\n\t}\n}"
+    },
+    {
+      "text": "package p\n\nvar x = ((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((1))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))\n"
+    },
+    {
+      "text": "package p\n\nfunc f(x int) {\n\tif x == 0 {\n\t} else if x == 1 {\n\t} else if x == 2 {\n\t} else if x == 3 {\n\t} else if x == 4 {\n\t} else if x == 5 {\n\t} else if x == 6 {\n\t} else if x == 7 {\n\t} else if x == 8 {\n\t} else if x == 9 {\n\t} else if x == 10 {\n\t} else if x == 11 {\n\t} else if x == 12 {\n\t} else if x == 13 {\n\t} else if x == 14 {\n\t} else if x == 15 {\n\t} else if x == 16 {\n\t} else if x == 17 {\n\t} else if x == 18 {\n\t} else if x == 19 {\n\t} else if x == 20 {\n\t} else if x == 21 {\n\t} else if x == 22 {\n\t} else if x == 23 {\n\t} else if x == 24 {\n\t} else if x == 25 {\n\t} else if x == 26 {\n\t} else if x == 27 {\n\t} else if x == 28 {\n\t} else if x == 29 {\n\t} else if x == 30 {\n\t} else if x == 31 {\n\t} else if x == 32 {\n\t} else if x == 33 {\n\t} else if x == 34 {\n\t} else if x == 35 {\n\t} else if x == 36 {\n\t} else if x == 37 {\n\t} else if x == 38 {\n\t} else if x == 39 {\n\t} else if x == 40 {\n\t} else if x == 41 {\n\t} else if x == 42 {\n\t} else if x == 43 {\n\t} else if x == 44 {\n\t} else if x == 45 {\n\t} else if x == 46 {\n\t} else if x == 47 {\n\t} else if x == 48 {\n\t} else if x == 49 {\n\t} else if x == 50 {\n\t} else if x == 51 {\n\t} else if x == 52 {\n\t} else if x == 53 {\n\t} else if x == 54 {\n\t} else if x == 55 {\n\t} else if x == 56 {\n\t} else if x == 57 {\n\t} else if x == 58 {\n\t} else if x == 59 {\n\t} else if x == 60 {\n\t}\n}\n"
+    },
+    {
+      "text": "package p\n\nvar x = 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1\n"
+    },
+    {
+      "text": "package p\n\nfunc {\n"
+    }
+  ]
+}
