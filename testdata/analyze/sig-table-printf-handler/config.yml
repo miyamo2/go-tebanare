@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: printf-one-arg
+    func: "func (_) Printf(string, _)"
+  - id: printf-variadic
+    func: "func (_) Printf(string, ..._)"
+  - id: handler-pointer
+    func: "func (**Handler) ServeHTTP(...)"
+  - id: handler-value
+    func: "func (/Handler$/) ServeHTTP(...)"

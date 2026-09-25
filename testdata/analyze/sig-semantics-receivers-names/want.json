@@ -1,0 +1,61 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 3,
+      "end": 3,
+      "hits": [
+        {
+          "ruleId": "any-pointer-lock",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Mutex) Lock"
+        }
+      ]
+    },
+    {
+      "start": 7,
+      "end": 7,
+      "hits": [
+        {
+          "ruleId": "get-one-rune",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) GetX"
+        },
+        {
+          "ruleId": "get-set-regexp",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) GetX"
+        }
+      ]
+    },
+    {
+      "start": 11,
+      "end": 11,
+      "hits": [
+        {
+          "ruleId": "get-set-regexp",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) GetXY"
+        }
+      ]
+    },
+    {
+      "start": 15,
+      "end": 15,
+      "hits": [
+        {
+          "ruleId": "get-set-regexp",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) SetNameOrDefault"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}
