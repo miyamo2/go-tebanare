@@ -1,0 +1,7 @@
+version: 1
+rules:
+  - id: debug-log
+    expr:
+      kind: CallExpr
+      regex: '^logger\.Debug\w*\('
+      hide: statement

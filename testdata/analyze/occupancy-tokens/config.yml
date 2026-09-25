@@ -1,0 +1,6 @@
+version: 1
+rules:
+  - id: debug-call
+    expr:
+      kind: CallExpr
+      regex: '^debug\(\d+\)$'

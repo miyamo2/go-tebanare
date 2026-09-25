@@ -1,0 +1,56 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 6,
+      "end": 6,
+      "hits": [
+        {
+          "ruleId": "debug-call",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "debug(3)"
+        }
+      ]
+    },
+    {
+      "start": 8,
+      "end": 8,
+      "hits": [
+        {
+          "ruleId": "debug-call",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "debug(4)"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "line-shared",
+      "message": "rule \"debug-call\" matched debug(1); line 5 also holds other code, so it stays visible",
+      "side": "new",
+      "ruleId": "debug-call",
+      "line": 5
+    },
+    {
+      "severity": "info",
+      "code": "line-shared",
+      "message": "rule \"debug-call\" matched debug(2); line 5 also holds other code, so it stays visible",
+      "side": "new",
+      "ruleId": "debug-call",
+      "line": 5
+    },
+    {
+      "severity": "info",
+      "code": "line-shared",
+      "message": "rule \"debug-call\" matched debug(5); line 11 also holds other code, so it stays visible",
+      "side": "new",
+      "ruleId": "debug-call",
+      "line": 11
+    }
+  ],
+  "skipped": ""
+}

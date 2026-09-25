@@ -1,0 +1,106 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 4,
+      "end": 11,
+      "hits": [
+        {
+          "ruleId": "debug-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "logger.Debug(\"expr\")"
+        },
+        {
+          "ruleId": "debug-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "logger.Debug(\"assign\")"
+        },
+        {
+          "ruleId": "debug-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "logger.Debug(\"define\")"
+        },
+        {
+          "ruleId": "debug-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "logger.Debug(\"var\")"
+        },
+        {
+          "ruleId": "debug-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "logger.Debug(\"var with type\")"
+        },
+        {
+          "ruleId": "debug-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "logger.Debug(\"defer\")"
+        },
+        {
+          "ruleId": "debug-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "logger.Debug(\"go\")"
+        },
+        {
+          "ruleId": "debug-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "logger.Debug(\"send\")"
+        }
+      ]
+    },
+    {
+      "start": 18,
+      "end": 18,
+      "hits": [
+        {
+          "ruleId": "debug-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "logger.Debug(\"return\")"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "statement-not-simple",
+      "message": "rule \"debug-log\" matched logger.Debug(\"field\"); hide: statement hides only a simple statement whose other parts are identifiers or literals",
+      "side": "new",
+      "ruleId": "debug-log",
+      "line": 12
+    },
+    {
+      "severity": "info",
+      "code": "statement-not-simple",
+      "message": "rule \"debug-log\" matched logger.Debug(\"qualified type\"); hide: statement hides only a simple statement whose other parts are identifiers or literals",
+      "side": "new",
+      "ruleId": "debug-log",
+      "line": 13
+    },
+    {
+      "severity": "info",
+      "code": "statement-not-simple",
+      "message": "rule \"debug-log\" matched logger.Debug(\"argument\"); hide: statement hides only a simple statement whose other parts are identifiers or literals",
+      "side": "new",
+      "ruleId": "debug-log",
+      "line": 14
+    },
+    {
+      "severity": "info",
+      "code": "line-shared",
+      "message": "rule \"debug-log\" matched logger.Debug(\"if\"); line 15 also holds other code, so it stays visible",
+      "side": "new",
+      "ruleId": "debug-log",
+      "line": 15
+    }
+  ],
+  "skipped": ""
+}

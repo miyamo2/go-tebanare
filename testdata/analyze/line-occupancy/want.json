@@ -1,0 +1,48 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 8,
+      "end": 8,
+      "hits": [
+        {
+          "ruleId": "debug-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "log.Debug(\"...\")"
+        }
+      ]
+    },
+    {
+      "start": 10,
+      "end": 10,
+      "hits": [
+        {
+          "ruleId": "legacy-case",
+          "target": "expr",
+          "node": "CompositeLit",
+          "label": "{name: \"legacy\", in: 1, want: 2}"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "line-shared",
+      "message": "rule \"return-inc\" matched return x + 1; line 6 also holds other code, so it stays visible",
+      "side": "new",
+      "ruleId": "return-inc",
+      "line": 6
+    },
+    {
+      "severity": "info",
+      "code": "line-shared",
+      "message": "rule \"debug-log\" matched log.Debug(\"...\"); line 7 also holds other code, so it stays visible",
+      "side": "new",
+      "ruleId": "debug-log",
+      "line": 7
+    }
+  ],
+  "skipped": ""
+}

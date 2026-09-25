@@ -1,0 +1,61 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 4,
+      "end": 7,
+      "hits": [
+        {
+          "ruleId": "tracing",
+          "target": "stmt",
+          "node": "AssignStmt",
+          "label": "ctx, span := tracer.Start(ctx, \"handle\")"
+        },
+        {
+          "ruleId": "tracing",
+          "target": "stmt",
+          "node": "DeferStmt",
+          "label": "defer span.End()"
+        }
+      ]
+    },
+    {
+      "start": 12,
+      "end": 12,
+      "hits": [
+        {
+          "ruleId": "debug-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "log.Debug(\"request\", ctx)"
+        }
+      ]
+    },
+    {
+      "start": 14,
+      "end": 14,
+      "hits": [
+        {
+          "ruleId": "debug-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "log.Debug(\"processed\")"
+        }
+      ]
+    },
+    {
+      "start": 16,
+      "end": 17,
+      "hits": [
+        {
+          "ruleId": "debug-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "log.Debug(\"result\")"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

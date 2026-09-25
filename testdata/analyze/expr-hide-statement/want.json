@@ -1,0 +1,28 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 4,
+      "end": 4,
+      "hits": [
+        {
+          "ruleId": "debug-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "logger.Debug(\"start\")"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "statement-not-simple",
+      "message": "rule \"debug-log\" matched logger.DebugEnabled(); hide: statement hides only a simple statement whose other parts are identifiers or literals",
+      "side": "new",
+      "ruleId": "debug-log",
+      "line": 5
+    }
+  ],
+  "skipped": ""
+}

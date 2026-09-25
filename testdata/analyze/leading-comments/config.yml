@@ -1,0 +1,14 @@
+version: 1
+rules:
+  - id: tracing
+    stmt:
+      kind: [AssignStmt, DeferStmt]
+      regex:
+        - '^ctx, span := \w+\.Start\(ctx, .+\)$'
+        - '^defer span\.End\(\)$'
+      include_leading_comments: true
+  - id: debug-log
+    expr:
+      kind: CallExpr
+      regex: '^log\.Debug\('
+      include_leading_comments: true
