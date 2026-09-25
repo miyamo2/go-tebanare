@@ -1,0 +1,6 @@
+# .gotebanare.yml (the minimal config: presets only)
+version: 1
+presets:
+  - getter
+  - noop
+  - iferr
