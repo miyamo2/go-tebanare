@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["chrome"],
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "paths": {
+      "@go-tebanare/engine": ["../engine/src/index.ts"]
+    }
+  },
+  "include": ["src"]
+}
