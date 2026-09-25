@@ -130,3 +130,28 @@ jobs:
       - run: bun run typecheck
       - run: bun run lint
       - run: bun run test
+      - run: bun run --filter @go-tebanare/chrome-extension zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chrome-extension
+          path: packages/chrome-extension/dist.zip
+          if-no-files-found: error
+
+  e2e:
+    needs: wasm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: engine-wasm
+          path: packages/engine/wasm
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd packages/chrome-extension playwright install --with-deps chromium
+      - run: bun run --filter @go-tebanare/chrome-extension e2e
