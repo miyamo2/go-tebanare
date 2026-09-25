@@ -1,0 +1,25 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 6,
+      "end": 7,
+      "hits": [
+        {
+          "ruleId": "tracing",
+          "target": "stmt",
+          "node": "AssignStmt",
+          "label": "ctx, span := tracer.Start(ctx, \"handle\")"
+        },
+        {
+          "ruleId": "tracing",
+          "target": "stmt",
+          "node": "DeferStmt",
+          "label": "defer span.End()"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

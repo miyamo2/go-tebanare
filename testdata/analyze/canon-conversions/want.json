@@ -1,0 +1,43 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 4,
+      "end": 7,
+      "hits": [
+        {
+          "ruleId": "find-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "log.Printf(\"find %s\", id)"
+        }
+      ]
+    },
+    {
+      "start": 9,
+      "end": 14,
+      "hits": [
+        {
+          "ruleId": "check-wrap",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if err := r.check(ctx); err != nil { return *new(T), fmt.Err..."
+        }
+      ]
+    },
+    {
+      "start": 16,
+      "end": 21,
+      "hits": [
+        {
+          "ruleId": "config-literal",
+          "target": "stmt",
+          "node": "AssignStmt",
+          "label": "v := Config{A: 1, B: []int{1, 2}}"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

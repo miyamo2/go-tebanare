@@ -1,0 +1,22 @@
+version: 1
+rules:
+  - id: block
+    stmt:
+      kind: IfStmt
+      regex: '^if x \{ a\(\) b\(\) \}$'
+  - id: func-literal
+    stmt:
+      kind: AssignStmt
+      regex: '^f := func\(\) \{ a\(\) b\(\) \}$'
+  - id: binary-spacing
+    stmt:
+      kind: AssignStmt
+      regex: ['^x := a\*b \+ c$', '^y := a \* b$']
+  - id: string-spaces
+    expr:
+      kind: CallExpr
+      regex: '^log\.Printf\("a b"\)$'
+  - id: fmt-println
+    expr:
+      kind: CallExpr
+      regex: '^fmt\.Println\('

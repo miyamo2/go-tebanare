@@ -1,0 +1,64 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 6,
+      "end": 6,
+      "hits": [
+        {
+          "ruleId": "len-abc",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "len(\"abc\")"
+        }
+      ]
+    },
+    {
+      "start": 14,
+      "end": 14,
+      "hits": [
+        {
+          "ruleId": "debug-call",
+          "target": "stmt",
+          "node": "ExprStmt",
+          "label": "debug()"
+        }
+      ]
+    },
+    {
+      "start": 18,
+      "end": 18,
+      "hits": [
+        {
+          "ruleId": "debug-call",
+          "target": "stmt",
+          "node": "ExprStmt",
+          "label": "debug()"
+        }
+      ]
+    },
+    {
+      "start": 20,
+      "end": 20,
+      "hits": [
+        {
+          "ruleId": "len-abc",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "len(\"abc\")"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "line-shared",
+      "message": "rule \"len-abc\" matched len(\"abc\"); line 10 also holds other code, so it stays visible",
+      "side": "new",
+      "ruleId": "len-abc",
+      "line": 10
+    }
+  ],
+  "skipped": ""
+}

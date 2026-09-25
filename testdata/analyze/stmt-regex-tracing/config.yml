@@ -1,0 +1,8 @@
+version: 1
+rules:
+  - id: tracing
+    stmt:
+      kind: [AssignStmt, DeferStmt]
+      regex:
+        - '^ctx, span := \w+\.Start\(ctx, .+\)$'
+        - '^defer span\.End\(\)$'

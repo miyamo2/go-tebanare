@@ -1,0 +1,43 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 9,
+      "end": 19,
+      "hits": [
+        {
+          "ruleId": "block",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if x { a() b() }"
+        },
+        {
+          "ruleId": "func-literal",
+          "target": "stmt",
+          "node": "AssignStmt",
+          "label": "f := func() { a() b() }"
+        },
+        {
+          "ruleId": "binary-spacing",
+          "target": "stmt",
+          "node": "AssignStmt",
+          "label": "x := a*b + c"
+        },
+        {
+          "ruleId": "binary-spacing",
+          "target": "stmt",
+          "node": "AssignStmt",
+          "label": "y := a * b"
+        },
+        {
+          "ruleId": "string-spaces",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "log.Printf(\"a b\")"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}
