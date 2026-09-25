@@ -4,11 +4,25 @@ import (
 	"fmt"
 	"go/ast"
 	"regexp"
+	"slices"
 	"testing"
 
 	"github.com/miyamo2/go-tebanare/internal/result"
 	"github.com/miyamo2/go-tebanare/internal/rule"
 )
+
+// funcsWhere returns a func rule with include_doc true that matches the
+// declarations for which match reports true.
+func funcsWhere(id string, match func(fd *ast.FuncDecl) bool) *rule.Rule {
+	return &rule.Rule{ID: id, Target: result.TargetFunc, IncludeDoc: true, Func: rule.FuncMatcherFunc(
+		func(fd *ast.FuncDecl, _ *rule.File) bool { return match(fd) })}
+}
+
+// funcsNamed returns a func rule with include_doc true that matches the
+// functions and methods named in names.
+func funcsNamed(id string, names ...string) *rule.Rule {
+	return funcsWhere(id, func(fd *ast.FuncDecl) bool { return slices.Contains(names, fd.Name.Name) })
+}
 
 // stmtsMatching returns a stmt rule that matches the statements of the
 // given kind, or of any kind when kind is "", whose source text matches
