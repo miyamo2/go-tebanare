@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
+  <title data-i18n="extName">go-tebanare</title>
+  <link rel="stylesheet" href="pages.css">
+</head>
+<body class="popup">
+  <main>
+    <h1 data-i18n="extName"></h1>
+    <p id="head-preview-banner" class="notice" role="status" hidden data-i18n="popupHeadPreviewActive"></p>
+    <p id="state" class="state" hidden></p>
+    <p id="pull-request" hidden></p>
+    <p id="no-page" hidden data-i18n="popupNoPage"></p>
+    <dl id="details" hidden>
+      <div id="config-row"><dt data-i18n="popupConfigLabel"></dt><dd id="config"></dd></div>
+      <div data-stat><dt data-i18n="popupRulesLabel"></dt><dd id="rules"></dd></div>
+      <div data-stat><dt data-i18n="popupFilesLabel"></dt><dd id="files"></dd></div>
+      <div data-stat><dt data-i18n="popupFilesWithFoldsLabel"></dt><dd id="files-with-folds"></dd></div>
+      <div data-stat><dt data-i18n="popupLinesHiddenLabel"></dt><dd id="lines-hidden"></dd></div>
+    </dl>
+    <section id="messages-section" hidden>
+      <h2 data-i18n="popupMessagesLabel"></h2>
+      <ul id="messages"></ul>
+    </section>
+    <p id="error" class="error" role="alert" hidden></p>
+    <div class="actions">
+      <button type="button" id="toggle-hiding" hidden></button>
+      <button type="button" id="toggle-head-preview" hidden></button>
+    </div>
+    <footer>
+      <a id="open-options" href="options.html" target="_blank" data-i18n="popupOptions"></a>
+    </footer>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>
