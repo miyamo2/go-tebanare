@@ -1,0 +1,23 @@
+<!-- Synthetic fixture, written by hand and not saved from github.com. It models the hidden commit inputs of the review forms on GitHub's classic pull request "Files changed" page. -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Add user getters by octo · Pull Request #12 · octo/repo</title></head>
+<body>
+  <div id="files_bucket">
+    <form class="js-review-form" action="/octo/repo/pull/12/reviews" method="post">
+      <input type="hidden" name="comparison_start_oid" value="0123456789abcdef0123456789abcdef01234567">
+      <input type="hidden" name="comparison_end_oid" value="89abcdef0123456789abcdef0123456789abcdef">
+    </form>
+    <div id="files" class="diff-view js-diff-container">
+      <div class="file">
+        <div class="file-header" data-path="user.go"></div>
+        <form class="js-inline-comment-form" action="/octo/repo/pull/12/review_comment/create" method="post">
+          <input type="hidden" name="comparison_start_oid" value="0123456789abcdef0123456789abcdef01234567">
+          <input type="hidden" name="comparison_end_oid" value="89abcdef0123456789abcdef0123456789abcdef">
+          <input type="hidden" name="path" value="user.go">
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

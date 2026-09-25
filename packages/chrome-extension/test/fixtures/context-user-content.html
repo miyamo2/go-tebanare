@@ -1,0 +1,30 @@
+<!-- Synthetic fixture, written by hand and not saved from github.com. It models a classic "Files changed" page seen by a viewer without review forms, after the deferred diffs have loaded, so the page has no hidden commit inputs and no diff URLs of its own. An inline review comment carries another commit pair in a Markdown link and image. The include-fragment, expander, and inputs inside the comment body model markup that GitHub's Markdown sanitizer is expected to strip; the providers skip them anyway. -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Add user getters by octo · Pull Request #12 · octo/repo</title></head>
+<body>
+  <div id="files" class="diff-view js-diff-container">
+    <div class="file">
+      <div class="file-header" data-path="user.go"></div>
+      <table class="diff-table">
+        <tbody>
+          <tr class="inline-comments">
+            <td colspan="4">
+              <div class="review-comment js-comment">
+                <div class="comment-body markdown-body js-comment-body">
+                  <p>Compare with <a href="https://github.com/octo/repo/pull/12/files?sha1=fedcba9876543210fedcba9876543210fedcba98&amp;sha2=89abcdef0123456789abcdef0123456789abcdef" rel="nofollow">this range</a>.</p>
+                  <p><img src="/octo/repo/diffs?pull_number=12&amp;sha1=fedcba9876543210fedcba9876543210fedcba98&amp;sha2=89abcdef0123456789abcdef0123456789abcdef" alt=""></p>
+                  <include-fragment src="/octo/repo/diffs?sha1=fedcba9876543210fedcba9876543210fedcba98&amp;sha2=89abcdef0123456789abcdef0123456789abcdef"></include-fragment>
+                  <a class="js-expand" data-url="/octo/repo/blob_excerpt/fedcba9876543210fedcba9876543210fedcba98?sha1=fedcba9876543210fedcba9876543210fedcba98&amp;sha2=89abcdef0123456789abcdef0123456789abcdef"></a>
+                  <input type="hidden" name="comparison_start_oid" value="fedcba9876543210fedcba9876543210fedcba98">
+                  <input type="hidden" name="comparison_end_oid" value="89abcdef0123456789abcdef0123456789abcdef">
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
