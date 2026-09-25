@@ -33,6 +33,36 @@ const SHA = /^[0-9a-f]{40}$/;
  */
 const USER_CONTENT = '.comment-body, .markdown-body, .js-comment-body, .review-comment';
 
+/** The JSON that GitHub's React pages embed for the app in a react-app element. */
+const EMBEDDED_DATA = 'react-app > script[type="application/json"][data-target="react-app.embeddedData"]';
+
+/**
+ * embeddedDataProvider reads the JSON that the React "Files changed" page
+ * embeds for its app outside user content. In
+ * payload.pullRequestsChangesRoute, comparison.fullDiff holds baseOid (old
+ * side) and headOid (new side), and pullRequest.comparison repeats them;
+ * when both are present they must agree. The route must name page's
+ * repository and pull request number, because the app keeps the JSON of
+ * the page it loaded with while it moves to other pages. Several react-app
+ * elements must all name the same pair.
+ *
+ * S3: the fields come from one saved page, trimmed into
+ * context-react.html. There baseOid equals the oldCommitOid of every file
+ * diff in the JSON, so it is the old side of the diff on display.
+ */
+export const embeddedDataProvider: PullRequestContextProvider = {
+  resolve(doc, page) {
+    const pairs = new Set<string>();
+    for (const el of doc.querySelectorAll(EMBEDDED_DATA)) {
+      if (el.closest(USER_CONTENT)) continue;
+      const pair = routePair(embeddedData(el), page);
+      if (pair) pairs.add(pair);
+    }
+    const [base = null, head = null] = single(pairs)?.split(' ') ?? [];
+    return context(page, base, head);
+  },
+};
+
 /**
  * hiddenInputProvider reads input[name="comparison_start_oid"] (old side)
  * and input[name="comparison_end_oid"] (new side) outside user content. The
@@ -105,8 +135,8 @@ export function firstOf(...providers: PullRequestContextProvider[]): PullRequest
   };
 }
 
-/** The strategies in the order the content script tries them. */
-export const defaultContextProvider: PullRequestContextProvider = firstOf(hiddenInputProvider, diffUrlProvider);
+/** The strategies in the order the content script tries them. The embedded data comes first because it was checked on a real page. */
+export const defaultContextProvider: PullRequestContextProvider = firstOf(embeddedDataProvider, hiddenInputProvider, diffUrlProvider);
 
 function context(page: PullPage, base: string | null, head: string | null): PullRequestContext | null {
   if (base === null || head === null || !SHA.test(base) || !SHA.test(head)) return null;
@@ -121,6 +151,57 @@ function single(values: Iterable<string>): string | null {
     found = v;
   }
   return found;
+}
+
+// GitHub treats owner and repository names without regard to case.
+const sameName = (a: unknown, b: string) => typeof a === 'string' && a.toLowerCase() === b.toLowerCase();
+
+// The parsed JSON of each embedded data element with the text it came
+// from. The controller resolves the context again after every batch of DOM
+// changes, and the JSON holds the whole diff, so each text is parsed once.
+const parsedData = new WeakMap<Element, { text: string; data: unknown }>();
+
+/** embeddedData returns the parsed JSON of el, or undefined when it does not parse. */
+function embeddedData(el: Element): unknown {
+  const text = el.textContent ?? '';
+  const cached = parsedData.get(el);
+  if (cached?.text === text) return cached.data;
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = undefined;
+  }
+  parsedData.set(el, { text, data });
+  return data;
+}
+
+/** field returns value.k1.k2..., or undefined when a step is not a plain object. */
+function field(value: unknown, ...keys: string[]): unknown {
+  let v = value;
+  for (const k of keys) {
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return undefined;
+    v = (v as Record<string, unknown>)[k];
+  }
+  return v;
+}
+
+/**
+ * routePair returns "<baseOid> <headOid>" from the "Files changed" route of
+ * data when the route names page's pull request and its copies of the pair
+ * agree, or null.
+ */
+function routePair(data: unknown, page: PullPage): string | null {
+  const route = field(data, 'payload', 'pullRequestsChangesRoute');
+  if (!sameName(field(route, 'repository', 'ownerLogin'), page.owner)) return null;
+  if (!sameName(field(route, 'repository', 'name'), page.repo)) return null;
+  if (field(route, 'pullRequest', 'number') !== page.number) return null;
+  const base = field(route, 'comparison', 'fullDiff', 'baseOid');
+  const head = field(route, 'comparison', 'fullDiff', 'headOid');
+  if (typeof base !== 'string' || typeof head !== 'string' || !SHA.test(base) || !SHA.test(head)) return null;
+  const copy = field(route, 'pullRequest', 'comparison');
+  if (copy !== undefined && copy !== null && (field(copy, 'baseOid') !== base || field(copy, 'headOid') !== head)) return null;
+  return `${base} ${head}`;
 }
 
 /**
@@ -153,9 +234,7 @@ function shaPair(value: string | null, page: PullPage): string | null {
  */
 function diffPath(pathname: string, page: PullPage): boolean {
   const [root, owner = '', repo = '', kind, next = ''] = pathname.split('/');
-  // GitHub treats owner and repository names without regard to case.
-  const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
-  if (root !== '' || !same(owner, page.owner) || !same(repo, page.repo)) return false;
+  if (root !== '' || !sameName(owner, page.owner) || !sameName(repo, page.repo)) return false;
   switch (kind) {
     case 'diffs':
       return true;

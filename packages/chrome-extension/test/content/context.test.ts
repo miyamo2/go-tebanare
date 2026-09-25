@@ -2,10 +2,11 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   defaultContextProvider,
   diffUrlProvider,
+  embeddedDataProvider,
   firstOf,
   hiddenInputProvider,
   type PullRequestContextProvider,
@@ -24,6 +25,110 @@ const BASE = '0123456789abcdef0123456789abcdef01234567';
 const HEAD = '89abcdef0123456789abcdef0123456789abcdef';
 const OTHER = 'fedcba9876543210fedcba9876543210fedcba98';
 const want = { owner: 'octo', repo: 'repo', number: 12, baseSha: BASE, headSha: HEAD };
+
+describe('embeddedDataProvider', () => {
+  const script = (root: ParentNode) => root.querySelector('script[data-target="react-app.embeddedData"]') as HTMLElement;
+
+  interface Pair {
+    baseOid: string;
+    headOid: string;
+  }
+  /** The fields of the fixture's "Files changed" route that the tests change. */
+  interface Route {
+    comparison: { fullDiff?: Pair };
+    pullRequest: { number: number | string; comparison?: Pair | null };
+    repository?: unknown;
+  }
+
+  /** withRoute returns the React fixture after edit changed its "Files changed" route. */
+  function withRoute(edit: (route: Route) => void): Document {
+    const doc = load('context-react.html');
+    const data = JSON.parse(script(doc).textContent ?? '') as { payload: { pullRequestsChangesRoute: Route } };
+    edit(data.payload.pullRequestsChangesRoute);
+    script(doc).textContent = JSON.stringify(data);
+    return doc;
+  }
+
+  it('reads the commits from the data of the React app', () => {
+    expect(embeddedDataProvider.resolve(load('context-react.html'), page)).toEqual(want);
+  });
+
+  it('takes owner and repo from the page, whatever the case in the data', () => {
+    const upper: PullPage = { owner: 'OCTO', repo: 'Repo', number: 12 };
+    expect(embeddedDataProvider.resolve(load('context-react.html'), upper)).toEqual({ ...want, owner: 'OCTO', repo: 'Repo' });
+  });
+
+  it.each([
+    ['another number', { ...page, number: 13 }],
+    ['another repository', { ...page, repo: 'other' }],
+    ['another owner', { ...page, owner: 'someone' }],
+  ])('returns null for the data of %s', (_, other) => {
+    expect(embeddedDataProvider.resolve(load('context-react.html'), other)).toBeNull();
+  });
+
+  it.each([
+    ['a pull request copy that disagrees', (r: Route) => (r.pullRequest.comparison = { baseOid: BASE, headOid: OTHER })],
+    ['a number in a string', (r: Route) => (r.pullRequest.number = '12')],
+    ['an abbreviated SHA', (r: Route) => (r.comparison.fullDiff = { baseOid: BASE.slice(0, 12), headOid: HEAD })],
+    ['no full diff', (r: Route) => delete r.comparison.fullDiff],
+    ['no repository', (r: Route) => delete r.repository],
+  ])('returns null for %s', (_, edit) => {
+    expect(embeddedDataProvider.resolve(withRoute(edit), page)).toBeNull();
+  });
+
+  it('reads the full diff alone when the pull request has no copy', () => {
+    expect(embeddedDataProvider.resolve(withRoute((r) => delete r.pullRequest.comparison), page)).toEqual(want);
+    expect(embeddedDataProvider.resolve(withRoute((r) => (r.pullRequest.comparison = null)), page)).toEqual(want);
+  });
+
+  it('returns null without the route or for JSON that does not parse', () => {
+    const doc = load('context-react.html');
+    script(doc).textContent = '{"payload":{"pullRequestsLayoutRoute":{}}}';
+    expect(embeddedDataProvider.resolve(doc, page)).toBeNull();
+    script(doc).textContent = '{"payload":';
+    expect(embeddedDataProvider.resolve(doc, page)).toBeNull();
+  });
+
+  it('reads only the data of react-app elements outside user content', () => {
+    const doc = load('context-react.html');
+    const data = script(doc);
+    const app = doc.querySelector('react-app') as HTMLElement;
+    doc.querySelector('react-partial')?.append(data);
+    expect(embeddedDataProvider.resolve(doc, page)).toBeNull();
+    app.append(data);
+    expect(embeddedDataProvider.resolve(doc, page)).toEqual(want);
+    const comment = doc.createElement('div');
+    comment.className = 'comment-body';
+    app.replaceWith(comment);
+    comment.append(app);
+    expect(embeddedDataProvider.resolve(doc, page)).toBeNull();
+  });
+
+  it('returns null when two apps name different pairs', () => {
+    const doc = load('context-react.html');
+    const copy = doc.querySelector('react-app')?.cloneNode(true) as HTMLElement;
+    doc.body.append(copy);
+    expect(embeddedDataProvider.resolve(doc, page)).toEqual(want);
+    script(copy).textContent = (script(copy).textContent ?? '').replaceAll(HEAD, OTHER);
+    expect(embeddedDataProvider.resolve(doc, page)).toBeNull();
+  });
+
+  it('parses each text once', () => {
+    const doc = load('context-react.html');
+    const parse = vi.spyOn(JSON, 'parse');
+    const routeParses = () => parse.mock.calls.filter(([text]) => String(text).includes('pullRequestsChangesRoute')).length;
+    try {
+      embeddedDataProvider.resolve(doc, page);
+      embeddedDataProvider.resolve(doc, page);
+      expect(routeParses()).toBe(1);
+      script(doc).textContent = (script(doc).textContent ?? '').replaceAll(HEAD, OTHER);
+      expect(embeddedDataProvider.resolve(doc, page)).toEqual({ ...want, headSha: OTHER });
+      expect(routeParses()).toBe(2);
+    } finally {
+      parse.mockRestore();
+    }
+  });
+});
 
 describe('hiddenInputProvider', () => {
   it('reads the commits from the hidden inputs', () => {
@@ -151,12 +256,21 @@ describe('user content', () => {
 
 describe('defaultContextProvider', () => {
   it.each([
+    ['context-react.html', want],
     ['context-hidden-inputs.html', want],
     ['context-diff-urls.html', want],
     ['context-conflicting.html', null],
     ['context-none.html', null],
   ])('%s', (fixture, expected) => {
     expect(defaultContextProvider.resolve(load(fixture), page)).toEqual(expected);
+  });
+
+  it('prefers the embedded data over the hidden inputs', () => {
+    const doc = load('context-react.html');
+    const form = doc.createElement('form');
+    form.innerHTML = `<input type="hidden" name="comparison_start_oid" value="${OTHER}"><input type="hidden" name="comparison_end_oid" value="${OTHER}">`;
+    doc.body.append(form);
+    expect(defaultContextProvider.resolve(doc, page)).toEqual(want);
   });
 
   it('prefers the hidden inputs over the diff URLs', () => {
