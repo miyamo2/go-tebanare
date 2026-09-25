@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"maps"
 	"slices"
 	"testing"
 
@@ -12,7 +13,7 @@ import (
 )
 
 // decodePresets decodes the `presets` list of src.
-func decodePresets(t *testing.T, src string) (*compiler, []*rule.Rule) {
+func decodePresets(t *testing.T, src string) (*compiler, []*rule.Rule, enabledPresets) {
 	t.Helper()
 	c := &compiler{}
 	es, _ := c.mapping(parseYAML(t, src), "", "presets")
@@ -20,9 +21,9 @@ func decodePresets(t *testing.T, src string) (*compiler, []*rule.Rule) {
 	if !ok {
 		t.Fatalf("no presets in %q", src)
 	}
-	rules := c.presets(e)
+	rules, enabled := c.presets(e)
 	sortByPosition(c.errs)
-	return c, rules
+	return c, rules, enabled
 }
 
 // firstIf parses src, a function body, and returns its first if statement.
@@ -48,7 +49,7 @@ func firstIf(t *testing.T, body string) (*ast.IfStmt, *rule.File) {
 }
 
 func TestPresets(t *testing.T) {
-	c, rules := decodePresets(t, `
+	c, rules, enabled := decodePresets(t, `
 presets:
   - getter:
       include_doc: false
@@ -69,6 +70,9 @@ presets:
 	if want := []string{"getter", "noop", "iferr"}; !slices.Equal(ids, want) {
 		t.Fatalf("ids = %q, want %q", ids, want)
 	}
+	if want := (enabledPresets{"getter": 3, "noop": 5, "iferr": 6}); !maps.Equal(enabled, want) {
+		t.Errorf("enabled = %v, want %v", enabled, want)
+	}
 	if rules[0].IncludeDoc || !rules[1].IncludeDoc || rules[2].Target != result.TargetStmt {
 		t.Errorf("rules = %+v, %+v, %+v", rules[0], rules[1], rules[2])
 	}
@@ -80,7 +84,7 @@ presets:
 
 // TestPresetsPlanSettings decodes the preset settings example of plan 4.5.
 func TestPresetsPlanSettings(t *testing.T) {
-	c, rules := decodePresets(t, `
+	c, rules, _ := decodePresets(t, `
 presets:
   - getter                    # enabled with the default settings
   - noop:
@@ -111,7 +115,7 @@ presets:
 	if !noop.Func.MatchFunc(fd, file) {
 		t.Error("noop with include_functions: true does not match func noop() {}")
 	}
-	if _, defaults := decodePresets(t, "presets: [noop]"); defaults[0].Func.MatchFunc(fd, file) {
+	if _, defaults, _ := decodePresets(t, "presets: [noop]"); defaults[0].Func.MatchFunc(fd, file) {
 		t.Error("noop with the default settings matches func noop() {}")
 	}
 
@@ -125,7 +129,7 @@ presets:
 }
 
 func TestPresetsDefaults(t *testing.T) {
-	c, rules := decodePresets(t, "presets: [getter, 'noop', iferr: , noop2: ~]")
+	c, rules, _ := decodePresets(t, "presets: [getter, 'noop', iferr: , noop2: ~]")
 	checkDiags(t, "errors", c.errs, []string{
 		`1:36: presets[3](noop2): unknown preset "noop2" (available presets: getter, iferr, noop)`,
 	})
@@ -140,52 +144,56 @@ func TestPresetsDefaults(t *testing.T) {
 
 func TestPresetsErrors(t *testing.T) {
 	tests := []struct {
-		name string
-		src  string
-		want []string
+		name    string
+		src     string
+		want    []string
+		enabled []string
 	}{
-		{"not a list", "presets: getter", []string{`1:10: presets: expected a list, found string "getter"`}},
+		{"not a list", "presets: getter", []string{`1:10: presets: expected a list, found string "getter"`}, nil},
 		{"entry of the wrong type", "presets: [1, [getter]]", []string{
 			"1:11: presets[0]: expected a preset name or a mapping from a preset name to its settings, found integer 1",
 			"1:14: presets[1]: expected a preset name or a mapping from a preset name to its settings, found a list",
-		}},
+		}, nil},
 		{"mapping with two keys", "presets:\n  - getter:\n    noop:", []string{
 			"2:5: presets[0]: expected a mapping with one key, the preset name, found 2 keys",
-		}},
+		}, nil},
 		{"empty mapping", "presets: [{}]", []string{
 			"1:11: presets[0]: expected a mapping with one key, the preset name, found 0 keys",
-		}},
+		}, nil},
 		{"key that is not a string", "presets: [{1: {}}]", []string{
 			"1:12: presets[0]: expected a preset name as the key, found integer 1",
-		}},
+		}, nil},
 		{"unknown preset", "presets: [getter, gettr]", []string{
 			`1:19: presets[1](gettr): unknown preset "gettr" (available presets: getter, iferr, noop)`,
-		}},
+		}, []string{"getter"}},
 		{"duplicate preset", "presets:\n  - getter\n  - noop\n  - getter: {max_depth: 1}", []string{
 			`4:5: presets[2](getter): preset "getter" is already enabled on line 2`,
-		}},
+		}, []string{"getter", "noop"}},
 		{"unknown setting", "presets:\n  - iferr:\n      nmes: [err]", []string{
 			`3:7: presets[0](iferr).nmes: unknown setting "nmes" (available settings: ` +
 				`paths, exclude_paths, names, allow_comments, init, allow_bare_return, allow_calls_in_results)`,
-		}},
+		}, []string{"iferr"}},
 		{"settings of the wrong type", "presets:\n  - getter: {max_depth: x, include_doc: 1}", []string{
 			`2:25: presets[0](getter).max_depth: expected an integer, found string "x"`,
 			"2:41: presets[0](getter).include_doc: expected a boolean, found integer 1",
-		}},
+		}, []string{"getter"}},
 		{"invalid settings", "presets:\n  - getter: {max_depth: 0}\n  - iferr: {init: fold, names: ['a b'], paths: ['[']}", []string{
 			"2:25: presets[0](getter).max_depth: must be at least 1, found 0",
 			`3:19: presets[1](iferr).init: unknown value "fold" (valid values: exclude, fold-body)`,
 			`3:33: presets[1](iferr).names[0]: invalid name "a b": use letters, digits, "_", "*", and "?"`,
 			`3:49: presets[1](iferr).paths[0]: invalid glob "["`,
-		}},
+		}, []string{"getter", "iferr"}},
 		{"settings that are not a mapping", "presets:\n  - noop: [x]", []string{
 			"2:11: presets[0](noop): settings must be a mapping, found a list",
-		}},
+		}, []string{"noop"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c, _ := decodePresets(t, tt.src)
+			c, _, enabled := decodePresets(t, tt.src)
 			checkDiags(t, "errors", c.errs, tt.want)
+			if got := slices.Sorted(maps.Keys(enabled)); !slices.Equal(got, tt.enabled) {
+				t.Errorf("enabled = %q, want %q", got, tt.enabled)
+			}
 			for _, d := range c.errs {
 				if d.Severity != result.SeverityError || d.Code != result.CodeConfigInvalid {
 					t.Errorf("%s: severity %s, code %s", d.Format(""), d.Severity, d.Code)
@@ -196,7 +204,7 @@ func TestPresetsErrors(t *testing.T) {
 }
 
 func TestPresetsDiagnosticRuleID(t *testing.T) {
-	c, _ := decodePresets(t, "presets:\n  - getter: {max_depth: 0}\n  - 1\n  - nope")
+	c, _, _ := decodePresets(t, "presets:\n  - getter: {max_depth: 0}\n  - 1\n  - nope")
 	if len(c.errs) != 3 || c.errs[0].RuleID != "getter" || c.errs[1].RuleID != "" || c.errs[2].RuleID != "" {
 		t.Errorf("errors = %+v", c.errs)
 	}
