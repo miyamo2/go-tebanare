@@ -1,0 +1,34 @@
+{
+  "name": "expander rows and rows without the line numbers their kind needs stay visible",
+  "rows": [
+    {"kind": "expander"},
+    {"kind": "hunk"},
+    {"kind": "context", "old": 1, "new": 1},
+    {"kind": "context", "old": 2, "new": 2},
+    {"kind": "expander", "old": 3, "new": 3},
+    {"kind": "context", "old": 10, "new": 10},
+    {"kind": "del"},
+    {"kind": "add"},
+    {"kind": "context", "old": 11},
+    {"kind": "context", "new": 11},
+    {"kind": "del", "new": 12},
+    {"kind": "add", "old": 12},
+    {"kind": "expander"}
+  ],
+  "result": {
+    "old": [
+      {"start": 1, "end": 20, "hits": [{"ruleId": "generated", "target": "func", "node": "FuncDecl", "label": "func init"}]}
+    ],
+    "new": [
+      {"start": 1, "end": 20, "hits": [{"ruleId": "generated", "target": "func", "node": "FuncDecl", "label": "func init"}]}
+    ],
+    "diagnostics": [], "skipped": ""
+  },
+  "want": {
+    "hidden": [2, 3, 5],
+    "folds": [
+      {"first": 2, "last": 3, "lines": 2, "deleted": 0, "added": 0, "rules": ["generated"]},
+      {"first": 5, "last": 5, "lines": 1, "deleted": 0, "added": 0, "rules": ["generated"]}
+    ]
+  }
+}

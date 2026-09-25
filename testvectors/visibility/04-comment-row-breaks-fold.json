@@ -1,0 +1,27 @@
+{
+  "name": "a review comment row stays visible and splits a fold",
+  "rows": [
+    {"kind": "hunk"},
+    {"kind": "del", "old": 5},
+    {"kind": "del", "old": 6},
+    {"kind": "comment"},
+    {"kind": "del", "old": 7},
+    {"kind": "add", "new": 5}
+  ],
+  "result": {
+    "old": [
+      {"start": 5, "end": 7, "hits": [{"ruleId": "noop", "target": "func", "node": "FuncDecl", "label": "func (*Server) mustEmbed", "preset": "noop"}]}
+    ],
+    "new": [
+      {"start": 5, "end": 5, "hits": [{"ruleId": "noop", "target": "func", "node": "FuncDecl", "label": "func (*Server) mustEmbed", "preset": "noop"}]}
+    ],
+    "diagnostics": [], "skipped": ""
+  },
+  "want": {
+    "hidden": [1, 2, 4, 5],
+    "folds": [
+      {"first": 1, "last": 2, "lines": 2, "deleted": 2, "added": 0, "rules": ["noop"]},
+      {"first": 4, "last": 5, "lines": 2, "deleted": 1, "added": 1, "rules": ["noop"]}
+    ]
+  }
+}

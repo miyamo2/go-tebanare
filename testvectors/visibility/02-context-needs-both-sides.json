@@ -1,0 +1,29 @@
+{
+  "name": "a context row is hidden only when both of its lines are in ranges",
+  "rows": [
+    {"kind": "hunk"},
+    {"kind": "context", "old": 20, "new": 20},
+    {"kind": "context", "old": 21, "new": 21},
+    {"kind": "context", "old": 22, "new": 22},
+    {"kind": "context", "old": 23, "new": 23},
+    {"kind": "del", "old": 24},
+    {"kind": "add", "new": 24},
+    {"kind": "context", "old": 25, "new": 25},
+    {"kind": "context", "old": 26, "new": 26}
+  ],
+  "result": {
+    "old": [
+      {"start": 20, "end": 24, "hits": [{"ruleId": "iferr", "target": "stmt", "node": "IfStmt", "label": "if err != nil { return err }", "preset": "iferr"}]}
+    ],
+    "new": [
+      {"start": 22, "end": 26, "hits": [{"ruleId": "iferr", "target": "stmt", "node": "IfStmt", "label": "if err != nil { return err }", "preset": "iferr"}]}
+    ],
+    "diagnostics": [], "skipped": ""
+  },
+  "want": {
+    "hidden": [3, 4, 5, 6],
+    "folds": [
+      {"first": 3, "last": 6, "lines": 4, "deleted": 1, "added": 1, "rules": ["iferr"]}
+    ]
+  }
+}
