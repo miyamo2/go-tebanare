@@ -54,6 +54,9 @@ func TestWrite(t *testing.T) {
 	if f := read("config"); len(f.Inputs) != 2 || f.Inputs[0].Syntax || !f.Inputs[1].Syntax {
 		t.Errorf("config.json = %+v, want the second input marked as a syntax error", f)
 	}
+	if f := read("sigpattern"); f.Inputs == nil || len(f.Inputs) != 0 {
+		t.Errorf("sigpattern.json = %+v, want no inputs", f)
+	}
 }
 
 func TestRunErrors(t *testing.T) {

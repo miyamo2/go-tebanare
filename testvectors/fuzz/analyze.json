@@ -7,6 +7,9 @@
       "text": "package p\n\nimport \"fmt\"\n\ntype T struct{ F map[string]int }\n\nvar table = []T{{F: nil}}\n\nvar fn = func(x []int) int { return len(x) }\n\nvar typed map[string]int = nil\n\nconst c = 1 << 2\n\nfunc (r *T) M(a []int) (b int) {\n\tvar m map[string]int\n\ttype local struct{ G []byte }\n\tf := func(y []int) {}\n\treturn len(m)\n}\n"
     },
     {
+      "text": "package p\n\ntype T struct{ M map[string]int }\n\nvar _ = 1\nfunc (u *User) Name() string { return u.name }\n\nfunc f() {\n\tx := compute(log.Debug(\"...\"))\n\t_ = x\n}\n"
+    },
+    {
       "text": "package p\n\n// Name returns the name.\nfunc (u *User) Name() string { return u.name }\n\nfunc (u *User) Email() string { return u.email }\n\nfunc (u *User) Age() int { return u.age }\n"
     },
     {

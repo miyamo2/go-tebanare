@@ -3,8 +3,8 @@
 // which cannot recover from a panic (plan 8): an input that panics only
 // there would stop the engine.
 //
-// Tests in internal/analyzer and internal/config keep
-// testvectors/fuzz/<name>.json in step with the seeds and the
+// Tests in internal/analyzer, internal/config, and internal/sigpattern
+// keep testvectors/fuzz/<name>.json in step with the seeds and the
 // testdata/fuzz corpus of their fuzz tests. internal/tools/fuzzcorpus
 // writes the corpus that `go test -fuzz` collects in GOCACHE in the same
 // format.
@@ -122,6 +122,42 @@ func parseCorpusFile(b []byte) ([]byte, error) {
 		return []byte(v), nil
 	}
 	return nil, fmt.Errorf("want one []byte or string value, found %q", rest)
+}
+
+// PatternConfig returns a config with one func rule whose pattern is p.
+// It writes p as a YAML double-quoted string and escapes every character
+// that YAML does not allow in it, so the config always parses as YAML.
+// Invalid UTF-8 in p becomes U+FFFD.
+func PatternConfig(p string) string {
+	var b strings.Builder
+	b.WriteString("version: 1\nrules:\n  - id: p\n    func: \"")
+	for _, r := range strings.ToValidUTF8(p, "�") {
+		switch {
+		case r == '"' || r == '\\':
+			b.WriteByte('\\')
+			b.WriteRune(r)
+		case yamlPrintable(r):
+			b.WriteRune(r)
+		default:
+			fmt.Fprintf(&b, "\\U%08X", r)
+		}
+	}
+	b.WriteString("\"\n")
+	return b.String()
+}
+
+// yamlPrintable reports whether r may appear unescaped in a YAML
+// double-quoted string. yaml.v3 also rejects the byte order mark there.
+func yamlPrintable(r rune) bool {
+	switch {
+	case r >= 0x20 && r <= 0x7E:
+		return true
+	case r == 0xFEFF:
+		return false
+	case r >= 0xA0 && r <= 0xD7FF, r >= 0xE000 && r <= 0xFFFD, r >= 0x10000 && r <= 0x10FFFF:
+		return true
+	}
+	return false
 }
 
 // Check compares testvectors/fuzz/<name>.json at the module root with f.
