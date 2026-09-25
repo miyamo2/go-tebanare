@@ -4,8 +4,10 @@
 // Applying the same input twice changes nothing the second time, which
 // keeps the controller's MutationObserver quiet.
 //
-// S2: inserting rows into GitHub's table suits the server-rendered markup.
-// The React UI needs one of the other fold bar options in plan 6.6.
+// S2: the React UI's table gets the same fold rows. React leaves nodes it
+// did not create in place when it adds or removes its own rows, and the
+// controller applies the plan again after React re-renders a file. Confirm
+// both on github.com.
 
 import type { ChangeResult, RuleInfo } from '@go-tebanare/engine';
 import { t } from '../shared/i18n.js';
