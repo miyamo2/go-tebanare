@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"reflect"
 	"testing"
 )
 
@@ -58,17 +59,26 @@ func TestRecvBase(t *testing.T) {
 		name    string
 		pointer bool
 		ok      bool
+		params  []string
 	}{
-		{"Name", "User", true, true},
-		{"Age", "User", false, true},
-		{"Get", "Cache", true, true},
-		{"Len", "Stack", true, true},
-		{"plain", "", false, false},
+		{"Name", "User", true, true, nil},
+		{"Age", "User", false, true, nil},
+		{"Get", "Cache", true, true, []string{"K", "V"}},
+		{"Len", "Stack", true, true, []string{"T"}},
+		{"plain", "", false, false, nil},
 	}
 	for _, tt := range tests {
-		name, pointer, ok := RecvBase(funcNamed(f, tt.fn))
+		fd := funcNamed(f, tt.fn)
+		name, pointer, ok := RecvBase(fd)
 		if name != tt.name || pointer != tt.pointer || ok != tt.ok {
 			t.Errorf("RecvBase(%s) = %q, %v, %v; want %q, %v, %v", tt.fn, name, pointer, ok, tt.name, tt.pointer, tt.ok)
+		}
+		var params []string
+		for _, id := range RecvTypeParams(fd) {
+			params = append(params, id.Name)
+		}
+		if !reflect.DeepEqual(params, tt.params) {
+			t.Errorf("RecvTypeParams(%s) = %v, want %v", tt.fn, params, tt.params)
 		}
 	}
 }
@@ -117,6 +127,37 @@ func TestLineAndOffset(t *testing.T) {
 	}
 	if off := f.Offset(fd.Pos()); string(f.Src[off:off+11]) != "func plain(" {
 		t.Errorf("Offset(plain) points at %q", f.Src[off:off+11])
+	}
+	if _, ok := f.Text(fd); ok {
+		t.Error("Text without Canon reported ok")
+	}
+}
+
+func TestImportAliases(t *testing.T) {
+	f := parseFile(t)
+	want := map[string]string{"ctx2": "context", "yaml": "yaml", "rand": "rand"}
+	if got := ImportAliases(f.AST); !reflect.DeepEqual(got, want) {
+		t.Errorf("ImportAliases = %v, want %v", got, want)
+	}
+}
+
+func TestGuessPackageName(t *testing.T) {
+	tests := map[string]string{
+		"context":                          "context",
+		"math/rand/v2":                     "rand",
+		"gopkg.in/yaml.v3":                 "yaml",
+		"github.com/x/go-foo":              "foo",
+		"github.com/x/foo-go":              "foo",
+		"github.com/x/foo-bar":             "foobar",
+		"v2":                               "v2",
+		"github.com/x/y/v10":               "y",
+		"example.com/pkg.vx":               "pkg.vx",
+		"github.com/bmatcuk/doublestar/v4": "doublestar",
+	}
+	for in, want := range tests {
+		if got := GuessPackageName(in); got != want {
+			t.Errorf("GuessPackageName(%q) = %q, want %q", in, got, want)
+		}
 	}
 }
 

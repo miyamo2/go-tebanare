@@ -34,6 +34,7 @@ type Target string
 const (
 	TargetFunc Target = "func"
 	TargetStmt Target = "stmt"
+	TargetExpr Target = "expr"
 )
 
 // Hit describes one rule match that produced (part of) a hidden range.
@@ -71,17 +72,21 @@ const (
 // contract; the codes are.
 const (
 	// Configuration diagnostics.
-	CodeConfigSyntax  = "config-syntax"
-	CodeConfigInvalid = "config-invalid"
+	CodeConfigSyntax     = "config-syntax"
+	CodeConfigInvalid    = "config-invalid"
+	CodeUnanchoredRegexp = "unanchored-regexp"
 	// CodeConfigIgnored marks a configuration file that is ignored because
 	// a file earlier in the lookup order exists.
 	CodeConfigIgnored = "config-ignored"
 
 	// Analysis diagnostics.
-	CodeLineShared    = "line-shared"
-	CodeMatchChanged  = "match-changed"
-	CodeDuplicateDecl = "duplicate-decl"
-	CodeSkipped       = "skipped"
+	CodeLineShared         = "line-shared"
+	CodeMatchChanged       = "match-changed"
+	CodeDuplicateDecl      = "duplicate-decl"
+	CodeAliasNotResolved   = "alias-not-resolved"
+	CodeNodeTooLarge       = "node-too-large"
+	CodeStatementNotSimple = "statement-not-simple"
+	CodeSkipped            = "skipped"
 )
 
 // Side names used in Diagnostic.Side.

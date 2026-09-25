@@ -44,3 +44,28 @@ func f() {
 		t.Error("KindOf(nil) != \"\"")
 	}
 }
+
+func TestKindLists(t *testing.T) {
+	for _, list := range [][]string{StmtKinds, ExprKinds} {
+		seen := map[string]bool{}
+		for _, k := range list {
+			if seen[k] {
+				t.Errorf("duplicate kind %s", k)
+			}
+			seen[k] = true
+		}
+	}
+	for _, k := range DefaultStmtKinds {
+		if k == "BlockStmt" || k == "EmptyStmt" {
+			t.Errorf("DefaultStmtKinds contains %s", k)
+		}
+	}
+	for _, k := range DefaultExprKinds {
+		if k == "Ident" || k == "BasicLit" {
+			t.Errorf("DefaultExprKinds contains %s", k)
+		}
+	}
+	if len(DefaultStmtKinds) != len(StmtKinds)-2 || len(DefaultExprKinds) != len(ExprKinds)-2 {
+		t.Error("default kind lists drop more than two kinds")
+	}
+}

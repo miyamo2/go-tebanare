@@ -21,7 +21,8 @@ type Set struct {
 	// slash-separated path relative to the repository root.
 	Include []string
 	Exclude []string
-	// Rules holds the rules built from presets, in `presets` order.
+	// Rules holds the enabled rules: user rules in file order, followed by
+	// the rules built from presets in `presets` order.
 	Rules []*Rule
 }
 
@@ -38,7 +39,18 @@ func (s *Set) IsTarget(path string) bool {
 	return matchAny(include, path) && !matchAny(s.Exclude, path)
 }
 
-// Rule is one compiled rule.
+// Hide selects what an expr rule hides.
+type Hide int
+
+// Hide modes.
+const (
+	// HideSelf hides the lines of the expression when it occupies them.
+	HideSelf Hide = iota
+	// HideStatement hides the innermost enclosing simple statement.
+	HideStatement
+)
+
+// Rule is one compiled rule. User rules and presets share this form.
 type Rule struct {
 	ID          string
 	Description string
@@ -54,10 +66,16 @@ type Rule struct {
 	// IncludeDoc hides the doc comment together with the function. It is
 	// used by func rules only.
 	IncludeDoc bool
+	// Hide is used by expr rules only.
+	Hide Hide
+	// IncludeLeadingComments extends the hidden range upward over the
+	// comment lines directly above the node. It is used by stmt and expr
+	// rules only.
+	IncludeLeadingComments bool
 
 	// Func is set when Target is result.TargetFunc.
 	Func FuncMatcher
-	// Node is set when Target is result.TargetStmt.
+	// Node is set when Target is result.TargetStmt or result.TargetExpr.
 	Node NodeMatcher
 }
 
@@ -74,13 +92,25 @@ type FuncMatcher interface {
 	MatchFunc(fd *ast.FuncDecl, f *File) bool
 }
 
-// NodeMatcher decides whether a statement matches a stmt rule.
+// RelaxedFuncMatcher is implemented by func matchers that can retry a match
+// after rewriting import aliases to guessed package names. The analyzer
+// uses it only to explain misses with an alias-not-resolved diagnostic. It
+// never hides code based on a relaxed match.
+type RelaxedFuncMatcher interface {
+	// MatchFuncRelaxed matches fd while treating a source qualifier q as
+	// qualifiers[q] when q is a key of qualifiers.
+	MatchFuncRelaxed(fd *ast.FuncDecl, f *File, qualifiers map[string]string) bool
+}
+
+// NodeMatcher decides whether a statement or expression matches a stmt or
+// expr rule.
 type NodeMatcher interface {
 	// Accepts is a cheap filter on the node kind. MatchNode is called only
 	// for nodes that Accepts approves.
 	Accepts(n ast.Node) bool
 	// MatchNode reports whether n matches. A non-zero Span overrides the
-	// lines to hide; a zero Span means the lines of n.
+	// lines to hide; a zero Span means "derive the lines from n and the
+	// rule's Hide mode".
 	MatchNode(n ast.Node, f *File) (Span, bool)
 }
 
