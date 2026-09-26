@@ -1,5 +1,8 @@
 GO ?= go
 FUZZTIME ?= 10s
+# Minimizing a new input may take this long. Go's default of 60s stalls a
+# short run: FuzzCompile stops executing inputs after a few seconds.
+FUZZMINIMIZETIME ?= 1s
 
 .PHONY: all test vet lint fmt-check fuzz-smoke
 
@@ -24,6 +27,6 @@ fuzz-smoke:
 	@set -e; for pkg in $$($(GO) list ./...); do \
 		for fz in $$($(GO) test -list '^Fuzz' $$pkg | grep '^Fuzz' || true); do \
 			echo "$$pkg $$fz"; \
-			$(GO) test -run '^$$' -fuzz "^$$fz$$" -fuzztime $(FUZZTIME) $$pkg; \
+			$(GO) test -run '^$$' -fuzz "^$$fz$$" -fuzztime $(FUZZTIME) -fuzzminimizetime $(FUZZMINIMIZETIME) $$pkg; \
 		done; \
 	done
