@@ -11,16 +11,24 @@ from rows to line numbers could hide the wrong lines.
 ## Decision
 
 Each markup gets its own `DiffUiVariant` that finds file containers, file
-paths, and rows with their old and new line numbers. Everything after that,
-such as planning which rows to hide and drawing folds, works on those rows
-and knows no GitHub markup. Before hiding anything, the extension compares
-each row's text with the line of the fetched source that has the same
-number, and hides nothing in a file where one row differs.
+paths, file headers and statuses, whether a file shows the split view, and
+rows with their old and new line numbers and text. Planning which rows to
+hide works on those rows and knows no GitHub markup; the fold rows assume
+only a table with two line number columns before the code.
+
+Before hiding anything, the extension checks every row it is about to hide
+against the analysis: the hash of the row's text must equal the hash of the
+same line in the analyzed source (the old side for a deleted row, the new
+side for an added row, both for a context row). If one row differs, it
+hides nothing in that file and the banner says the page does not match the
+analyzed source.
 
 ## Consequences
 
-- When no variant recognizes the page, the extension hides nothing and the
-  popup reports an unsupported GitHub UI.
+- When no variant recognizes the page, the extension hides nothing, and the
+  banner and the popup report an unsupported GitHub UI.
+- Neither variant reads the split view yet. A file shown split hides
+  nothing, and the banner says the split view is not supported.
 - The classic variant targets the server-rendered unified table. Its tests
   use synthetic fixtures modeled on that markup, because this environment
   cannot load github.com. Spike S2 must replace them with saved pages and

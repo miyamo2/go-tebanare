@@ -11,18 +11,34 @@ it to hide their own change in the same pull request.
 ## Decision
 
 The extension reads the configuration at the commit of the old side of the
-diff, which is the merge base for the full "Files changed" view. The author
-of the pull request cannot change that commit. It looks for
-`.gotebanare.yml`, then `.gotebanare.yaml`, and warns when both exist.
+diff. It runs only on the full "Files changed" view, where the old side is
+the merge base, so the author of the pull request cannot change that
+commit. The React page's embedded data was checked on a saved page; the
+classic page's hidden inputs and diff URLs still need spike S3 (ADR 0003)
+to confirm that they name the merge base.
 
-The popup offers a temporary "preview with head config" switch for people
-who edit the configuration. While it is on, the page shows a banner that
-says so. The switch belongs to one tab and one pull request.
+It requests `.gotebanare.yml` and `.gotebanare.yaml` at once and uses the
+first that exists in that order. When both exist, the page banner warns
+that `.gotebanare.yml` is used. The order is the core constant
+`tebanare.ConfigFileNames`.
+
+The popup offers a "preview with head config" switch for people who edit
+the configuration. It belongs to one tab and one pull request: it stays on
+across reloads until it is turned off, the tab or the browser closes, or
+the tab shows another pull request. While it is on, the popup says so, and
+the page banner warns that the pull request author controls the
+configuration once the head configuration file is found.
 
 ## Consequences
 
-- A pull request that changes the configuration file shows a banner saying
-  that the base configuration applies. The configuration file's own diff is
-  never hidden.
+- When the base side has no configuration file, the page hides nothing and
+  shows no banner, even when the pull request adds one. The head preview
+  shows what it would do.
+- When the configuration cannot be fetched (other than a 404), the page
+  hides nothing and the banner shows the reason.
+- A pull request that changes the configuration file, with a base
+  configuration in use, shows a banner saying that the base configuration
+  applies. Only Go files are analyzed, so the configuration file's own diff
+  is never hidden.
 - A configuration change on the base branch after the pull request branched
   does not apply until the pull request merges the base branch.
