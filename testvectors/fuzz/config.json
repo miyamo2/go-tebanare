@@ -13,6 +13,9 @@
       "text": "version: 1\npresets: [iferr: {names: &n [&x a, *x]}, noop: {paths: *n}]\n---\n"
     },
     {
+      "text": "version: 1\n---\nversion: 1\n---\n{\n"
+    },
+    {
       "text": "version: 1\npresets: [",
       "syntax": true
     },
