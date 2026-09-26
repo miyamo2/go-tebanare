@@ -1,0 +1,15 @@
+{
+  "old": [],
+  "new": [],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "match-changed",
+      "message": "rule \"getter\" matches User.Name only on the new side, so both sides stay visible",
+      "side": "new",
+      "ruleId": "getter",
+      "line": 7
+    }
+  ],
+  "skipped": ""
+}

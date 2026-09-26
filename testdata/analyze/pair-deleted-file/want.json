@@ -1,0 +1,33 @@
+{
+  "old": [
+    {
+      "start": 3,
+      "end": 4,
+      "hits": [
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) Name",
+          "preset": "getter"
+        }
+      ]
+    },
+    {
+      "start": 8,
+      "end": 10,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if err != nil { return err }",
+          "preset": "iferr"
+        }
+      ]
+    }
+  ],
+  "new": [],
+  "diagnostics": [],
+  "skipped": ""
+}

@@ -1,0 +1,51 @@
+{
+  "old": [
+    {
+      "start": 9,
+      "end": 9,
+      "hits": [
+        {
+          "ruleId": "noop",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func _",
+          "preset": "noop"
+        }
+      ]
+    }
+  ],
+  "new": [
+    {
+      "start": 9,
+      "end": 11,
+      "hits": [
+        {
+          "ruleId": "noop",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func _",
+          "preset": "noop"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "match-changed",
+      "message": "rule \"noop\" matches init#0 only on the old side, so both sides stay visible",
+      "side": "old",
+      "ruleId": "noop",
+      "line": 3
+    },
+    {
+      "severity": "info",
+      "code": "match-changed",
+      "message": "rule \"noop\" matches init#1 only on the new side, so both sides stay visible",
+      "side": "new",
+      "ruleId": "noop",
+      "line": 7
+    }
+  ],
+  "skipped": ""
+}

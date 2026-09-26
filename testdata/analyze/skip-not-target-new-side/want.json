@@ -1,0 +1,13 @@
+{
+  "old": [],
+  "new": [],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "skipped",
+      "message": "new side skipped (not-target): vendor/example.com/user/user.go is not selected by files.include and files.exclude",
+      "side": "new"
+    }
+  ],
+  "skipped": "not-target"
+}
