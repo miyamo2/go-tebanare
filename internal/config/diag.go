@@ -39,7 +39,8 @@ func (f field) named(name string) field {
 
 // compiler collects the diagnostics of one Compile call.
 type compiler struct {
-	errs []result.Diagnostic
+	errs  []result.Diagnostic
+	warns []result.Diagnostic
 	// ruleID is the name of the preset being decoded. Diagnostics carry
 	// it in RuleID.
 	ruleID string
