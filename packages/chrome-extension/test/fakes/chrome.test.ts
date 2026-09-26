@@ -152,6 +152,6 @@ describe('runtime and install', () => {
     fake.restore();
     expect('chrome' in globalThis).toBe(false);
     restore = installChrome(fake.hub.contentScript(1));
-    expect(chrome.i18n.getMessage('foldShow')).toBe('Show');
+    expect(chrome.i18n.getMessage('commandToggle')).toBe('Turn hiding on or off');
   });
 });
