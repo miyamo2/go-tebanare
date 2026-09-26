@@ -47,6 +47,11 @@ func TestYAMLProgress(t *testing.T) {
 	}{
 		{"valid", config, YAMLDone},
 		{"two documents", "version: 1\n---\npresets: [getter]\n", YAMLDone},
+		// Compile rejects the stream at the second document with content
+		// and never parses the third, so neither does the scan.
+		{"syntax error after two documents", "version: 1\n---\nversion: 1\n---\n{\n", YAMLDone},
+		{"syntax error in the second document", "version: 1\n---\n{\n", 17},
+		{"syntax error after empty documents", "version: 1\n---\n---\n~\n---\n{\n", 27},
 		{"invalid but valid YAML", "version: 2\n", YAMLDone},
 		// The parser reads to the end, then reports the missing "]".
 		{"unclosed flow sequence", "version: 1\npresets: [", 21},

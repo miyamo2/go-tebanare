@@ -14,6 +14,7 @@ import (
 	"go.yaml.in/yaml/v3"
 
 	tebanare "github.com/miyamo2/go-tebanare"
+	tbconfig "github.com/miyamo2/go-tebanare/internal/config"
 )
 
 // YAMLDone is the value of the YAMLProgress counter before the first
@@ -100,23 +101,29 @@ func (b *Bridge) YAMLProgress() *uint32 {
 	return &b.yamlRead
 }
 
-// scanYAML parses every document in src with yaml.v3, handing the parser
-// one byte per read, and counts the bytes read in b.yamlRead. It sets
-// YAMLDone when src has no YAML error and leaves the count when it has one.
+// scanYAML parses the documents in src with yaml.v3, handing the parser
+// one byte per read, and counts the bytes read in b.yamlRead. Like
+// tebanare.Compile, it stops after the second document with content, so a
+// syntax error after that document traps neither build. It sets YAMLDone
+// when the documents it parsed have no YAML error and leaves the count
+// when they have one.
 func (b *Bridge) scanYAML(src []byte) {
 	b.yamlRead = 0
 	dec := yaml.NewDecoder(&byteReader{src: src, n: &b.yamlRead})
-	for {
+	for withContent := 0; withContent < 2; {
 		var doc yaml.Node
 		err := dec.Decode(&doc)
 		if errors.Is(err, io.EOF) {
-			b.yamlRead = YAMLDone
-			return
+			break
 		}
 		if err != nil {
 			return
 		}
+		if tbconfig.HasContent(&doc) {
+			withContent++
+		}
 	}
+	b.yamlRead = YAMLDone
 }
 
 // byteReader returns src one byte per Read call. *n is the number of

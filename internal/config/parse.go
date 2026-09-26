@@ -32,21 +32,28 @@ func (c *compiler) parse(src []byte) (*yaml.Node, bool) {
 			c.syntaxError(err)
 			return nil, false
 		}
-		n := resolve(&doc)
-		if n == nil || isNull(n) {
+		if !HasContent(&doc) {
 			continue
 		}
 		if root != nil {
 			c.errorf(&doc, "", "the config must be one YAML document, and another document starts here")
 			return nil, false
 		}
-		root = n
+		root = resolve(&doc)
 	}
 	if root == nil {
 		c.errorf(nil, "", emptyConfig)
 		return nil, false
 	}
 	return root, true
+}
+
+// HasContent reports whether doc, a node that yaml.v3 decoded from one
+// document of a stream, has content: it is neither empty nor null. Compile
+// reads documents only up to the second one with content.
+func HasContent(doc *yaml.Node) bool {
+	n := resolve(doc)
+	return n != nil && !isNull(n)
 }
 
 // syntaxError reports an error of the YAML parser. Its messages look like
