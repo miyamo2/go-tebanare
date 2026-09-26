@@ -1,0 +1,46 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 5,
+      "end": 7,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if err != nil { return err }",
+          "preset": "iferr"
+        }
+      ]
+    },
+    {
+      "start": 9,
+      "end": 11,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if err != nil { return nil, err }",
+          "preset": "iferr"
+        }
+      ]
+    },
+    {
+      "start": 13,
+      "end": 15,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if err != nil { return *new(T), err }",
+          "preset": "iferr"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

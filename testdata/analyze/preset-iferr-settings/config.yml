@@ -1,0 +1,7 @@
+version: 1
+presets:
+  - iferr:
+      allow_comments: true
+      init: fold-body
+      allow_bare_return: true
+      allow_calls_in_results: true

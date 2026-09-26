@@ -1,0 +1,8 @@
+version: 1
+presets:
+  - getter                    # enabled with the default settings
+  - noop:
+      include_functions: true # also hides empty functions that are not methods
+  - iferr:
+      names: [err, "*Err"]    # also covers parseErr and the like
+      paths: ["internal/**"]  # limits this preset to some files

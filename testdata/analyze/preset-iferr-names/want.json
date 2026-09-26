@@ -1,0 +1,33 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 5,
+      "end": 7,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if parseErr != nil { return nil, parseErr }",
+          "preset": "iferr"
+        }
+      ]
+    },
+    {
+      "start": 16,
+      "end": 18,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if err != nil { return nil, err }",
+          "preset": "iferr"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

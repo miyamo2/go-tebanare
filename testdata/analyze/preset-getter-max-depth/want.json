@@ -1,0 +1,20 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 5,
+      "end": 5,
+      "hits": [
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) Name",
+          "preset": "getter"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}
