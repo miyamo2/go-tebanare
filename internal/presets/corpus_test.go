@@ -33,6 +33,10 @@ type corpusSnapshot struct {
 // TestCorpusSnapshot guards against unnoticed changes to what the presets
 // match. A changed count fails the test. Rewrite the snapshot with -update
 // only after checking that the change narrows the matches or fixes a bug.
+//
+// The counts hold for one Go release. Locally, another release skips the
+// test; in CI it fails, so that bumping CI's Go version without rewriting
+// the snapshot cannot turn the test into a silent no-op.
 func TestCorpusSnapshot(t *testing.T) {
 	if testing.Short() {
 		t.Skip("walks GOROOT/src")
@@ -46,7 +50,8 @@ func TestCorpusSnapshot(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !*update && runtime.Version() != want.GoVersion {
-		t.Skipf("snapshot is for %s, running %s", want.GoVersion, runtime.Version())
+		skipOutsideCI(t, "snapshot is for %s, running %s; run with -update under %s after checking the new counts",
+			want.GoVersion, runtime.Version(), runtime.Version())
 	}
 	goroot := findGOROOT(t)
 
@@ -107,21 +112,32 @@ func TestCorpusSnapshot(t *testing.T) {
 	}
 }
 
-// findGOROOT returns the GOROOT of the go command, and skips the test when
-// that GOROOT belongs to another Go release than the test binary.
+// skipOutsideCI skips the test, or fails it when the CI environment
+// variable is set, as it is on GitHub Actions.
+func skipOutsideCI(t *testing.T, format string, args ...any) {
+	t.Helper()
+	if os.Getenv("CI") != "" {
+		t.Fatalf(format, args...)
+	}
+	t.Skipf(format, args...)
+}
+
+// findGOROOT returns the GOROOT of the go command, and skips the test (fails
+// it in CI) when that GOROOT belongs to another Go release than the test
+// binary.
 func findGOROOT(t *testing.T) string {
 	t.Helper()
 	out, err := exec.Command("go", "env", "GOROOT").Output()
 	if err != nil {
-		t.Skipf("go env GOROOT: %v", err)
+		skipOutsideCI(t, "go env GOROOT: %v", err)
 	}
 	goroot := strings.TrimSpace(string(out))
 	version, err := os.ReadFile(filepath.Join(goroot, "VERSION"))
 	if err != nil {
-		t.Skipf("read GOROOT/VERSION: %v", err)
+		skipOutsideCI(t, "read GOROOT/VERSION: %v", err)
 	}
 	if v, _, _ := strings.Cut(string(version), "\n"); v != runtime.Version() {
-		t.Skipf("GOROOT %s holds %s, running %s", goroot, v, runtime.Version())
+		skipOutsideCI(t, "GOROOT %s holds %s, running %s", goroot, v, runtime.Version())
 	}
 	return goroot
 }
