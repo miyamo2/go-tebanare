@@ -1,0 +1,21 @@
+<!-- Synthetic fixture, written by hand and not saved from github.com. It models a classic "Files changed" page whose hidden commit inputs and diff URLs each name two different commit pairs, which must resolve to no context. -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Add user getters by octo · Pull Request #12 · octo/repo</title></head>
+<body>
+  <form class="js-review-form" action="/octo/repo/pull/12/reviews" method="post">
+    <input type="hidden" name="comparison_start_oid" value="0123456789abcdef0123456789abcdef01234567">
+    <input type="hidden" name="comparison_end_oid" value="89abcdef0123456789abcdef0123456789abcdef">
+  </form>
+  <form class="js-inline-comment-form" action="/octo/repo/pull/12/review_comment/create" method="post">
+    <input type="hidden" name="comparison_start_oid" value="fedcba9876543210fedcba9876543210fedcba98">
+    <input type="hidden" name="comparison_end_oid" value="89abcdef0123456789abcdef0123456789abcdef">
+  </form>
+  <div id="files" class="diff-view js-diff-container">
+    <div class="js-diff-progressive-container">
+      <include-fragment src="/octo/repo/diffs?sha1=0123456789abcdef0123456789abcdef01234567&amp;sha2=89abcdef0123456789abcdef0123456789abcdef&amp;start_entry=1"></include-fragment>
+      <include-fragment src="/octo/repo/diffs?sha1=fedcba9876543210fedcba9876543210fedcba98&amp;sha2=89abcdef0123456789abcdef0123456789abcdef&amp;start_entry=2"></include-fragment>
+    </div>
+  </div>
+</body>
+</html>
