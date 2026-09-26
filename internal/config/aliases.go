@@ -63,8 +63,15 @@ func (a *aliasSizer) visit(n *yaml.Node) (stop *yaml.Node) {
 	return nil
 }
 
-// size returns the size of n with its aliases expanded.
+// size returns the size of n with its aliases expanded. Once a cycle is
+// found, the check fails whatever the sizes are, so it stops measuring:
+// otherwise an anchor under an open one is measured again at each level of
+// nested anchors that refer to each other, and the work and the stack grow
+// with the square of their depth.
 func (a *aliasSizer) size(n *yaml.Node) int {
+	if a.cycle != nil {
+		return maxAliasCopy + 1
+	}
 	switch {
 	case n.Kind == yaml.AliasNode && n.Alias == nil:
 		return 1

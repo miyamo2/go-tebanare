@@ -85,16 +85,35 @@ func TestCheckAliases(t *testing.T) {
 	}
 }
 
+// nestedCycle returns n nested anchored lists, the innermost of which
+// holds an alias to each of them, from the innermost out.
+func nestedCycle(n int) (src string, column int) {
+	var b strings.Builder
+	for i := range n {
+		fmt.Fprintf(&b, "&a%d [", i)
+	}
+	column = b.Len() + 1
+	for i := n - 1; i >= 0; i-- {
+		fmt.Fprintf(&b, "*a%d, ", i)
+	}
+	return strings.TrimSuffix(b.String(), ", ") + strings.Repeat("]", n), column
+}
+
 func TestCheckAliasesQuadratic(t *testing.T) {
 	list := func(item string, n int) string { return strings.TrimSuffix(strings.Repeat(item+", ", n), ", ") }
+	cycle, column := nestedCycle(2400)
 	tests := []struct {
-		name string
-		src  string
-		want string
+		name  string
+		src   string
+		want  string
+		limit time.Duration
 	}{
 		// Each *r copies 300 invalid globs; the 70th copy passes the limit.
 		{"config with errors in the copies", "version: 1\np: &p 'a['\nf: &f [" + list("*p", 300) +
-			"]\nr: &r {iferr: {names: *f}}\npresets: [" + list("*r", 300) + "]\n", "5:287: " + tooMuch},
+			"]\nr: &r {iferr: {names: *f}}\npresets: [" + list("*r", 300) + "]\n", "5:287: " + tooMuch, 10 * time.Second},
+		// 38 KB: measuring on after the cycle took seconds and a stack that
+		// grew with the square of the depth.
+		{"nested anchors in a cycle", cycle, fmt.Sprintf("1:%d: alias *a2399 refers to a value that contains it", column), time.Second},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -107,7 +126,7 @@ func TestCheckAliasesQuadratic(t *testing.T) {
 			if c.checkAliases(root) {
 				t.Error("checkAliases = true")
 			}
-			if d := time.Since(start); d > 10*time.Second {
+			if d := time.Since(start); d > tt.limit {
 				t.Errorf("checkAliases took %v", d)
 			}
 			checkDiags(t, "errors", c.errs, []string{tt.want})
