@@ -82,3 +82,24 @@ describe('buildErrors', () => {
     ]);
   });
 });
+
+describe('THIRD_PARTY_NOTICES.txt', () => {
+  const notices = readFileSync(join(pkgRoot, 'static', 'THIRD_PARTY_NOTICES.txt'), 'utf8');
+
+  it('names every Go module that engine.wasm links, at its go.mod version', () => {
+    const goMod = readFileSync(join(pkgRoot, '..', '..', 'go.mod'), 'utf8');
+    const block = /^require \(\n([\s\S]*?)^\)/m.exec(goMod)?.[1] ?? '';
+    const modules = block
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line !== '' && !line.startsWith('//'))
+      .map((line) => line.split(/\s+/).slice(0, 2).join(' '));
+    expect(modules).not.toEqual([]);
+    for (const m of modules) expect(notices).toContain(m);
+  });
+
+  it('covers the Go standard library and TinyGo', () => {
+    expect(notices).toContain('The Go standard library');
+    expect(notices).toContain('TinyGo');
+  });
+});
