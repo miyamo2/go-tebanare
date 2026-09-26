@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
+  <title data-i18n="optionsTitle">go-tebanare options</title>
+  <link rel="stylesheet" href="pages.css">
+</head>
+<body class="options">
+  <main>
+    <h1 data-i18n="optionsTitle"></h1>
+    <form id="options-form">
+      <label for="excluded-repos" data-i18n="optionsExcludedLabel"></label>
+      <p class="help" id="excluded-help" data-i18n="optionsExcludedHelp"></p>
+      <textarea id="excluded-repos" rows="8" spellcheck="false" autocomplete="off" aria-describedby="excluded-help" placeholder="owner/name&#10;owner/*"></textarea>
+      <p>
+        <label><input type="checkbox" id="debug" aria-describedby="debug-help"> <span data-i18n="optionsDebugLabel"></span></label>
+      </p>
+      <p class="help" id="debug-help" data-i18n="optionsDebugHelp"></p>
+      <p class="save-row">
+        <button type="submit" id="save" data-i18n="optionsSave"></button>
+        <span id="save-status" class="status" role="status"></span>
+      </p>
+      <ul id="invalid-lines" class="invalid-lines" hidden></ul>
+    </form>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>

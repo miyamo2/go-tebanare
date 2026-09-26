@@ -1,0 +1,162 @@
+/* Shared styles for popup.html and options.html. */
+
+:root {
+  color-scheme: light dark;
+  --fg: #1f2328;
+  --bg: #ffffff;
+  --muted: #59636e;
+  --border: #d1d9e0;
+  --success: #1a7f37;
+  --danger: #d1242f;
+  --attention-fg: #9a6700;
+  --attention-bg: #fff8c5;
+  --attention-border: #d4a72c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fg: #e6edf3;
+    --bg: #0d1117;
+    --muted: #9198a1;
+    --border: #3d444d;
+    --success: #3fb950;
+    --danger: #f85149;
+    --attention-fg: #d29922;
+    --attention-bg: rgba(187, 128, 9, 0.15);
+    --attention-border: rgba(187, 128, 9, 0.4);
+  }
+}
+
+body {
+  margin: 0;
+  font: 13px/1.5 system-ui, sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+h2 {
+  margin: 12px 0 4px;
+  font-size: 13px;
+}
+
+.help {
+  margin: 2px 0 8px;
+  color: var(--muted);
+}
+
+button {
+  font: inherit;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+[data-level="success"] {
+  color: var(--success);
+}
+
+.notice {
+  color: var(--attention-fg);
+}
+
+[data-level="error"],
+.error {
+  color: var(--danger);
+}
+
+.notice {
+  margin: 0 0 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--attention-border);
+  border-radius: 6px;
+  background: var(--attention-bg);
+}
+
+/* Options page */
+
+.options main {
+  max-width: 560px;
+  padding: 16px;
+}
+
+.options textarea {
+  box-sizing: border-box;
+  width: 100%;
+  font-family: ui-monospace, monospace;
+}
+
+.save-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.invalid-lines {
+  margin: 0;
+  padding-left: 18px;
+  font-family: ui-monospace, monospace;
+  overflow-wrap: anywhere;
+}
+
+/* Popup */
+
+.popup {
+  width: 320px;
+}
+
+.popup main {
+  padding: 12px;
+}
+
+.popup p {
+  margin: 0 0 6px;
+}
+
+.state {
+  font-weight: 600;
+}
+
+.popup dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 12px;
+  margin: 8px 0;
+}
+
+/* Each dt/dd pair sits in a div so the popup can hide it as one row. */
+.popup dl > div {
+  display: contents;
+}
+
+.popup dt {
+  color: var(--muted);
+}
+
+.popup dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.popup ul {
+  margin: 0;
+  padding-left: 18px;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.popup footer {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}

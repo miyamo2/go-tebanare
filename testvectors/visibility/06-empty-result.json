@@ -1,0 +1,12 @@
+{
+  "name": "an empty result hides nothing and still returns empty arrays",
+  "rows": [
+    {"kind": "hunk"},
+    {"kind": "context", "old": 1, "new": 1},
+    {"kind": "del", "old": 2},
+    {"kind": "add", "new": 2},
+    {"kind": "expander"}
+  ],
+  "result": {"old": [], "new": [], "diagnostics": [], "skipped": ""},
+  "want": {"hidden": [], "folds": []}
+}

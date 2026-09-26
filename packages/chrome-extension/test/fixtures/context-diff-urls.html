@@ -1,0 +1,35 @@
+<!-- Synthetic fixture, written by hand and not saved from github.com. It models the deferred diff and context expander URLs of GitHub's classic pull request "Files changed" page, without the hidden commit inputs. -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Add user getters by octo · Pull Request #12 · octo/repo</title></head>
+<body>
+  <div id="files" class="diff-view js-diff-container">
+    <div class="file">
+      <div class="file-header" data-path="user.go">
+        <a href="/octo/repo/blob/89abcdef0123456789abcdef0123456789abcdef/user.go">View file</a>
+      </div>
+      <table class="diff-table">
+        <tbody>
+          <tr class="js-expandable-line">
+            <td class="blob-num blob-num-expandable">
+              <a class="js-expand directional-expander" href="#diff-1" data-url="/Octo/Repo/blob_excerpt/fedcba9876543210fedcba9876543210fedcba98?diff=unified&amp;direction=down&amp;left=9&amp;right=9&amp;mode=100644&amp;path=user.go&amp;sha1=0123456789abcdef0123456789abcdef01234567&amp;sha2=89abcdef0123456789abcdef0123456789abcdef"></a>
+            </td>
+            <td class="blob-code blob-code-inner blob-code-hunk">@@ -10,3 +10,4 @@ type User struct</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="js-diff-progressive-container">
+      <include-fragment src="/octo/repo/diffs?bytes=2048&amp;lines=80&amp;pull_number=12&amp;sha1=0123456789abcdef0123456789abcdef01234567&amp;sha2=89abcdef0123456789abcdef0123456789abcdef&amp;start_entry=1"></include-fragment>
+    </div>
+    <div class="js-diff-load-container">
+      <include-fragment data-fragment-url="https://github.com/octo/repo/diffs/2?sha1=0123456789abcdef0123456789abcdef01234567&amp;sha2=89abcdef0123456789abcdef0123456789abcdef"></include-fragment>
+    </div>
+  </div>
+  <!-- Each element below names another pair and is skipped: a fork, another host, only sha1, and a link. -->
+  <include-fragment src="/forker/repo/diffs?sha1=fedcba9876543210fedcba9876543210fedcba98&amp;sha2=fedcba9876543210fedcba9876543210fedcba98"></include-fragment>
+  <include-fragment src="https://gist.github.com/octo/repo/diffs?sha1=fedcba9876543210fedcba9876543210fedcba98&amp;sha2=fedcba9876543210fedcba9876543210fedcba98"></include-fragment>
+  <include-fragment src="/octo/repo/diffs?sha1=fedcba9876543210fedcba9876543210fedcba98"></include-fragment>
+  <a href="/octo/repo/diffs?sha1=fedcba9876543210fedcba9876543210fedcba98&amp;sha2=fedcba9876543210fedcba9876543210fedcba98">A link</a>
+</body>
+</html>
