@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
-import { countFolds, countLines, localizePage, t, type MessageKey } from '../../src/shared/i18n.js';
+import { countLines, localizePage, t, type MessageKey } from '../../src/shared/i18n.js';
 import { FakeChrome, installChrome } from '../fakes/chrome.js';
 
 let restore = () => {};
@@ -12,7 +12,7 @@ function useLocale(locale: string): void {
 
 describe('t', () => {
   it('returns the key without chrome.i18n', () => {
-    expect(t('foldShow')).toBe('foldShow');
+    expect(t('foldShowTitle', 3)).toBe('foldShowTitle');
   });
 
   it('returns the key for a missing message', () => {
@@ -22,16 +22,16 @@ describe('t', () => {
 
   it('formats English messages', () => {
     useLocale('en');
-    expect(t('foldShow')).toBe('Show');
-    expect(t('foldSummary', countLines(24), 14, 10)).toBe('gotebanare: 24 lines hidden (\u221214 / +10)');
-    expect(t('badgeText', countFolds(1), countLines(1))).toBe('1 fold / 1 line hidden');
-    expect(t('badgeText', countFolds(3), countLines(57))).toBe('3 folds / 57 lines hidden');
+    expect(t('bannerTitle')).toBe('gotebanare');
+    expect(t('foldShowTitle', countLines(1))).toBe('Show 1 line hidden by gotebanare');
+    expect(t('foldHideTitle', countLines(24))).toBe('Hide 24 lines again');
+    expect(t('fileShowTitle', countLines(57))).toBe('Show the 57 lines that gotebanare hid in this file');
   });
 
   it('formats Japanese messages', () => {
     useLocale('ja');
-    expect(t('foldSummary', countLines(24), 14, 10)).toBe('gotebanare: 24 行を非表示（\u221214 / +10）');
-    expect(t('badgeText', countFolds(3), countLines(57))).toBe('3 箇所 / 57 行を非表示');
+    expect(t('foldShowTitle', countLines(24))).toBe('gotebanare が隠した 24 行を表示');
+    expect(t('fileHideTitle', countLines(57))).toBe('このファイルの 57 行をもう一度隠す');
   });
 });
 

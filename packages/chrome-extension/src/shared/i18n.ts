@@ -24,11 +24,6 @@ export function countLines(n: number): string {
   return n === 1 ? t('countLinesOne') : t('countLines', n);
 }
 
-/** countFolds returns "1 fold" or "N folds" in the UI language. */
-export function countFolds(n: number): string {
-  return n === 1 ? t('countFoldsOne') : t('countFolds', n);
-}
-
 /**
  * localizePage fills static extension pages: an element with
  * data-i18n="key" gets the message as its text, and one with
