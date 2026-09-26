@@ -1,0 +1,55 @@
+<!--
+  Synthetic fixture: unified diffs of a renamed Go file with changes
+  (store/names.go to store/naming.go) and one without changes (docs/a.go to
+  docs/b.go).
+  It is modeled on GitHub's classic (server-rendered) "Files changed" markup
+  and is not a saved page, because github.com cannot be loaded where it was
+  written. Replace it with a saved page during spike S2 and update
+  src/content/dom/classic.ts where the markup differs.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Add store owner by octocat · Pull Request #7 · octo-org/octo-repo</title></head>
+<body>
+<input type="hidden" name="comparison_start_oid" value="1405df66cbe219b0bf6355bc3d60361a8376b6b4">
+<input type="hidden" name="comparison_end_oid" value="1a954628a960aaef81d7b2d4521929579f3541e6">
+<div id="files" class="diff-view js-diff-container" data-hpc>
+<div class="js-diff-progressive-container">
+<div class="file js-file js-details-container Details--on open show-inline-notes" data-file-type=".go" data-file-deleted="false" data-tagsearch-path="store/naming.go" data-tagsearch-lang="Go">
+<div class="file-header d-flex flex-md-row flex-column flex-md-items-center file-header--expandable js-file-header js-skip-tagsearch sticky-file-header" data-path="store/naming.go" data-anchor="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8" data-file-type=".go" data-file-deleted="false">
+<div class="file-info flex-auto min-width-0 mb-md-0 mb-2"><button type="button" class="btn-octicon js-details-target" aria-label="Toggle diff contents" aria-expanded="true"><svg class="octicon octicon-chevron-down" aria-hidden="true" width="16" height="16"></svg></button><span class="diffstat tooltipped tooltipped-e" aria-label="2 changes: 1 addition & 1 deletion">2</span><span class="Truncate"><a title="store/names.go → store/naming.go" class="Link--primary Truncate-text" href="#diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8">store/names.go → store/naming.go</a></span></div>
+<div class="file-actions pt-0 mb-md-0 mb-2 ml-md-2 flex-shrink-0"><details class="js-file-header-dropdown dropdown details-overlay details-reset"><summary aria-label="Show options"><svg class="octicon octicon-kebab-horizontal" aria-hidden="true" width="16" height="16"></svg></summary></details></div>
+</div>
+<div class="js-file-content Details-content--hidden-not-important">
+<div class="data highlight js-blob-wrapper js-check-bidi">
+<table class="diff-table js-diff-table tab-size" data-tab-size="8" data-diff-anchor="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8" data-paste-markdown-skip>
+<thead hidden><tr><th scope="col">Original file line number</th><th scope="col">Diff line number</th><th scope="col">Diff line change</th></tr></thead>
+<tbody>
+<tr class="js-skip-tagsearch"><td class="blob-num blob-num-hunk non-expandable" colspan="2"></td><td class="blob-code blob-code-inner blob-code-hunk">@@ -1,7 +1,7 @@</td></tr>
+<tr><td id="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8L1" data-line-number="1" class="blob-num blob-num-context js-linkable-line-number"></td><td id="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8R1" data-line-number="1" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><button type="button" class="add-line-comment js-add-line-comment btn-link" aria-label="Add line comment"><svg class="octicon octicon-plus" aria-hidden="true" width="16" height="16"></svg></button><span class="blob-code-inner blob-code-marker js-code-nav-pass" data-code-marker=" "><span class="pl-k">package</span> store</span></td></tr>
+<tr><td id="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8L2" data-line-number="2" class="blob-num blob-num-context js-linkable-line-number"></td><td id="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8R2" data-line-number="2" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><button type="button" class="add-line-comment js-add-line-comment btn-link" aria-label="Add line comment"><svg class="octicon octicon-plus" aria-hidden="true" width="16" height="16"></svg></button><span class="blob-code-inner blob-code-marker js-code-nav-pass" data-code-marker=" "></span></td></tr>
+<tr><td id="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8L3" data-line-number="3" class="blob-num blob-num-context js-linkable-line-number"></td><td id="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8R3" data-line-number="3" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><button type="button" class="add-line-comment js-add-line-comment btn-link" aria-label="Add line comment"><svg class="octicon octicon-plus" aria-hidden="true" width="16" height="16"></svg></button><span class="blob-code-inner blob-code-marker js-code-nav-pass" data-code-marker=" "><span class="pl-c">// DefaultName is the name of a new Store.</span></span></td></tr>
+<tr><td id="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8L4" data-line-number="4" class="blob-num blob-num-deletion js-linkable-line-number"></td><td class="blob-num blob-num-deletion empty-cell"></td><td class="blob-code blob-code-deletion js-file-line"><button type="button" class="add-line-comment js-add-line-comment btn-link" aria-label="Add line comment"><svg class="octicon octicon-plus" aria-hidden="true" width="16" height="16"></svg></button><span class="blob-code-inner blob-code-marker js-code-nav-pass" data-code-marker="-"><span class="pl-k">const</span> DefaultName = <span class="pl-s"><span class="pl-pds">"</span>default<span class="pl-pds">"</span></span></span></td></tr>
+<tr><td class="blob-num blob-num-addition empty-cell"></td><td id="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8R4" data-line-number="4" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><button type="button" class="add-line-comment js-add-line-comment btn-link" aria-label="Add line comment"><svg class="octicon octicon-plus" aria-hidden="true" width="16" height="16"></svg></button><span class="blob-code-inner blob-code-marker js-code-nav-pass" data-code-marker="+"><span class="pl-k">const</span> DefaultName = <span class="pl-s"><span class="pl-pds">"</span>main<span class="pl-pds">"</span></span></span></td></tr>
+<tr><td id="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8L5" data-line-number="5" class="blob-num blob-num-context js-linkable-line-number"></td><td id="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8R5" data-line-number="5" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><button type="button" class="add-line-comment js-add-line-comment btn-link" aria-label="Add line comment"><svg class="octicon octicon-plus" aria-hidden="true" width="16" height="16"></svg></button><span class="blob-code-inner blob-code-marker js-code-nav-pass" data-code-marker=" "></span></td></tr>
+<tr><td id="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8L6" data-line-number="6" class="blob-num blob-num-context js-linkable-line-number"></td><td id="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8R6" data-line-number="6" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><button type="button" class="add-line-comment js-add-line-comment btn-link" aria-label="Add line comment"><svg class="octicon octicon-plus" aria-hidden="true" width="16" height="16"></svg></button><span class="blob-code-inner blob-code-marker js-code-nav-pass" data-code-marker=" "><span class="pl-c">// IsDefault reports whether s has the default name.</span></span></td></tr>
+<tr><td id="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8L7" data-line-number="7" class="blob-num blob-num-context js-linkable-line-number"></td><td id="diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8R7" data-line-number="7" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><button type="button" class="add-line-comment js-add-line-comment btn-link" aria-label="Add line comment"><svg class="octicon octicon-plus" aria-hidden="true" width="16" height="16"></svg></button><span class="blob-code-inner blob-code-marker js-code-nav-pass" data-code-marker=" "><span class="pl-k">func</span> IsDefault(s *Store) bool {</span></td></tr>
+<tr class="js-expandable-line js-skip-tagsearch"><td class="blob-num blob-num-expandable" colspan="2"><a href="#diff-ee7c3cb82252f0cd2b74eb4e363bdd125156d5ac97676b368d6e967164277ad8" class="js-expand directional-expander single-expander" aria-label="Expand Down" data-url="/octo-org/octo-repo/blob_excerpt/1a954628a960aaef81d7b2d4521929579f3541e6?diff=unified"><svg class="octicon octicon-fold-down" aria-hidden="true" width="16" height="16"></svg></a></td><td class="blob-code blob-code-inner"></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="file js-file js-details-container Details--on open show-inline-notes" data-file-type=".go" data-file-deleted="false" data-tagsearch-path="docs/b.go" data-tagsearch-lang="Go">
+<div class="file-header d-flex flex-md-row flex-column flex-md-items-center file-header--expandable js-file-header js-skip-tagsearch sticky-file-header" data-path="docs/b.go" data-anchor="diff-5026ed22252cabbb92868bd8be9bee45bbf9f2cffce7e94d01bc7e7b650caf5a" data-file-type=".go" data-file-deleted="false">
+<div class="file-info flex-auto min-width-0 mb-md-0 mb-2"><button type="button" class="btn-octicon js-details-target" aria-label="Toggle diff contents" aria-expanded="true"><svg class="octicon octicon-chevron-down" aria-hidden="true" width="16" height="16"></svg></button><span class="diffstat tooltipped tooltipped-e" aria-label="0 changes: 0 additions & 0 deletions">0</span><span class="Truncate"><a title="docs/a.go → docs/b.go" class="Link--primary Truncate-text" href="#diff-5026ed22252cabbb92868bd8be9bee45bbf9f2cffce7e94d01bc7e7b650caf5a">docs/a.go → docs/b.go</a></span></div>
+<div class="file-actions pt-0 mb-md-0 mb-2 ml-md-2 flex-shrink-0"><details class="js-file-header-dropdown dropdown details-overlay details-reset"><summary aria-label="Show options"><svg class="octicon octicon-kebab-horizontal" aria-hidden="true" width="16" height="16"></svg></summary></details></div>
+</div>
+<div class="js-file-content Details-content--hidden-not-important">
+<div class="data highlight empty">File renamed without changes.</div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

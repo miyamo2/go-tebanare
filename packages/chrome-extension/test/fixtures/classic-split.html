@@ -1,0 +1,42 @@
+<!--
+  Synthetic fixture: a split (side-by-side) diff of the first hunk of
+  store/store.go.
+  It is modeled on GitHub's classic (server-rendered) "Files changed" markup
+  and is not a saved page, because github.com cannot be loaded where it was
+  written. Replace it with a saved page during spike S2 and update
+  src/content/dom/classic.ts where the markup differs.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Add store owner by octocat · Pull Request #7 · octo-org/octo-repo</title></head>
+<body>
+<input type="hidden" name="comparison_start_oid" value="1405df66cbe219b0bf6355bc3d60361a8376b6b4">
+<input type="hidden" name="comparison_end_oid" value="1a954628a960aaef81d7b2d4521929579f3541e6">
+<div id="files" class="diff-view js-diff-container" data-hpc>
+<div class="js-diff-progressive-container">
+<div class="file js-file js-details-container Details--on open show-inline-notes" data-file-type=".go" data-file-deleted="false" data-tagsearch-path="store/store.go" data-tagsearch-lang="Go">
+<div class="file-header d-flex flex-md-row flex-column flex-md-items-center file-header--expandable js-file-header js-skip-tagsearch sticky-file-header" data-path="store/store.go" data-anchor="diff-9a62b4a044185786fb1bf1c5a2ea3d0d94c2e168d1ed580db8994c06a4f0f41a" data-file-type=".go" data-file-deleted="false">
+<div class="file-info flex-auto min-width-0 mb-md-0 mb-2"><button type="button" class="btn-octicon js-details-target" aria-label="Toggle diff contents" aria-expanded="true"><svg class="octicon octicon-chevron-down" aria-hidden="true" width="16" height="16"></svg></button><span class="diffstat tooltipped tooltipped-e" aria-label="14 changes: 12 additions & 2 deletions">14</span><span class="Truncate"><a title="store/store.go" class="Link--primary Truncate-text" href="#diff-9a62b4a044185786fb1bf1c5a2ea3d0d94c2e168d1ed580db8994c06a4f0f41a">store/store.go</a></span></div>
+<div class="file-actions pt-0 mb-md-0 mb-2 ml-md-2 flex-shrink-0"><details class="js-file-header-dropdown dropdown details-overlay details-reset"><summary aria-label="Show options"><svg class="octicon octicon-kebab-horizontal" aria-hidden="true" width="16" height="16"></svg></summary></details></div>
+</div>
+<div class="js-file-content Details-content--hidden-not-important">
+<div class="data highlight js-blob-wrapper js-check-bidi">
+<table class="diff-table js-diff-table tab-size file-diff-split" data-tab-size="8" data-diff-anchor="diff-9a62b4a044185786fb1bf1c5a2ea3d0d94c2e168d1ed580db8994c06a4f0f41a" data-paste-markdown-skip>
+<thead hidden><tr><th scope="col">Original file line number</th><th scope="col">Original file line</th><th scope="col">Diff line number</th><th scope="col">Diff line change</th></tr></thead>
+<tbody>
+<tr class="js-expandable-line js-skip-tagsearch"><td class="blob-num blob-num-expandable" colspan="1"><a href="#diff-9a62b4a044185786fb1bf1c5a2ea3d0d94c2e168d1ed580db8994c06a4f0f41a" class="js-expand directional-expander single-expander" aria-label="Expand Up"><svg class="octicon octicon-fold-up" aria-hidden="true" width="16" height="16"></svg></a></td><td class="blob-code blob-code-inner blob-code-hunk" colspan="3">@@ -9,6 +9,7 @@ import (</td></tr>
+<tr><td id="diff-9a62b4a044185786fb1bf1c5a2ea3d0d94c2e168d1ed580db8994c06a4f0f41aL9" data-line-number="9" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" "><span class="pl-k">type</span> Store <span class="pl-k">struct</span> {</span></td><td id="diff-9a62b4a044185786fb1bf1c5a2ea3d0d94c2e168d1ed580db8994c06a4f0f41aR9" data-line-number="9" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" "><span class="pl-k">type</span> Store <span class="pl-k">struct</span> {</span></td></tr>
+<tr><td id="diff-9a62b4a044185786fb1bf1c5a2ea3d0d94c2e168d1ed580db8994c06a4f0f41aL10" data-line-number="10" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">	mu    sync.Mutex</span></td><td id="diff-9a62b4a044185786fb1bf1c5a2ea3d0d94c2e168d1ed580db8994c06a4f0f41aR10" data-line-number="10" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">	mu    sync.Mutex</span></td></tr>
+<tr><td id="diff-9a62b4a044185786fb1bf1c5a2ea3d0d94c2e168d1ed580db8994c06a4f0f41aL11" data-line-number="11" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">	name  string</span></td><td id="diff-9a62b4a044185786fb1bf1c5a2ea3d0d94c2e168d1ed580db8994c06a4f0f41aR11" data-line-number="11" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">	name  string</span></td></tr>
+<tr><td class="blob-num blob-num-empty empty-cell"></td><td class="blob-code blob-code-empty empty-cell"></td><td id="diff-9a62b4a044185786fb1bf1c5a2ea3d0d94c2e168d1ed580db8994c06a4f0f41aR12" data-line-number="12" class="blob-num blob-num-addition js-linkable-line-number"></td><td class="blob-code blob-code-addition js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker="+">	owner string</span></td></tr>
+<tr><td id="diff-9a62b4a044185786fb1bf1c5a2ea3d0d94c2e168d1ed580db8994c06a4f0f41aL12" data-line-number="12" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">	items map[string]int</span></td><td id="diff-9a62b4a044185786fb1bf1c5a2ea3d0d94c2e168d1ed580db8994c06a4f0f41aR13" data-line-number="13" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">	items map[string]int</span></td></tr>
+<tr><td id="diff-9a62b4a044185786fb1bf1c5a2ea3d0d94c2e168d1ed580db8994c06a4f0f41aL13" data-line-number="13" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">}</span></td><td id="diff-9a62b4a044185786fb1bf1c5a2ea3d0d94c2e168d1ed580db8994c06a4f0f41aR14" data-line-number="14" class="blob-num blob-num-context js-linkable-line-number"></td><td class="blob-code blob-code-context js-file-line"><span class="blob-code-inner blob-code-marker" data-code-marker=" ">}</span></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

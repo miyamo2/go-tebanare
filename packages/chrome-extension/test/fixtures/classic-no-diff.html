@@ -1,0 +1,38 @@
+<!--
+  Synthetic fixture: a "Files changed" page whose files have no diff tables
+  (a large diff behind "Load diff" and a binary file).
+  It is modeled on GitHub's classic (server-rendered) "Files changed" markup
+  and is not a saved page, because github.com cannot be loaded where it was
+  written. Replace it with a saved page during spike S2 and update
+  src/content/dom/classic.ts where the markup differs.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Add store owner by octocat · Pull Request #7 · octo-org/octo-repo</title></head>
+<body>
+<input type="hidden" name="comparison_start_oid" value="1405df66cbe219b0bf6355bc3d60361a8376b6b4">
+<input type="hidden" name="comparison_end_oid" value="1a954628a960aaef81d7b2d4521929579f3541e6">
+<div id="files" class="diff-view js-diff-container" data-hpc>
+<div class="js-diff-progressive-container">
+<div class="file js-file js-details-container Details--on open show-inline-notes" data-file-type=".go" data-file-deleted="false" data-tagsearch-path="gen/tables.go" data-tagsearch-lang="Go">
+<div class="file-header d-flex flex-md-row flex-column flex-md-items-center file-header--expandable js-file-header js-skip-tagsearch sticky-file-header" data-path="gen/tables.go" data-anchor="diff-e1b4661e410b113cd51a9f96e587224ba606f338270f5f27cafe54974f056717" data-file-type=".go" data-file-deleted="false">
+<div class="file-info flex-auto min-width-0 mb-md-0 mb-2"><button type="button" class="btn-octicon js-details-target" aria-label="Toggle diff contents" aria-expanded="true"><svg class="octicon octicon-chevron-down" aria-hidden="true" width="16" height="16"></svg></button><span class="diffstat tooltipped tooltipped-e" aria-label="5000 changes: 5000 additions & 0 deletions">5000</span><span class="Truncate"><a title="gen/tables.go" class="Link--primary Truncate-text" href="#diff-e1b4661e410b113cd51a9f96e587224ba606f338270f5f27cafe54974f056717">gen/tables.go</a></span></div>
+<div class="file-actions pt-0 mb-md-0 mb-2 ml-md-2 flex-shrink-0"><details class="js-file-header-dropdown dropdown details-overlay details-reset"><summary aria-label="Show options"><svg class="octicon octicon-kebab-horizontal" aria-hidden="true" width="16" height="16"></svg></summary></details></div>
+</div>
+<div class="js-file-content Details-content--hidden-not-important">
+<div class="js-diff-load-container"><include-fragment data-fragment-url="/octo-org/octo-repo/diffs/0?sha1=1405df66cbe219b0bf6355bc3d60361a8376b6b4&amp;sha2=1a954628a960aaef81d7b2d4521929579f3541e6&amp;path=gen%2Ftables.go"><div class="text-center p-4"><button type="button" class="btn-link js-diff-load">Load diff</button><p>Large diffs are not rendered by default.</p></div></include-fragment></div>
+</div>
+</div>
+<div class="file js-file js-details-container Details--on open show-inline-notes" data-file-type=".go" data-file-deleted="false" data-tagsearch-path="assets/logo.png" data-tagsearch-lang="Go">
+<div class="file-header d-flex flex-md-row flex-column flex-md-items-center file-header--expandable js-file-header js-skip-tagsearch sticky-file-header" data-path="assets/logo.png" data-anchor="diff-90580d12fbd0edace7745ba49a090bc882d32c9f7d6bfa1345df935f7a6816d3" data-file-type=".go" data-file-deleted="false">
+<div class="file-info flex-auto min-width-0 mb-md-0 mb-2"><button type="button" class="btn-octicon js-details-target" aria-label="Toggle diff contents" aria-expanded="true"><svg class="octicon octicon-chevron-down" aria-hidden="true" width="16" height="16"></svg></button><span class="diffstat tooltipped tooltipped-e" aria-label="Binary file">Binary</span><span class="Truncate"><a title="assets/logo.png" class="Link--primary Truncate-text" href="#diff-90580d12fbd0edace7745ba49a090bc882d32c9f7d6bfa1345df935f7a6816d3">assets/logo.png</a></span></div>
+<div class="file-actions pt-0 mb-md-0 mb-2 ml-md-2 flex-shrink-0"><details class="js-file-header-dropdown dropdown details-overlay details-reset"><summary aria-label="Show options"><svg class="octicon octicon-kebab-horizontal" aria-hidden="true" width="16" height="16"></svg></summary></details></div>
+</div>
+<div class="js-file-content Details-content--hidden-not-important">
+<div class="data highlight empty">Binary file not shown.</div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
