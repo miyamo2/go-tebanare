@@ -11,6 +11,8 @@ permissions:
   contents: read
 
 env:
+  # Bumping this fails TestCorpusSnapshot until
+  # internal/presets/testdata/corpus_snapshot.json is rewritten with -update.
   GO_VERSION: "1.26.8"
 
 jobs:
