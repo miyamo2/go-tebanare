@@ -22,42 +22,48 @@ const GETTER = [19, 20, 21, 22]; // Owner and its doc comment
 const IFERR = [27, 28, 29]; // if err != nil { return err }
 const VISIBLE = [15, 26, 43, 44, 45, 46, 47, 48, 49]; // the owner field, err := validate(k), and func validate
 
-test('folds the getter and the if err block, and Show opens them', async ({ context, page }) => {
+test('folds the getter and the if err block, and the fold rows and the file badge toggle them', async ({ context, page }) => {
   const requested = await serveGitHub(context, fixtureCommits());
   await page.goto(PULL_URL);
 
-  const bar = page.locator('tr[data-gotebanare-fold]:not([data-gotebanare-thin])');
-  await expect(bar).toHaveCount(1);
-  await expect(bar).toContainText('4 lines hidden');
-  await expect(bar.locator('.gotebanare-fold-rule')).toHaveText(['getter']);
-  for (const row of newRows(page, GETTER)) {
+  const folds = page.locator('tr[data-gotebanare-fold]');
+  await expect(folds).toHaveCount(2);
+  const [getter, iferr] = [folds.nth(0), folds.nth(1)];
+  // Fold rows carry no text; the button's tooltip names the rule.
+  await expect(getter).toHaveText('');
+  const showGetter = getter.getByRole('button', { name: 'Show 4 lines hidden by gotebanare' });
+  await expect(showGetter).toHaveAttribute('title', /\ngetter/);
+  await expect(iferr.getByRole('button', { name: 'Show 3 lines hidden by gotebanare' })).toHaveAttribute('title', /\niferr/);
+  for (const row of newRows(page, [...GETTER, ...IFERR])) {
     await expect(row).toHaveAttribute('data-gotebanare-hidden', '');
     await expect(row).toBeHidden();
   }
-  // The bar stands right above the first hidden row.
-  expect(await bar.evaluate((tr) => tr.nextElementSibling?.textContent)).toBe('// Owner returns the store owner.');
-
-  // A fold of 3 lines or fewer is a thin separator.
-  const thin = page.locator('tr[data-gotebanare-thin]');
-  await expect(thin).toHaveCount(1);
-  await expect(thin.getByRole('button')).toHaveAttribute('title', /iferr/);
-  for (const row of newRows(page, IFERR)) await expect(row).toHaveAttribute('data-gotebanare-hidden', '');
+  // The fold row stands right above the first hidden row.
+  expect(await getter.evaluate((tr) => tr.nextElementSibling?.textContent)).toBe('// Owner returns the store owner.');
 
   for (const row of newRows(page, VISIBLE)) {
     await expect(row).toBeVisible();
     await expect(row).not.toHaveAttribute('data-gotebanare-hidden');
   }
-  await expect(page.locator('[data-gotebanare-badge]')).toContainText('2 folds / 7 lines hidden');
+  const badge = page.locator('[data-gotebanare-badge]');
+  await expect(badge).toHaveAttribute('aria-label', 'Show the 7 lines that gotebanare hid in this file');
   await expect(page.locator('[data-gotebanare-banner]')).toHaveCount(0);
 
-  await bar.getByRole('button', { name: 'Show' }).click();
+  // The fold row shows the getter, and the same row hides it again.
+  await showGetter.click();
   for (const row of newRows(page, GETTER)) await expect(row).toBeVisible();
-  await expect(bar).toHaveCount(0);
-  await expect(page.locator('[data-gotebanare-badge]')).toContainText('1 fold / 3 lines hidden');
+  await expect(badge).toHaveAttribute('aria-label', 'Show the 3 lines that gotebanare hid in this file');
+  await getter.getByRole('button', { name: 'Hide 4 lines again' }).click();
+  for (const row of newRows(page, GETTER)) await expect(row).toBeHidden();
 
-  await thin.getByRole('button').click();
-  for (const row of newRows(page, IFERR)) await expect(row).toBeVisible();
-  await expect(page.locator('[data-gotebanare-fold], [data-gotebanare-hidden], [data-gotebanare-badge]')).toHaveCount(0);
+  // The file badge shows every fold, then hides them all again.
+  await badge.click();
+  for (const row of newRows(page, [...GETTER, ...IFERR])) await expect(row).toBeVisible();
+  await expect(page.locator('[data-gotebanare-hidden]')).toHaveCount(0);
+  await expect(page.locator('tr[data-gotebanare-fold][data-gotebanare-open]')).toHaveCount(2);
+  await expect(badge).toHaveAttribute('aria-label', 'Hide the 7 lines in this file again');
+  await badge.click();
+  await expect(page.locator('[data-gotebanare-hidden]')).toHaveCount(GETTER.length + IFERR.length);
 
   expect(requested).toEqual(
     expect.arrayContaining([

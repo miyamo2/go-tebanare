@@ -46,8 +46,8 @@ The tests never contact github.com. `context.route` answers every `https://githu
 
 `extension.spec.ts` checks that:
 
-- the getter's rows are hidden under a fold bar that names the rule, the other new code stays visible, and Show opens the fold;
-- the 3-line `if err != nil` block becomes a thin separator;
+- the getter's rows and the 3-line `if err != nil` block are hidden under fold rows whose tooltips name the rules, and the other new code stays visible;
+- a fold row shows its rows and hides them again, and the button in the file header shows every fold and hides them all again;
 - turning hiding off with the popup's `set-tab-state` request shows every row, and the `toggle-hiding` command hides them again.
 
 The popup request is sent from `popup.html` opened in a tab. The command is fired in the service worker with `chrome.commands.onCommand.dispatch`, which Chromium exposes but the typed API leaves out.
