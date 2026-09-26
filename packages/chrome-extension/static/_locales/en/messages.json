@@ -7,27 +7,25 @@
     "message": "$count$ lines",
     "placeholders": { "count": { "content": "$1" } }
   },
-  "countFoldsOne": { "message": "1 fold" },
-  "countFolds": {
-    "message": "$count$ folds",
-    "placeholders": { "count": { "content": "$1" } }
+  "foldShowTitle": {
+    "message": "Show $lines$ hidden by gotebanare",
+    "placeholders": { "lines": { "content": "$1" } }
   },
-  "foldSummary": {
-    "message": "gotebanare: $lines$ hidden (−$deleted$ / +$added$)",
-    "placeholders": { "lines": { "content": "$1" }, "deleted": { "content": "$2" }, "added": { "content": "$3" } }
+  "foldHideTitle": {
+    "message": "Hide $lines$ again",
+    "placeholders": { "lines": { "content": "$1" } }
   },
-  "foldShow": { "message": "Show" },
+  "fileShowTitle": {
+    "message": "Show the $lines$ that gotebanare hid in this file",
+    "placeholders": { "lines": { "content": "$1" } }
+  },
+  "fileHideTitle": {
+    "message": "Hide the $lines$ in this file again",
+    "placeholders": { "lines": { "content": "$1" } }
+  },
   "foldRuleMatched": {
     "message": "Matched: $labels$",
     "placeholders": { "labels": { "content": "$1" } }
-  },
-  "thinTooltip": {
-    "message": "$lines$ hidden by $rules$. Click to show.",
-    "placeholders": { "lines": { "content": "$1" }, "rules": { "content": "$2" } }
-  },
-  "thinTooltipNoRules": {
-    "message": "$lines$ hidden. Click to show.",
-    "placeholders": { "lines": { "content": "$1" } }
   },
   "debugRowTitle": {
     "message": "Hidden by $rules$: $labels$",
@@ -38,11 +36,6 @@
     "placeholders": { "rules": { "content": "$1" } }
   },
   "debugRowTitleNoRules": { "message": "Hidden" },
-  "badgeText": {
-    "message": "$folds$ / $lines$ hidden",
-    "placeholders": { "folds": { "content": "$1" }, "lines": { "content": "$2" } }
-  },
-  "badgeShowAll": { "message": "Show all" },
   "bannerTitle": { "message": "gotebanare" },
   "bannerConfigError": {
     "message": "$path$ has errors, so nothing is hidden.",

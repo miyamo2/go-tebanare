@@ -7,27 +7,25 @@
     "message": "$count$ 行",
     "placeholders": { "count": { "content": "$1" } }
   },
-  "countFoldsOne": { "message": "1 箇所" },
-  "countFolds": {
-    "message": "$count$ 箇所",
-    "placeholders": { "count": { "content": "$1" } }
+  "foldShowTitle": {
+    "message": "gotebanare が隠した $lines$を表示",
+    "placeholders": { "lines": { "content": "$1" } }
   },
-  "foldSummary": {
-    "message": "gotebanare: $lines$を非表示（−$deleted$ / +$added$）",
-    "placeholders": { "lines": { "content": "$1" }, "deleted": { "content": "$2" }, "added": { "content": "$3" } }
+  "foldHideTitle": {
+    "message": "$lines$をもう一度隠す",
+    "placeholders": { "lines": { "content": "$1" } }
   },
-  "foldShow": { "message": "表示" },
+  "fileShowTitle": {
+    "message": "このファイルで gotebanare が隠した $lines$をすべて表示",
+    "placeholders": { "lines": { "content": "$1" } }
+  },
+  "fileHideTitle": {
+    "message": "このファイルの $lines$をもう一度隠す",
+    "placeholders": { "lines": { "content": "$1" } }
+  },
   "foldRuleMatched": {
     "message": "マッチ: $labels$",
     "placeholders": { "labels": { "content": "$1" } }
-  },
-  "thinTooltip": {
-    "message": "$rules$ により $lines$を非表示。クリックで表示します。",
-    "placeholders": { "lines": { "content": "$1" }, "rules": { "content": "$2" } }
-  },
-  "thinTooltipNoRules": {
-    "message": "$lines$を非表示。クリックで表示します。",
-    "placeholders": { "lines": { "content": "$1" } }
   },
   "debugRowTitle": {
     "message": "$rules$ により非表示: $labels$",
@@ -38,11 +36,6 @@
     "placeholders": { "rules": { "content": "$1" } }
   },
   "debugRowTitleNoRules": { "message": "非表示" },
-  "badgeText": {
-    "message": "$folds$ / $lines$を非表示",
-    "placeholders": { "folds": { "content": "$1" }, "lines": { "content": "$2" } }
-  },
-  "badgeShowAll": { "message": "すべて表示" },
   "bannerTitle": { "message": "gotebanare" },
   "bannerConfigError": {
     "message": "$path$ にエラーがあるため、何も隠していません。",
