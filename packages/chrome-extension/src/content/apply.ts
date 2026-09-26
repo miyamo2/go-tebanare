@@ -1,8 +1,10 @@
 // applyFile shows a visibility plan in one file container (plan 6.6, 6.7).
 // It marks GitHub's rows with data-gotebanare-* attributes and inserts its
 // own fold rows and badge, so clearFile can restore the original markup.
-// Applying the same input twice changes nothing the second time, which
-// keeps the controller's MutationObserver quiet.
+// A fold row stays after the reader opens its fold, so a row hides the fold
+// again. Parts of a fold that end up all open or all closed merge into one
+// fold with one row. Applying the same input twice changes nothing the
+// second time, which keeps the controller's MutationObserver quiet.
 //
 // S2: the React UI's table gets the same fold rows. React leaves nodes it
 // did not create in place when it adds or removes its own rows, and the
@@ -27,13 +29,13 @@ export interface ApplyContext {
   result: ChangeResult;
   /** Rules of the compiled config, for their descriptions. */
   rules: readonly RuleInfo[];
-  /** rowKey values of rows the reader opened. applyFile adds to it on Show. */
+  /** rowKey values of rows the reader opened. The fold rows and the badge add and remove them. */
   expanded: Set<string>;
   /** Outline the rows of hidden ranges instead of hiding them. */
   debug?: boolean;
   /** The element that gets the file badge (DiffUiVariant.fileHeader). No badge when absent. */
   badgeHost?: HTMLElement | null;
-  /** Called after a Show click re-applied the plan. */
+  /** Called after a click on a fold row or the badge re-applied the plan. */
   onChange?: (summary: ApplySummary) => void;
 }
 
@@ -46,6 +48,15 @@ export interface ApplySummary {
 interface ShownFold {
   rows: RowRef[];
   view: FoldView;
+  /** The reader opened the fold, so its rows are visible. */
+  open: boolean;
+  /**
+   * The thread anchor right below the run, if any. A comment row ends a plan
+   * fold, so the anchor is the last row of the plan fold this run came from.
+   * A toggle adds or removes its key too, so when the thread goes away the
+   * line takes the state of the run above it.
+   */
+  anchor?: RowRef;
 }
 
 interface FileState {
@@ -90,9 +101,9 @@ function threadAnchors(rows: readonly RowRef[]): Set<number> {
   return out;
 }
 
-// shownFolds splits each plan fold at thread anchors and at the rows in
-// expanded. It returns null when the plan does not fit rows, so the caller
-// hides nothing.
+// shownFolds splits each plan fold at thread anchors and where rows in
+// expanded (open) meet rows outside it (closed). It returns null when the
+// plan does not fit rows, so the caller hides nothing.
 function shownFolds(rows: readonly RowRef[], plan: Plan, expanded: ReadonlySet<string>, ctx: ApplyContext): ShownFold[] | null {
   const hidden = new Set(plan.hidden);
   for (const i of hidden) if (!hideable(rows[i])) return null;
@@ -104,19 +115,28 @@ function shownFolds(rows: readonly RowRef[], plan: Plan, expanded: ReadonlySet<s
     if (!Number.isInteger(fold.first) || !Number.isInteger(fold.last) || fold.first <= end || fold.first > fold.last) return null;
     end = fold.last;
     let run: RowRef[] = [];
-    const flush = () => {
+    let open = false;
+    const flush = (anchor?: RowRef) => {
       const [first, last] = [run[0], run[run.length - 1]];
       if (first && last) {
         const key = `${rowKey(first)}-${rowKey(last)}`;
-        out.push({ rows: run, view: describeFold(key, run, fold.rules, ctx.result, ctx.rules) });
+        const shown: ShownFold = { rows: run, view: describeFold(key, run, fold.rules, ctx.result, ctx.rules), open };
+        if (anchor) shown.anchor = anchor;
+        out.push(shown);
       }
       run = [];
     };
     for (let i = fold.first; i <= fold.last; i++) {
       const row = rows[i];
       if (!hidden.has(i) || !hideable(row)) return null;
-      if (anchors.has(i) || expanded.has(rowKey(row))) flush();
-      else run.push(row);
+      if (anchors.has(i)) {
+        flush(row);
+        continue;
+      }
+      const rowOpen = expanded.has(rowKey(row));
+      if (rowOpen !== open) flush();
+      open = rowOpen;
+      run.push(row);
     }
     flush();
   }
@@ -193,31 +213,76 @@ function syncBadge(container: HTMLElement, host: HTMLElement | null, badge: HTML
   if (badge && host && !kept) host.append(badge);
 }
 
-function reapply(container: HTMLElement, keys: Iterable<string>): void {
+// reapply opens (open is true) or closes rows of container and applies its
+// plan again.
+function reapply(container: HTMLElement, rows: readonly RowRef[], open: boolean): void {
   const state = states.get(container);
   if (!state) return;
-  for (const key of keys) state.ctx.expanded.add(key);
+  for (const key of rows.map(rowKey)) {
+    if (open) state.ctx.expanded.add(key);
+    else state.ctx.expanded.delete(key);
+  }
   const summary = applyFile(container, state.rows, state.plan, state.ctx);
   state.ctx.onChange?.(summary);
 }
 
-function expandFold(container: HTMLElement, foldKey: string): void {
-  const fold = states.get(container)?.folds.find((f) => f.view.key === foldKey);
-  if (fold) reapply(container, fold.rows.map(rowKey));
+// focusedButton reports whether the button of the fold row with foldKey, or
+// the badge when foldKey is null, has the focus.
+function focusedButton(container: HTMLElement, foldKey: string | null): boolean {
+  const active = container.ownerDocument.activeElement;
+  if (!active) return false;
+  if (foldKey === null) return active.hasAttribute(BADGE_ATTR);
+  return active.closest(`[${FOLD_ATTR}]`)?.getAttribute(FOLD_ATTR) === foldKey;
 }
 
-function expandAll(container: HTMLElement): void {
-  const folds = states.get(container)?.folds ?? [];
-  reapply(container, folds.flatMap((f) => f.rows.map(rowKey)));
+// refocus moves the focus to the new button of the fold row with foldKey,
+// or of the badge when foldKey is null. A click replaces the row and the
+// badge, and a keyboard reader would otherwise lose their place.
+function refocus(container: HTMLElement, foldKey: string | null): void {
+  const state = states.get(container);
+  if (foldKey === null) {
+    const host = state?.ctx.badgeHost ?? container;
+    host.querySelector<HTMLElement>(`[${BADGE_ATTR}]`)?.focus();
+    return;
+  }
+  for (const row of container.querySelectorAll(`[${FOLD_ATTR}]`)) {
+    if (row.getAttribute(FOLD_ATTR) === foldKey) row.querySelector<HTMLElement>('button')?.focus();
+  }
+}
+
+// toggleFold opens a closed fold and closes an open one. When the fold then
+// merges with a neighbor, the focus goes to the row of the merged fold.
+function toggleFold(container: HTMLElement, foldKey: string): void {
+  const fold = states.get(container)?.folds.find((f) => f.view.key === foldKey);
+  if (!fold) return;
+  const focused = focusedButton(container, foldKey);
+  reapply(container, fold.anchor ? [...fold.rows, fold.anchor] : fold.rows, !fold.open);
+  const first = fold.rows[0];
+  const merged = states.get(container)?.folds.find((f) => first !== undefined && f.rows.includes(first));
+  if (focused && merged) refocus(container, merged.view.key);
+}
+
+// toggleAll opens every fold of container while any is closed, and closes
+// them all once every fold is open. It acts on every row the plan hides,
+// including thread anchors that no fold holds, such as a one-line fold
+// with a thread.
+function toggleAll(container: HTMLElement): void {
+  const state = states.get(container);
+  if (!state) return;
+  const focused = focusedButton(container, null);
+  const hidden = state.plan.hidden.map((i) => state.rows[i]).filter((r): r is RowRef => r !== undefined);
+  reapply(container, hidden, state.folds.some((f) => !f.open));
+  if (focused) refocus(container, null);
 }
 
 /**
  * applyFile hides the rows of plan that are not in ctx.expanded, puts a
- * fold row before each run of them, and updates the file badge. Hunk,
- * expander, and comment rows are never hidden: a plan that marks one, or
- * that does not fit rows, clears the file instead. The row a review thread
- * is attached to stays visible and splits its fold. In debug mode the rows
- * of every fold are outlined and nothing is hidden.
+ * fold row before each run of hidden rows and each run the reader opened,
+ * and updates the file badge. Hunk, expander, and comment rows are never
+ * hidden: a plan that marks one, or that does not fit rows, clears the file
+ * instead. The row a review thread is attached to stays visible and splits
+ * its fold. In debug mode the rows of every fold are outlined, and nothing
+ * is hidden and no fold row or badge is shown.
  */
 export function applyFile(container: HTMLElement, rows: readonly RowRef[], plan: Plan, ctx: ApplyContext): ApplySummary {
   const debug = ctx.debug === true;
@@ -232,7 +297,7 @@ export function applyFile(container: HTMLElement, rows: readonly RowRef[], plan:
   for (const fold of folds) {
     for (const row of fold.rows) {
       if (debug) titles.set(row.el, debugTitle(row, ctx.result));
-      else hide.add(row.el);
+      else if (!fold.open) hide.add(row.el);
     }
   }
   syncRows(container, rows, hide, titles);
@@ -241,14 +306,18 @@ export function applyFile(container: HTMLElement, rows: readonly RowRef[], plan:
   syncFolds(
     container,
     shown.map((f) => ({
-      el: createFoldRow(doc, f.view, () => expandFold(container, f.view.key)),
+      el: createFoldRow(doc, f.view, f.open, () => toggleFold(container, f.view.key)),
       before: (f.rows[0] as RowRef).el,
     })),
   );
 
-  const summary = { folds: shown.length, lines: debug ? 0 : hide.size };
+  const closed = shown.filter((f) => !f.open);
+  const summary = { folds: closed.length, lines: hide.size };
   const host = ctx.badgeHost ?? null;
-  const badge = summary.folds > 0 ? createBadge(doc, summary.folds, summary.lines, () => expandAll(container)) : null;
+  // The badge acts on the closed folds, or on every fold once none is closed.
+  const acted = closed.length > 0 ? closed : shown;
+  const lines = acted.reduce((n, f) => n + f.rows.length, 0);
+  const badge = shown.length > 0 ? createBadge(doc, { lines, allOpen: closed.length === 0 }, () => toggleAll(container)) : null;
   syncBadge(container, host, badge, states.get(container)?.ctx.badgeHost ?? null);
 
   states.set(container, { rows, plan, ctx, folds: shown });
