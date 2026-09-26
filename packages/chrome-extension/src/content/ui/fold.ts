@@ -1,18 +1,22 @@
-// Fold rows stand in for hidden diff rows (plan 6.7). describeFold turns a
-// run of hidden rows into a FoldView, and createFoldRow draws it: a fold of
-// up to THIN_MAX_LINES lines is a thin separator, a longer one is a bar
-// with a summary, the rule names, and a Show button.
+// Fold rows stand in for runs of hidden diff rows (plan 6.7). describeFold
+// turns a run into a FoldView, and createFoldRow draws it the way GitHub
+// draws the rows that expand hidden context: a row in the hunk color whose
+// line number columns hold an icon button, with no text. The button shows
+// the run, and the same row then hides it again. Its tooltip names the
+// rules behind the fold.
 
 import type { ChangeResult, Hit, RuleInfo } from '@go-tebanare/engine';
 import { countLines, t } from '../../shared/i18n.js';
 import { rowHits, type PlanRow } from '../plan.js';
+import { createIcon } from './icons.js';
 
 /** Marks every fold row; the value is the fold key. */
 export const FOLD_ATTR = 'data-gotebanare-fold';
-export const THIN_ATTR = 'data-gotebanare-thin';
+/** Marks the fold row of a run the reader opened. */
+export const OPEN_ATTR = 'data-gotebanare-open';
 
-/** Folds of at most this many lines render as a thin separator. */
-export const THIN_MAX_LINES = 3;
+// A unified diff row has two line number columns before the code.
+const GUTTER_COLUMNS = 2;
 
 export interface FoldRule {
   id: string;
@@ -25,8 +29,6 @@ export interface FoldView {
   /** Identifies the fold within its file; stored in FOLD_ATTR. */
   key: string;
   lines: number;
-  deleted: number;
-  added: number;
   rules: readonly FoldRule[];
   /** Number of table columns the fold row spans. */
   colSpan: number;
@@ -63,12 +65,8 @@ export function describeFold(
   result: ChangeResult,
   rules: readonly RuleInfo[],
 ): FoldView {
-  let deleted = 0;
-  let added = 0;
   const labels = new Map<string, string[]>();
   for (const row of run) {
-    if (row.kind === 'del') deleted++;
-    if (row.kind === 'add') added++;
     for (const hit of hitsOf(row, result)) {
       const list = labels.get(hit.ruleId) ?? [];
       labels.set(hit.ruleId, list);
@@ -82,81 +80,54 @@ export function describeFold(
     return description ? { id, description, labels: l } : { id, labels: l };
   });
   const colSpan = run[0] ? rowWidth(run[0].el) : 1;
-  return { key, lines: run.length, deleted, added, rules: foldRules, colSpan };
+  return { key, lines: run.length, rules: foldRules, colSpan };
 }
 
-function ruleTitle(rule: FoldRule): string {
-  const parts: string[] = [];
-  if (rule.description) parts.push(rule.description);
-  if (rule.labels.length > 0) parts.push(t('foldRuleMatched', rule.labels.join(', ')));
-  return parts.join('\n');
+// ruleLines describes each rule on its own line: the id with the rule's
+// description, then the nodes it matched.
+function ruleLines(rules: readonly FoldRule[]): string[] {
+  const lines: string[] = [];
+  for (const rule of rules) {
+    if (rule.id === '') continue;
+    lines.push(rule.description ? `${rule.id}: ${rule.description}` : rule.id);
+    if (rule.labels.length > 0) lines.push(t('foldRuleMatched', rule.labels.join(', ')));
+  }
+  return lines;
 }
 
-function appendRules(doc: Document, td: HTMLElement, rules: readonly FoldRule[]): void {
-  if (rules.length === 0) return;
-  const list = doc.createElement('span');
-  list.className = 'gotebanare-fold-rules';
-  rules.forEach((rule, i) => {
-    if (i > 0) list.append(', ');
-    const name = doc.createElement('span');
-    name.className = 'gotebanare-fold-rule';
-    name.textContent = rule.id;
-    const title = ruleTitle(rule);
-    if (title) name.title = title;
-    list.append(name);
-  });
-  td.append(list);
-}
-
-function thinTooltip(fold: FoldView): string {
-  const lines = countLines(fold.lines);
-  const ids = fold.rules.map((r) => r.id).filter((id) => id !== '');
-  return ids.length > 0 ? t('thinTooltip', lines, ids.join(', ')) : t('thinTooltipNoRules', lines);
-}
-
-function fillThin(td: HTMLTableCellElement, fold: FoldView, onExpand: () => void): void {
-  const tip = thinTooltip(fold);
-  td.title = tip;
-  td.tabIndex = 0;
-  td.setAttribute('role', 'button');
-  td.setAttribute('aria-label', tip);
-  td.addEventListener('click', onExpand);
-  td.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter' && e.key !== ' ') return;
-    e.preventDefault();
-    onExpand();
-  });
-}
-
-function fillBar(doc: Document, td: HTMLTableCellElement, fold: FoldView, onExpand: () => void): void {
-  const icon = doc.createElement('span');
-  icon.className = 'gotebanare-fold-icon';
-  icon.setAttribute('aria-hidden', 'true');
-  const text = doc.createElement('span');
-  text.className = 'gotebanare-fold-text';
-  text.textContent = t('foldSummary', countLines(fold.lines), fold.deleted, fold.added);
-  td.append(icon, text);
-  appendRules(doc, td, fold.rules);
-  const show = doc.createElement('button');
-  show.type = 'button';
-  show.className = 'gotebanare-fold-show';
-  show.textContent = t('foldShow');
-  show.addEventListener('click', onExpand);
-  td.append(show);
-}
-
-/** createFoldRow builds a detached fold row that calls onExpand when the reader opens it. */
-export function createFoldRow(doc: Document, fold: FoldView, onExpand: () => void): HTMLTableRowElement {
+/**
+ * createFoldRow builds a detached fold row for fold, open or closed, whose
+ * button calls onToggle. The button fills a cell over the two line number
+ * columns, and an empty cell covers the rest; a row narrower than three
+ * columns gets one cell. The button's label says what a click does. Its
+ * tooltip adds the rules, which screen readers get as its description.
+ */
+export function createFoldRow(doc: Document, fold: FoldView, open: boolean, onToggle: () => void): HTMLTableRowElement {
   const tr = doc.createElement('tr');
   tr.setAttribute(FOLD_ATTR, fold.key);
+  if (open) tr.setAttribute(OPEN_ATTR, '');
+  const width = Math.max(1, fold.colSpan);
+  const gutter = width > GUTTER_COLUMNS;
   const td = doc.createElement('td');
-  td.colSpan = Math.max(1, fold.colSpan);
+  td.className = 'gotebanare-fold-gutter';
+  td.colSpan = gutter ? GUTTER_COLUMNS : width;
+  const label = t(open ? 'foldHideTitle' : 'foldShowTitle', countLines(fold.lines));
+  const button = doc.createElement('button');
+  button.type = 'button';
+  button.className = 'gotebanare-fold-toggle';
+  button.setAttribute('aria-label', label);
+  button.setAttribute('aria-expanded', String(open));
+  const rules = ruleLines(fold.rules);
+  button.title = [label, ...rules].join('\n');
+  if (rules.length > 0) button.setAttribute('aria-description', rules.join('\n'));
+  button.append(createIcon(doc, open ? 'fold' : 'unfold'));
+  button.addEventListener('click', onToggle);
+  td.append(button);
   tr.append(td);
-  if (fold.lines <= THIN_MAX_LINES) {
-    tr.setAttribute(THIN_ATTR, '');
-    fillThin(td, fold, onExpand);
-  } else {
-    fillBar(doc, td, fold, onExpand);
+  if (gutter) {
+    const code = doc.createElement('td');
+    code.colSpan = width - GUTTER_COLUMNS;
+    tr.append(code);
   }
   return tr;
 }

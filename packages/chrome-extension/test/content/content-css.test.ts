@@ -15,4 +15,10 @@ describe('content.css', () => {
     expect(rules.length).toBeGreaterThan(0);
     for (const [, selector, body] of rules) expect(body, selector).not.toMatch(/(^|;)\s*background/);
   });
+
+  it('keeps the file badge from shrinking next to a long path', () => {
+    const css = read('static/content.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const badge = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].find((m) => m[1]?.trim() === '.gotebanare-badge');
+    expect(badge?.[2]).toMatch(/flex-shrink:\s*0/);
+  });
 });

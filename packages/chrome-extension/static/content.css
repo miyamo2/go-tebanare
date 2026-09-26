@@ -6,11 +6,13 @@
  */
 
 :root {
+  --gotebanare-fg-default: var(--fgColor-default, var(--color-fg-default, #1f2328));
   --gotebanare-fg-muted: var(--fgColor-muted, var(--color-fg-muted, #59636e));
-  --gotebanare-bg-muted: var(--bgColor-muted, var(--color-canvas-subtle, #f6f8fa));
-  --gotebanare-border: var(--borderColor-default, var(--color-border-default, #d1d9e0));
+  --gotebanare-fg-on-emphasis: var(--fgColor-onEmphasis, var(--color-fg-on-emphasis, #ffffff));
   --gotebanare-accent-fg: var(--fgColor-accent, var(--color-accent-fg, #0969da));
   --gotebanare-accent-bg: var(--bgColor-accent-muted, var(--color-accent-subtle, #ddf4ff));
+  --gotebanare-accent-emphasis: var(--bgColor-accent-emphasis, var(--color-accent-emphasis, #0969da));
+  --gotebanare-control-hover-bg: var(--control-transparent-bgColor-hover, var(--color-action-list-item-default-hover-bg, #d1d9e03d));
   --gotebanare-attention-bg: var(--bgColor-attention-muted, var(--color-attention-subtle, #fff8c5));
   --gotebanare-attention-border: var(--borderColor-attention-emphasis, var(--color-attention-emphasis, #9a6700));
   --gotebanare-danger-fg: var(--fgColor-danger, var(--color-danger-fg, #d1242f));
@@ -35,92 +37,64 @@ tr[data-gotebanare-debug] > td:first-child {
 }
 
 /*
- * Fold bar, thin separator, file badge, and banner (ui/fold.ts,
- * ui/badge.ts, ui/banner.ts).
+ * Fold rows, file badge, and banner (ui/fold.ts, ui/badge.ts,
+ * ui/banner.ts). The fold rows and the badge copy the look of GitHub's own
+ * diff controls: the hunk color, octicons, and icon buttons without text.
  *
- * Fold bar: tr[data-gotebanare-fold] > td[colspan] holding
- *   .gotebanare-fold-icon, .gotebanare-fold-text, .gotebanare-fold-rules
- *   (one .gotebanare-fold-rule per rule, title = description and hits),
- *   and button.gotebanare-fold-show.
- * Thin separator: tr[data-gotebanare-fold][data-gotebanare-thin] > td[colspan],
- *   empty, with a title; a click, Enter, or Space expands it.
- * File badge: .gotebanare-badge in the file header with
- *   .gotebanare-badge-text and button.gotebanare-badge-show-all.
+ * Fold row: tr[data-gotebanare-fold] > td.gotebanare-fold-gutter[colspan=2]
+ *   > button.gotebanare-fold-toggle (unfold icon, or fold icon with
+ *   data-gotebanare-open on the row), then an empty td over the code column.
+ * File badge: button.gotebanare-badge in the file header (eye or eye-closed icon).
  * Banner: .gotebanare-banner before the first file container with
  *   .gotebanare-banner-title and ul.gotebanare-banner-messages > li
  *   (data-level="error" | "warning" | "info").
  */
 
 tr[data-gotebanare-fold] > td {
-  padding: 2px 10px;
-  border-top: 1px solid var(--gotebanare-border);
-  border-bottom: 1px solid var(--gotebanare-border);
-  background-color: var(--gotebanare-bg-muted);
-  color: var(--gotebanare-fg-muted);
-  font-size: 12px;
-  line-height: 20px;
-}
-
-.gotebanare-fold-icon::before {
-  /* U+1F648 SEE-NO-EVIL MONKEY, the fold bar's marker. */
-  content: "\1F648";
-  margin-right: 4px;
-}
-
-.gotebanare-fold-rules::before {
-  content: "\00B7";
-  margin: 0 6px;
-}
-
-.gotebanare-fold-rule {
-  text-decoration: underline dotted;
-  cursor: help;
-}
-
-.gotebanare-fold-show,
-.gotebanare-badge-show-all {
-  margin-left: 8px;
   padding: 0;
   border: 0;
-  background: none;
-  color: var(--gotebanare-accent-fg);
-  font: inherit;
-  cursor: pointer;
-}
-.gotebanare-fold-show:hover,
-.gotebanare-badge-show-all:hover {
-  text-decoration: underline;
-}
-
-tr[data-gotebanare-fold][data-gotebanare-thin] > td {
-  height: 5px;
-  padding: 0;
-  border: 0;
-  background: linear-gradient(var(--gotebanare-border), var(--gotebanare-border)) center / 100% 1px no-repeat;
-  font-size: 0;
-  line-height: 0;
-  cursor: pointer;
-}
-tr[data-gotebanare-fold][data-gotebanare-thin]:hover > td {
   background-color: var(--gotebanare-accent-bg);
+  line-height: 0;
 }
-tr[data-gotebanare-fold][data-gotebanare-thin] > td:focus-visible {
+
+.gotebanare-fold-toggle,
+.gotebanare-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--gotebanare-fg-muted);
+  cursor: pointer;
+}
+.gotebanare-fold-toggle:focus-visible,
+.gotebanare-badge:focus-visible {
   outline: 2px solid var(--gotebanare-accent-fg);
   outline-offset: -2px;
 }
 
+/* The button fills the line number columns, where GitHub puts its expand buttons. */
+.gotebanare-fold-toggle {
+  width: 100%;
+  height: 24px;
+}
+.gotebanare-fold-toggle:hover {
+  background-color: var(--gotebanare-accent-emphasis);
+  color: var(--gotebanare-fg-on-emphasis);
+}
+
 .gotebanare-badge {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 8px;
-  padding: 0 8px;
-  border: 1px solid var(--gotebanare-border);
-  border-radius: 2em;
-  background-color: var(--gotebanare-bg-muted);
-  color: var(--gotebanare-fg-muted);
-  font-size: 12px;
-  line-height: 18px;
-  white-space: nowrap;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin-left: 4px;
+  border-radius: 6px;
+  vertical-align: middle;
+}
+.gotebanare-badge:hover {
+  background-color: var(--gotebanare-control-hover-bg);
+  color: var(--gotebanare-fg-default);
 }
 
 .gotebanare-banner {

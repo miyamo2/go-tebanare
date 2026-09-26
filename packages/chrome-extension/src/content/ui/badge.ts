@@ -1,27 +1,33 @@
-// The file badge sits in the file header and counts the folds that are
-// closed: "3 folds / 57 lines hidden [Show all]" (plan 6.7).
+// The file badge is an icon button in the file header, next to GitHub's
+// own header buttons (plan 6.7). While any fold of the file is closed it
+// shows them all (eye icon); once every fold is open it hides them all
+// again (eye-closed icon).
 
-import { countFolds, countLines, t } from '../../shared/i18n.js';
+import { countLines, t } from '../../shared/i18n.js';
+import { createIcon } from './icons.js';
 
 export const BADGE_ATTR = 'data-gotebanare-badge';
 
-/** createBadge builds a detached badge that calls onShowAll when the reader opens every fold. */
-export function createBadge(doc: Document, folds: number, lines: number, onShowAll: () => void): HTMLElement {
-  const badge = doc.createElement('span');
-  badge.className = 'gotebanare-badge';
-  badge.setAttribute(BADGE_ATTR, '');
-  const text = doc.createElement('span');
-  text.className = 'gotebanare-badge-text';
-  text.textContent = t('badgeText', countFolds(folds), countLines(lines));
-  const show = doc.createElement('button');
-  show.type = 'button';
-  show.className = 'gotebanare-badge-show-all';
-  show.textContent = t('badgeShowAll');
-  show.addEventListener('click', (e) => {
+/** What the badge acts on: the lines it shows, or with allOpen, the lines it hides again. */
+export interface BadgeState {
+  lines: number;
+  allOpen: boolean;
+}
+
+/** createBadge builds a detached badge that calls onToggle when the reader clicks it. */
+export function createBadge(doc: Document, state: BadgeState, onToggle: () => void): HTMLElement {
+  const button = doc.createElement('button');
+  button.type = 'button';
+  button.className = 'gotebanare-badge';
+  button.setAttribute(BADGE_ATTR, '');
+  const label = t(state.allOpen ? 'fileHideTitle' : 'fileShowTitle', countLines(state.lines));
+  button.setAttribute('aria-label', label);
+  button.title = label;
+  button.append(createIcon(doc, state.allOpen ? 'eye-closed' : 'eye'));
+  button.addEventListener('click', (e) => {
     // S2: keep the click from reaching header handlers that collapse the file.
     e.stopPropagation();
-    onShowAll();
+    onToggle();
   });
-  badge.append(text, show);
-  return badge;
+  return button;
 }
