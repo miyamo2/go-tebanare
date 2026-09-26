@@ -1,0 +1,37 @@
+{
+  "name": "fold rules are unique and follow first appearance, old side before new side on context rows",
+  "rows": [
+    {"kind": "hunk"},
+    {"kind": "add", "new": 20},
+    {"kind": "context", "old": 10, "new": 21},
+    {"kind": "del", "old": 11},
+    {"kind": "hunk"},
+    {"kind": "context", "old": 40, "new": 51},
+    {"kind": "add", "new": 52}
+  ],
+  "result": {
+    "old": [
+      {"start": 10, "end": 11, "hits": [
+        {"ruleId": "noop", "target": "func", "node": "FuncDecl", "label": "func (T) marker", "preset": "noop"},
+        {"ruleId": "iferr", "target": "stmt", "node": "IfStmt", "label": "if err != nil { return err }", "preset": "iferr"},
+        {"ruleId": "iferr", "target": "stmt", "node": "IfStmt", "label": "if err != nil { return nil, err }", "preset": "iferr"}
+      ]},
+      {"start": 40, "end": 41, "hits": [{"ruleId": "getter", "target": "func", "node": "FuncDecl", "label": "func (*User) ID", "preset": "getter"}]}
+    ],
+    "new": [
+      {"start": 20, "end": 22, "hits": [
+        {"ruleId": "getter", "target": "func", "node": "FuncDecl", "label": "func (*User) Name", "preset": "getter"},
+        {"ruleId": "iferr", "target": "stmt", "node": "IfStmt", "label": "if err != nil { return err }", "preset": "iferr"}
+      ]},
+      {"start": 51, "end": 52, "hits": [{"ruleId": "noop", "target": "func", "node": "FuncDecl", "label": "func (T) marker", "preset": "noop"}]}
+    ],
+    "diagnostics": [], "skipped": ""
+  },
+  "want": {
+    "hidden": [1, 2, 3, 5, 6],
+    "folds": [
+      {"first": 1, "last": 3, "lines": 3, "deleted": 1, "added": 1, "rules": ["getter", "iferr", "noop"]},
+      {"first": 5, "last": 6, "lines": 2, "deleted": 0, "added": 1, "rules": ["getter", "noop"]}
+    ]
+  }
+}

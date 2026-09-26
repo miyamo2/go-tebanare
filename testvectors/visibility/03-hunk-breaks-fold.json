@@ -1,0 +1,28 @@
+{
+  "name": "a hunk header row splits a fold",
+  "rows": [
+    {"kind": "hunk"},
+    {"kind": "context", "old": 3, "new": 3},
+    {"kind": "context", "old": 4, "new": 4},
+    {"kind": "hunk"},
+    {"kind": "context", "old": 30, "new": 30},
+    {"kind": "del", "old": 31},
+    {"kind": "add", "new": 31}
+  ],
+  "result": {
+    "old": [
+      {"start": 1, "end": 40, "hits": [{"ruleId": "mocks", "target": "func", "node": "FuncDecl", "label": "func (*MockStore) Get"}]}
+    ],
+    "new": [
+      {"start": 1, "end": 40, "hits": [{"ruleId": "mocks", "target": "func", "node": "FuncDecl", "label": "func (*MockStore) Get"}]}
+    ],
+    "diagnostics": [], "skipped": ""
+  },
+  "want": {
+    "hidden": [1, 2, 4, 5, 6],
+    "folds": [
+      {"first": 1, "last": 2, "lines": 2, "deleted": 0, "added": 0, "rules": ["mocks"]},
+      {"first": 4, "last": 6, "lines": 3, "deleted": 1, "added": 1, "rules": ["mocks"]}
+    ]
+  }
+}

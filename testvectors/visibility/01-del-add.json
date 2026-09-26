@@ -1,0 +1,30 @@
+{
+  "name": "del rows use the old ranges and add rows the new ranges",
+  "rows": [
+    {"kind": "hunk"},
+    {"kind": "context", "old": 9, "new": 9},
+    {"kind": "del", "old": 10},
+    {"kind": "del", "old": 11},
+    {"kind": "del", "old": 12},
+    {"kind": "add", "new": 10},
+    {"kind": "add", "new": 11},
+    {"kind": "add", "new": 12},
+    {"kind": "add", "new": 13},
+    {"kind": "context", "old": 13, "new": 14}
+  ],
+  "result": {
+    "old": [
+      {"start": 10, "end": 12, "hits": [{"ruleId": "getter", "target": "func", "node": "FuncDecl", "label": "func (*User) Name", "preset": "getter"}]}
+    ],
+    "new": [
+      {"start": 10, "end": 13, "hits": [{"ruleId": "getter", "target": "func", "node": "FuncDecl", "label": "func (*User) Name", "preset": "getter"}]}
+    ],
+    "diagnostics": [], "skipped": ""
+  },
+  "want": {
+    "hidden": [2, 3, 4, 5, 6, 7, 8],
+    "folds": [
+      {"first": 2, "last": 8, "lines": 7, "deleted": 3, "added": 4, "rules": ["getter"]}
+    ]
+  }
+}

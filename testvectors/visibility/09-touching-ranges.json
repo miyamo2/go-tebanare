@@ -1,0 +1,37 @@
+{
+  "name": "touching ranges keep their own rules, and lines in the gaps between ranges stay visible",
+  "rows": [
+    {"kind": "hunk"},
+    {"kind": "del", "old": 2},
+    {"kind": "del", "old": 3},
+    {"kind": "del", "old": 4},
+    {"kind": "del", "old": 5},
+    {"kind": "del", "old": 6},
+    {"kind": "del", "old": 7},
+    {"kind": "add", "new": 9},
+    {"kind": "add", "new": 10},
+    {"kind": "add", "new": 11}
+  ],
+  "result": {
+    "old": [
+      {"start": 1, "end": 3, "hits": [{"ruleId": "getter", "target": "func", "node": "FuncDecl", "label": "func (*User) ID", "preset": "getter"}]},
+      {"start": 4, "end": 4, "hits": [{"ruleId": "iferr", "target": "stmt", "node": "IfStmt", "label": "if err != nil { return err }", "preset": "iferr"}]},
+      {"start": 5, "end": 5, "hits": [{"ruleId": "noop", "target": "func", "node": "FuncDecl", "label": "func (T) marker", "preset": "noop"}]},
+      {"start": 7, "end": 8, "hits": [{"ruleId": "getter", "target": "func", "node": "FuncDecl", "label": "func (*User) Email", "preset": "getter"}]}
+    ],
+    "new": [
+      {"start": 1, "end": 8, "hits": [{"ruleId": "getter", "target": "func", "node": "FuncDecl", "label": "func (*User) ID", "preset": "getter"}]},
+      {"start": 10, "end": 10, "hits": [{"ruleId": "iferr", "target": "stmt", "node": "IfStmt", "label": "if err != nil { return err }", "preset": "iferr"}]},
+      {"start": 11, "end": 30, "hits": [{"ruleId": "noop", "target": "func", "node": "FuncDecl", "label": "func (T) marker", "preset": "noop"}]}
+    ],
+    "diagnostics": [], "skipped": ""
+  },
+  "want": {
+    "hidden": [1, 2, 3, 4, 6, 8, 9],
+    "folds": [
+      {"first": 1, "last": 4, "lines": 4, "deleted": 4, "added": 0, "rules": ["getter", "iferr", "noop"]},
+      {"first": 6, "last": 6, "lines": 1, "deleted": 1, "added": 0, "rules": ["getter"]},
+      {"first": 8, "last": 9, "lines": 2, "deleted": 0, "added": 2, "rules": ["iferr", "noop"]}
+    ]
+  }
+}
