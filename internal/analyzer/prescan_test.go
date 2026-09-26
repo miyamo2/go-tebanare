@@ -84,6 +84,14 @@ func TestScanFileLimits(t *testing.T) {
 		// func counts one level, so ten labels exceed the limit.
 		{"labels past limit", body(strings.Repeat("L: ", 10) + "return"), result.SkipTooDeep, nest11, 4},
 		{"labels survive binary operators", body(strings.Repeat("L: ", 5) + "_ = a + " + strings.Repeat("!", 5) + "b"), result.SkipTooDeep, nest11, 4},
+		{"labels survive commas", body(strings.Repeat("L: ", 5) + "a, b = 0, func() {\n" + strings.Repeat("L: ", 5) + "return\n}"), result.SkipTooDeep, nest11, 5},
+		{"labels survive else", body(strings.Repeat("L: ", 5) + "if true {\n} else {\n" + strings.Repeat("L: ", 5) + "return\n}"), result.SkipTooDeep, nest11, 6},
+		{"labels survive if headers", body(strings.Repeat("L: ", 5) + "if x := 0; true {\n" + strings.Repeat("L: ", 5) + "return\n}"), result.SkipTooDeep, nest11, 5},
+		{"labels survive for headers", body(strings.Repeat("L: ", 5) + "for i := 0; i < 1; i++ {\n" + strings.Repeat("L: ", 5) + "return\n}"), result.SkipTooDeep, nest11, 5},
+		{"labels survive func literals in headers", body(strings.Repeat("L: ", 5) + "if f := func() {}; true {\n" + strings.Repeat("L: ", 5) + "return\n}"), result.SkipTooDeep, nest11, 5},
+		{"labels survive composite literals in headers", body(strings.Repeat("L: ", 5) + "switch x := map[int]int{1: 1}; x[0] {\ndefault:\n" + strings.Repeat("L: ", 5) + "return\n}"), result.SkipTooDeep, nest11, 6},
+		{"labels end with the statement", body(strings.Repeat("\tL: if x := 0; true {\n\t}\n", 30)), "", "", 0},
+		{"keys are not labels", "package p\n\nvar m = map[string]int{" + strings.Repeat("\"a\": 1, ", 30) + "}\n", "", "", 0},
 		{"flat chains", "package p\n\nvar x = " + joinTerms(4, "s.a", "f(x)", "a[i]", "-a", "*p", "<-ch", "x.(T)", "T{}", "[]int{1}[0]", "m[i](x)") + "\n", "", "", 0},
 		{"plus chain inside a function", body("\t_ = 1" + strings.Repeat(" + 1", 30)), "", "", 0},
 		{"empty case clauses", emptyCases(30), "", "", 0},
@@ -180,5 +188,52 @@ func TestScanFileNestingCounter(t *testing.T) {
 	}
 	if _, err := parser.ParseFile(token.NewFileSet(), "x.go", build(lo), parser.AllErrors|parser.SkipObjectResolution); err != nil {
 		t.Errorf("parse: %v", err)
+	}
+}
+
+// TestScanFileHiddenLabels checks that labels count until the labeled
+// statement ends. The parser holds them through the commas, else, and
+// header semicolons of the statement, so a prescan that restarted the
+// labels there let each bracket level hide hundreds of them.
+func TestScanFileHiddenLabels(t *testing.T) {
+	for _, open := range []string{
+		"a, b = 0, func() {",
+		"if x := 0; true {",
+		"if true {\n} else {",
+		"for i := 0; i < 1; i++ {",
+		"switch x := 0; x {\ndefault:",
+		"if f := func() {}; true {",
+		"if f := func() struct{} { return struct{}{} }; true {",
+		"if x := []int{1}; true {",
+		"if m := map[int]int{1: 1}; true {",
+		"for _, x := range []struct{}{{}} {",
+	} {
+		build := func(k int) []byte {
+			var b strings.Builder
+			b.WriteString("package p\n\nfunc f() {\n")
+			levels := DefaultMaxBracketDepth - 2
+			for range levels {
+				b.WriteString(strings.Repeat("L: ", k) + open + "\n")
+			}
+			b.WriteString("x = " + strings.Repeat("a + ", maxOps/2) + "a\n" + strings.Repeat("}\n", levels+1))
+			return []byte(b.String())
+		}
+		const hidden = 510 // enough labels per level for the nesting panic
+		lo, hi := 0, hidden
+		for lo < hi {
+			mid := (lo + hi + 1) / 2
+			if _, sk := scanFile(build(mid), DefaultOptions()); sk == nil {
+				lo = mid
+			} else {
+				hi = mid - 1
+			}
+		}
+		if lo == hidden {
+			t.Errorf("%q: the prescan accepts %d labels per level", open, hidden)
+			continue
+		}
+		if _, err := parser.ParseFile(token.NewFileSet(), "x.go", build(lo), parser.SkipObjectResolution); err != nil {
+			t.Errorf("%q with %d labels per level: parse: %v", open, lo, err)
+		}
 	}
 }

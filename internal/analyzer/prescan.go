@@ -33,8 +33,24 @@ type level struct {
 	// recursion: prefix operators, type constructors, and colons.
 	nest int
 	// labels is the part of nest that a binary operator keeps: the count
-	// up to the last colon, which may end a label.
+	// up to the last colon, which may end a label. The parser holds the
+	// labels until the labeled statement ends, so a comma, else, or the
+	// semicolon of an if, for, or switch header keeps them too.
 	labels int
+	// comma is set after a comma since the last semicolon. A colon after
+	// it separates a key from a value or ends a case, never a label.
+	comma bool
+	// header is set from an if, for, or switch keyword to the "{" of its
+	// block, and a semicolon on this level then keeps the labels.
+	header bool
+	// funcs counts the func keywords on this level whose "{" has not been
+	// seen, and lit is set when a type that may start a composite literal
+	// comes before the next "{": [...]T, []T, map, or struct, also in
+	// parentheses. A header ends only at a "{" that neither of them nor a
+	// struct or interface keyword claims, so a misread keeps the labels
+	// longer than the parser does, never shorter.
+	funcs int
+	lit   bool
 	// elseIf counts the else-if links of the current if statement on this
 	// level.
 	elseIf int
@@ -69,7 +85,9 @@ type level struct {
 //
 // Both counts restart at a comma, semicolon, else, case, or default. A
 // binary operator also restarts the recursion count of its level, keeping
-// the labels, because the parser has returned from the left operand.
+// the labels, because the parser has returned from the left operand. The
+// labels also survive a comma, else, and a semicolon in an if, for, or
+// switch header, since they end only with the labeled statement.
 //
 // The counts follow the parser only for code without syntax errors. The
 // parser recovers from an error by taking any token in place of an
@@ -98,10 +116,15 @@ func scanFile(src []byte, opt Options) (*scanInfo, *skip) {
 
 	levels := []level{{}}
 	ops, nest, elseIfs := 0, 0, 0
-	restart := func(l *level) {
-		ops -= l.ops
-		nest -= l.nest
-		l.ops, l.nest, l.labels = 0, 0, 0
+	// restart drops the counts of l, keeping the labels unless the
+	// statement has ended.
+	restart := func(l *level, stmtEnd bool) {
+		if stmtEnd {
+			l.labels, l.comma = 0, false
+		}
+		ops -= l.ops - l.labels
+		nest -= l.nest - l.labels
+		l.ops, l.nest = l.labels, l.labels
 	}
 	count := func(l *level, recursive bool) {
 		l.ops++
@@ -127,8 +150,14 @@ func scanFile(src []byte, opt Options) (*scanInfo, *skip) {
 		switch tok {
 		case token.COMMENT:
 			continue
-		case token.COMMA, token.SEMICOLON:
-			restart(top)
+		case token.COMMA:
+			restart(top, false)
+			top.comma = true
+			prev, prevType = tok, false
+			continue
+		case token.SEMICOLON:
+			restart(top, !top.header)
+			top.comma = false
 			prev, prevType = tok, false
 			continue
 		}
@@ -157,6 +186,17 @@ func scanFile(src []byte, opt Options) (*scanInfo, *skip) {
 				typ = prev == token.RBRACK || !endsOperand(prev, prevType, tok)
 			}
 			count(top, typ && tok == token.LBRACK)
+			switch {
+			case tok == token.LBRACK:
+				top.lit = top.lit || typ
+			case tok != token.LBRACE || prev == token.STRUCT || prev == token.INTERFACE:
+			case top.funcs > 0:
+				top.funcs--
+			case top.lit:
+				top.lit = false
+			default:
+				top.header = false
+			}
 			levels = append(levels, level{typ: typ})
 			if depth := len(levels) - 1; depth > opt.MaxBracketDepth {
 				return nil, tooDeep(off, "brackets are nested %d deep, more than the limit of %d", depth, opt.MaxBracketDepth)
@@ -167,9 +207,15 @@ func scanFile(src []byte, opt Options) (*scanInfo, *skip) {
 				nest -= top.nest
 				elseIfs -= top.elseIf
 				closedType = top.typ
+				closedLit := top.lit && tok != token.RBRACE
 				levels = levels[:len(levels)-1]
+				levels[len(levels)-1].lit = levels[len(levels)-1].lit || closedLit
 			}
-		case token.IF:
+		case token.IF, token.FOR, token.SWITCH:
+			top.header, top.funcs, top.lit = true, 0, false
+			if tok != token.IF {
+				break
+			}
 			if prev != token.ELSE {
 				elseIfs -= top.elseIf
 				top.elseIf = 0
@@ -180,15 +226,24 @@ func scanFile(src []byte, opt Options) (*scanInfo, *skip) {
 			if elseIfs > opt.MaxElseIfChain {
 				return nil, tooDeep(off, "else-if chains are %d long, more than the limit of %d", elseIfs, opt.MaxElseIfChain)
 			}
-		case token.ELSE, token.CASE, token.DEFAULT:
+		case token.ELSE:
+			restart(top, false)
+		case token.CASE, token.DEFAULT:
 			// The else-if limit covers the links of an if statement, and a
 			// case clause starts a new statement list.
-			restart(top)
-		case token.FUNC, token.CHAN:
+			restart(top, true)
+		case token.FUNC:
+			count(top, true)
+			top.funcs++
+		case token.MAP, token.STRUCT:
+			top.lit = true
+		case token.CHAN:
 			count(top, true)
 		case token.COLON:
 			count(top, true)
-			top.labels = top.nest
+			if !top.comma {
+				top.labels = top.nest
+			}
 		default:
 			if !tok.IsOperator() {
 				break
