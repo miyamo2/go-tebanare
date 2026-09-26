@@ -68,6 +68,29 @@ describe('FileScanner', () => {
     expect(bg.requests.length).toBe(requests);
   });
 
+  it('clears a folded file whose rows can no longer be read', async () => {
+    const [store] = buildPage(fileHtml('classic-modified.html'));
+    const { s, report, state } = scanner();
+    s.scan();
+    await settle();
+    expect(hiddenRows(store!)).toHaveLength(4);
+    const changed = state.changed;
+    const unknown = document.createElement('tr');
+    unknown.innerHTML = '<td>?</td>';
+    store!.querySelector('tbody')!.append(unknown);
+    s.scan();
+    await settle();
+    expect(hiddenRows(store!)).toEqual([]);
+    expect(addedMarks()).toBe(0);
+    expect(report.counts()).toEqual({ files: 0, filesWithFolds: 0, linesHidden: 0 });
+    expect(state.changed).toBe(changed + 1);
+    unknown.remove();
+    s.scan();
+    await settle();
+    expect(hiddenRows(store!)).toHaveLength(4);
+    expect(report.counts()).toEqual({ files: 1, filesWithFolds: 1, linesHidden: 4 });
+  });
+
   it('removes what it added and ignores analyses that finish after stop', async () => {
     const [store] = buildPage(fileHtml('classic-modified.html'), fileHtml('classic-added.html'));
     const { s, bg, fetcher } = scanner();

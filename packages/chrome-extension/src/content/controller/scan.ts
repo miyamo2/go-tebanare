@@ -49,7 +49,8 @@ export class FileScanner {
   // Rows the reader opened, per file, so they stay open when GitHub re-renders the file.
   readonly #expanded = new Map<string, Set<string>>();
   #seen = new WeakMap<HTMLElement, Seen>();
-  readonly #touched = new Set<HTMLElement>();
+  // Containers the scanner showed a file in, with the key of that file.
+  readonly #touched = new Map<HTMLElement, string>();
 
   constructor(c: ScanContext) {
     this.#c = c;
@@ -66,7 +67,7 @@ export class FileScanner {
   /** refresh shows every file again after enabled changed. Turning hiding off clears every file at once. */
   refresh(): void {
     if (!this.#c.enabled()) {
-      for (const c of this.#touched) clearFile(c);
+      for (const c of this.#touched.keys()) clearFile(c);
       this.#c.report.hideNothing();
     }
     this.#seen = new WeakMap();
@@ -76,27 +77,31 @@ export class FileScanner {
   /** stop drops pending work and removes what the scanner added to the page. */
   stop(): void {
     this.#stopped = true;
-    for (const c of this.#touched) clearFile(c);
+    for (const c of this.#touched.keys()) clearFile(c);
     this.#touched.clear();
   }
 
   // visit skips a container whose rows are the same elements with the same
   // kinds, line numbers, and text as last time (see rowsKey). A new or
   // re-rendered container, or a row whose code changed, is shown again from
-  // the file's analysis, which checks the text again.
+  // the file's analysis, which checks the text again. A container that can
+  // no longer be read is cleared, so nothing stays hidden (fail open).
   #visit(container: HTMLElement): void {
     const { variant, report, source } = this.#c;
     const { path, oldPath } = variant.filePath(container);
-    if (path === '') return;
+    if (path === '') return this.#forget(container);
     // Plan 6.5: a config file in the diff is never analyzed, so never hidden.
     const configPath = [path, oldPath].find((p) => p !== undefined && isConfigPath(p));
     if (configPath !== undefined && source === 'base') report.addPage({ kind: 'config-changed', path: configPath });
-    if (variant.isSplit?.(container)) return report.addPage({ kind: 'split-view' });
+    if (variant.isSplit?.(container)) {
+      report.addPage({ kind: 'split-view' });
+      return this.#forget(container);
+    }
     const file: DiffFile = { path, status: variant.fileStatus?.(container) ?? 'modified' };
     if (oldPath !== undefined) file.oldPath = oldPath;
-    if (!isGoFile(file)) return;
+    if (!isGoFile(file)) return this.#forget(container);
     const rows = [...variant.rows(container)];
-    if (rows.length === 0) return;
+    if (rows.length === 0) return this.#forget(container);
     const seen: Seen = { key: `${fileKey(file)}\n${rowsKey(rows)}`, rows };
     const last = this.#seen.get(container);
     if (last && last.key === seen.key && sameElements(last.rows, rows)) return;
@@ -110,6 +115,19 @@ export class FileScanner {
         clearFile(container);
       }
     });
+  }
+
+  // forget clears a container the scanner can no longer read: it drops a
+  // pending show, removes what the scanner added, and stops counting the
+  // lines it hid.
+  #forget(container: HTMLElement): void {
+    this.#seen.delete(container);
+    const key = this.#touched.get(container);
+    if (key === undefined) return;
+    this.#touched.delete(container);
+    clearFile(container);
+    this.#c.report.tally(key, false);
+    this.#c.changed();
   }
 
   #analysis(file: DiffFile): Promise<FileAnalysis> {
@@ -128,7 +146,7 @@ export class FileScanner {
   #show(container: HTMLElement, file: DiffFile, rows: readonly RowRef[], analysis: FileAnalysis): void {
     const { report, variant } = this.#c;
     const key = fileKey(file);
-    this.#touched.add(container);
+    this.#touched.set(container, key);
     let notice = analysis.notice;
     if (!analysis.record) {
       clearFile(container);
