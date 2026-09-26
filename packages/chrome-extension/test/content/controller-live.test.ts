@@ -119,14 +119,19 @@ describe('re-rendering', () => {
     expect(h.bg.requests.length).toBe(requests);
   });
 
-  it('keeps folds the reader opened', async () => {
+  it('keeps folds the reader opened, and hides them again from the same row', async () => {
     const { h, store } = await ready();
-    store.querySelector<HTMLElement>('.gotebanare-fold-show')!.click();
+    store.querySelector<HTMLElement>('.gotebanare-fold-toggle')!.click();
     expect(hiddenRows(store)).toEqual([]);
     expect(h.controller.status()).toMatchObject({ filesWithFolds: 0, linesHidden: 0 });
     store.outerHTML = fileHtml('classic-modified.html');
     await h.settle();
-    expect(hiddenRows(document.querySelector<HTMLElement>('#files .file')!)).toEqual([]);
+    const again = document.querySelector<HTMLElement>('#files .file')!;
+    expect(hiddenRows(again)).toEqual([]);
+    expect(again.querySelectorAll('[data-gotebanare-fold][data-gotebanare-open]')).toHaveLength(1);
+    again.querySelector<HTMLElement>('.gotebanare-fold-toggle')!.click();
+    expect(hiddenRows(again)).toEqual(['+26', '+27', '+28', '+29']);
+    expect(h.controller.status()).toMatchObject({ filesWithFolds: 1, linesHidden: 4 });
   });
 
   it('reads again only the files a change touched', async () => {
