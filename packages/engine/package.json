@@ -1,0 +1,25 @@
+{
+  "name": "@go-tebanare/engine",
+  "version": "0.1.0",
+  "description": "Loads the go-tebanare wasm engine and exposes a typed API for browsers and Node.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "wasm/engine.wasm"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "typescript": "7.0.2",
+    "vitest": "5.0.1"
+  }
+}
