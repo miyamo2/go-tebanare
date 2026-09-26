@@ -1,0 +1,68 @@
+{
+  "cases": [
+    {
+      "name": "preset settings example",
+      "yaml": "# The preset settings example of plan 4.5.\nversion: 1\npresets:\n  - getter                    # default settings\n  - noop:\n      include_functions: true # also hide empty functions that are not methods\n  - iferr:\n      names: [err, \"*Err\"]    # also parseErr and similar names\n      paths: [\"internal/**\"]  # limit this preset to some files\n",
+      "want": {
+        "handle": 1,
+        "diagnostics": [],
+        "rules": [
+          {
+            "id": "getter",
+            "description": "Methods that only return a field of the receiver.",
+            "target": "func",
+            "preset": "getter"
+          },
+          {
+            "id": "noop",
+            "description": "Methods that take no parameters, return nothing, and have an empty body.",
+            "target": "func",
+            "preset": "noop"
+          },
+          {
+            "id": "iferr",
+            "description": "`if err != nil` blocks that return the error unchanged.",
+            "target": "stmt",
+            "preset": "iferr"
+          }
+        ]
+      }
+    },
+    {
+      "name": "errors",
+      "yaml": "version: 1\nfiles:\n  exclude: ['[']\npresets:\n  - getter: {max_depth: 0}\n  - nope\n",
+      "want": {
+        "handle": 0,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "config-invalid",
+            "message": "invalid glob \"[\"",
+            "field": "files.exclude[0]",
+            "line": 3,
+            "column": 13
+          },
+          {
+            "severity": "error",
+            "code": "config-invalid",
+            "message": "must be at least 1, found 0",
+            "field": "presets[0](getter).max_depth",
+            "ruleId": "getter",
+            "line": 5,
+            "column": 25
+          },
+          {
+            "severity": "error",
+            "code": "config-invalid",
+            "message": "unknown preset \"nope\" (available presets: getter, iferr, noop)",
+            "field": "presets[1](nope)",
+            "line": 6,
+            "column": 5
+          }
+        ],
+        "rules": [],
+        "error": "3:13: files.exclude[0]: invalid glob \"[\""
+      }
+    }
+  ]
+}
