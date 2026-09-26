@@ -55,3 +55,17 @@ wasm-check:
 # TinyGo cannot be used (plan 2.3).
 wasm-wasip1:
 	GOOS=wasip1 GOARCH=wasm $(GO) build -buildmode=c-shared -o /dev/null ./cmd/gotebanare-wasm
+
+PARITY_JSON ?= $(or $(TMPDIR),/tmp)/gotebanare-parity.json
+# PARITY_FLAGS=-pairs makes the parity test pair declarations across files.
+PARITY_FLAGS ?=
+
+.PHONY: parity
+
+# Analyzes the Go standard library with the native build and with
+# engine.wasm and compares the results (plan 8).
+parity: $(ENGINE_WASM)
+	root="$$($(GO) env GOROOT)/src"; \
+	$(GO) run ./internal/tools/corpusdump -config testdata/parity/config.yml -root "$$root" $(PARITY_FLAGS) > $(PARITY_JSON) && \
+	GOTEBANARE_PARITY=$(PARITY_JSON) GOTEBANARE_PARITY_ROOT="$$root" \
+		bun run --cwd packages/engine vitest run test/parity.test.ts

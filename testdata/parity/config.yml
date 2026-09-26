@@ -1,0 +1,19 @@
+# Configuration for the parity test: the native build and the TinyGo wasm
+# build must return the same results for every file of a corpus. It enables
+# every preset and uses the settings that widen what each one hides, and
+# path filters on one of them.
+version: 1
+
+presets:
+  - getter:
+      include_doc: false
+  - noop:
+      include_functions: true
+      paths: ["**/internal/**"]
+      exclude_paths: ["**/internal/abi/**"]
+  - iferr:
+      names: [err, "*Err"]
+      allow_comments: true
+      init: fold-body
+      allow_bare_return: true
+      allow_calls_in_results: true
