@@ -1,0 +1,117 @@
+/*
+ * go-tebanare content styles for github.com. Colors come from GitHub's CSS
+ * variables (current names first, older names second) with light-theme
+ * fallbacks. Every selector uses a data-gotebanare-* attribute or a
+ * gotebanare-* class so nothing touches GitHub's own elements otherwise.
+ */
+
+:root {
+  --gotebanare-fg-default: var(--fgColor-default, var(--color-fg-default, #1f2328));
+  --gotebanare-fg-muted: var(--fgColor-muted, var(--color-fg-muted, #59636e));
+  --gotebanare-fg-on-emphasis: var(--fgColor-onEmphasis, var(--color-fg-on-emphasis, #ffffff));
+  --gotebanare-accent-fg: var(--fgColor-accent, var(--color-accent-fg, #0969da));
+  --gotebanare-accent-bg: var(--bgColor-accent-muted, var(--color-accent-subtle, #ddf4ff));
+  --gotebanare-accent-emphasis: var(--bgColor-accent-emphasis, var(--color-accent-emphasis, #0969da));
+  --gotebanare-control-hover-bg: var(--control-transparent-bgColor-hover, var(--color-action-list-item-default-hover-bg, #d1d9e03d));
+  --gotebanare-attention-bg: var(--bgColor-attention-muted, var(--color-attention-subtle, #fff8c5));
+  --gotebanare-attention-border: var(--borderColor-attention-emphasis, var(--color-attention-emphasis, #9a6700));
+  --gotebanare-danger-fg: var(--fgColor-danger, var(--color-danger-fg, #d1242f));
+}
+
+/* Hidden rows (apply.ts). */
+[data-gotebanare-hidden] {
+  display: none !important;
+}
+
+/*
+ * Debug mode: rows in hidden ranges stay visible with an outline and a
+ * stripe on the first cell; the title lists the hits. Nothing here sets a
+ * background, so GitHub's addition and deletion colors stay visible.
+ */
+tr[data-gotebanare-debug] {
+  outline: 1px dashed var(--gotebanare-attention-border);
+  outline-offset: -1px;
+}
+tr[data-gotebanare-debug] > td:first-child {
+  box-shadow: inset 3px 0 0 var(--gotebanare-attention-border);
+}
+
+/*
+ * Fold rows, file badge, and banner (ui/fold.ts, ui/badge.ts,
+ * ui/banner.ts). The fold rows and the badge copy the look of GitHub's own
+ * diff controls: the hunk color, octicons, and icon buttons without text.
+ *
+ * Fold row: tr[data-gotebanare-fold] > td.gotebanare-fold-gutter[colspan=2]
+ *   > button.gotebanare-fold-toggle (unfold icon, or fold icon with
+ *   data-gotebanare-open on the row), then an empty td over the code column.
+ * File badge: button.gotebanare-badge in the file header (eye or eye-closed icon).
+ * Banner: .gotebanare-banner before the first file container with
+ *   .gotebanare-banner-title and ul.gotebanare-banner-messages > li
+ *   (data-level="error" | "warning" | "info").
+ */
+
+tr[data-gotebanare-fold] > td {
+  padding: 0;
+  border: 0;
+  background-color: var(--gotebanare-accent-bg);
+  line-height: 0;
+}
+
+.gotebanare-fold-toggle,
+.gotebanare-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--gotebanare-fg-muted);
+  cursor: pointer;
+}
+.gotebanare-fold-toggle:focus-visible,
+.gotebanare-badge:focus-visible {
+  outline: 2px solid var(--gotebanare-accent-fg);
+  outline-offset: -2px;
+}
+
+/* The button fills the line number columns, where GitHub puts its expand buttons. */
+.gotebanare-fold-toggle {
+  width: 100%;
+  height: 24px;
+}
+.gotebanare-fold-toggle:hover {
+  background-color: var(--gotebanare-accent-emphasis);
+  color: var(--gotebanare-fg-on-emphasis);
+}
+
+.gotebanare-badge {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin-left: 4px;
+  border-radius: 6px;
+  vertical-align: middle;
+}
+.gotebanare-badge:hover {
+  background-color: var(--gotebanare-control-hover-bg);
+  color: var(--gotebanare-fg-default);
+}
+
+.gotebanare-banner {
+  margin: 8px 0 16px;
+  padding: 8px 16px;
+  border: 1px solid var(--gotebanare-attention-border);
+  border-radius: 6px;
+  background-color: var(--gotebanare-attention-bg);
+  font-size: 14px;
+}
+.gotebanare-banner-title {
+  font-weight: 600;
+}
+.gotebanare-banner-messages {
+  margin: 4px 0 0;
+  padding-left: 20px;
+}
+.gotebanare-banner-messages > li[data-level="error"] {
+  color: var(--gotebanare-danger-fg);
+}
