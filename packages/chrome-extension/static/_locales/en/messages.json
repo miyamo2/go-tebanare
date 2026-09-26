@@ -1,0 +1,156 @@
+{
+  "extName": { "message": "go-tebanare" },
+  "extDescription": { "message": "Folds Go code that your team agreed not to review, such as generated mocks and getters, in GitHub pull request diffs." },
+  "commandToggle": { "message": "Turn hiding on or off" },
+  "countLinesOne": { "message": "1 line" },
+  "countLines": {
+    "message": "$count$ lines",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "foldShowTitle": {
+    "message": "Show $lines$ hidden by gotebanare",
+    "placeholders": { "lines": { "content": "$1" } }
+  },
+  "foldHideTitle": {
+    "message": "Hide $lines$ again",
+    "placeholders": { "lines": { "content": "$1" } }
+  },
+  "fileShowTitle": {
+    "message": "Show the $lines$ that gotebanare hid in this file",
+    "placeholders": { "lines": { "content": "$1" } }
+  },
+  "fileHideTitle": {
+    "message": "Hide the $lines$ in this file again",
+    "placeholders": { "lines": { "content": "$1" } }
+  },
+  "foldRuleMatched": {
+    "message": "Matched: $labels$",
+    "placeholders": { "labels": { "content": "$1" } }
+  },
+  "debugRowTitle": {
+    "message": "Hidden by $rules$: $labels$",
+    "placeholders": { "rules": { "content": "$1" }, "labels": { "content": "$2" } }
+  },
+  "debugRowTitleNoLabels": {
+    "message": "Hidden by $rules$",
+    "placeholders": { "rules": { "content": "$1" } }
+  },
+  "debugRowTitleNoRules": { "message": "Hidden" },
+  "bannerTitle": { "message": "gotebanare" },
+  "bannerConfigError": {
+    "message": "$path$ has errors, so nothing is hidden.",
+    "placeholders": { "path": { "content": "$1" } }
+  },
+  "diagnosticText": {
+    "message": "$location$: $message$",
+    "placeholders": { "location": { "content": "$1" }, "message": { "content": "$2" } }
+  },
+  "diagnosticLine": {
+    "message": "line $line$",
+    "placeholders": { "line": { "content": "$1" } }
+  },
+  "diagnosticColumn": {
+    "message": "column $column$",
+    "placeholders": { "column": { "content": "$1" } }
+  },
+  "diagnosticRule": {
+    "message": "rule $rule$",
+    "placeholders": { "rule": { "content": "$1" } }
+  },
+  "diagnosticField": {
+    "message": "field $field$",
+    "placeholders": { "field": { "content": "$1" } }
+  },
+  "bannerConfigChanged": {
+    "message": "This pull request changes $path$. Folds follow the base branch config.",
+    "placeholders": { "path": { "content": "$1" } }
+  },
+  "bannerBothConfigs": { "message": "Both .gotebanare.yml and .gotebanare.yaml exist. Using .gotebanare.yml." },
+  "bannerHeadPreview": {
+    "message": "Previewing with the head branch config $path$. The pull request author controls this config.",
+    "placeholders": { "path": { "content": "$1" } }
+  },
+  "bannerFetchFailed": {
+    "message": "Nothing is hidden in $path$. $reason$",
+    "placeholders": { "path": { "content": "$1" }, "reason": { "content": "$2" } }
+  },
+  "bannerConfigFetchFailed": {
+    "message": "Nothing is hidden because the config $path$ could not be loaded. $reason$",
+    "placeholders": { "path": { "content": "$1" }, "reason": { "content": "$2" } }
+  },
+  "fetchNotFound": { "message": "GitHub could not find the file at this commit." },
+  "fetchUnauthorized": { "message": "GitHub denied access. Sign in to GitHub and reload the page." },
+  "fetchSso": { "message": "Your organization requires single sign-on. Authorize your SSO session and reload the page." },
+  "fetchNetwork": { "message": "The request failed because of a network error." },
+  "fetchTooLarge": { "message": "The file is larger than 1 MiB." },
+  "bannerUnsupportedUi": { "message": "This GitHub diff layout is not supported yet, so nothing is hidden." },
+  "bannerSplitView": { "message": "Split view is not supported yet. Switch to the unified view to fold code." },
+  "bannerSourceMismatch": {
+    "message": "Nothing is hidden in $path$ because the page does not match the analyzed source.",
+    "placeholders": { "path": { "content": "$1" } }
+  },
+  "bannerContextError": { "message": "Could not read the pull request commits from this page, so nothing is hidden." },
+  "bannerAnalysisFailed": {
+    "message": "Nothing is hidden in $path$ because the analysis failed: $error$",
+    "placeholders": { "path": { "content": "$1" }, "error": { "content": "$2" } }
+  },
+  "popupNoPage": { "message": "Open a pull request's Files changed tab." },
+  "popupStateInactive": { "message": "Not a pull request diff" },
+  "popupStateExcluded": { "message": "Off for this repository (see options)" },
+  "popupStateLoading": { "message": "Loading" },
+  "popupStateNoConfig": { "message": "No .gotebanare.yml or .gotebanare.yaml in this repository" },
+  "popupStateNoConfigHead": { "message": "No .gotebanare.yml or .gotebanare.yaml on the head branch" },
+  "popupStateConfigError": { "message": "The config has errors" },
+  "popupStateUnsupportedUi": { "message": "Unsupported GitHub UI" },
+  "popupStateReady": { "message": "Active" },
+  "popupStateError": { "message": "Error" },
+  "popupPullRequest": {
+    "message": "$repo$ #$number$",
+    "placeholders": { "repo": { "content": "$1" }, "number": { "content": "$2" } }
+  },
+  "popupConfigLabel": { "message": "Config" },
+  "popupConfigBase": {
+    "message": "$path$ (base branch)",
+    "placeholders": { "path": { "content": "$1" } }
+  },
+  "popupConfigHead": {
+    "message": "$path$ (head branch preview)",
+    "placeholders": { "path": { "content": "$1" } }
+  },
+  "popupRulesLabel": { "message": "Rules" },
+  "popupFilesLabel": { "message": "Files analyzed" },
+  "popupFilesWithFoldsLabel": { "message": "Files with folds" },
+  "popupLinesHiddenLabel": { "message": "Lines hidden" },
+  "popupMessagesLabel": { "message": "Messages" },
+  "popupHidingOn": { "message": "Hiding: on" },
+  "popupHidingOff": { "message": "Hiding: off" },
+  "popupHeadPreviewStart": { "message": "Preview with head config" },
+  "popupHeadPreviewStop": { "message": "Stop head config preview" },
+  "popupHeadPreviewActive": { "message": "Previewing with the head branch config. The pull request author controls this config." },
+  "popupActionFailed": {
+    "message": "Could not change the setting: $error$",
+    "placeholders": { "error": { "content": "$1" } }
+  },
+  "popupOptions": { "message": "Options" },
+  "optionsTitle": { "message": "go-tebanare options" },
+  "optionsExcludedLabel": { "message": "Excluded repositories" },
+  "optionsExcludedHelp": { "message": "One pattern per line: owner/name, owner/*, or * for every repository. Case is ignored." },
+  "optionsDebugLabel": { "message": "Debug mode" },
+  "optionsDebugHelp": { "message": "Outline code that would be hidden instead of hiding it, and list the matched rules on hover." },
+  "optionsSave": { "message": "Save" },
+  "optionsSaved": { "message": "Saved." },
+  "optionsSaveFailed": {
+    "message": "Could not save: $error$",
+    "placeholders": { "error": { "content": "$1" } }
+  },
+  "optionsNotSaved": { "message": "Not saved. Fix the lines below. Each line needs owner/name, owner/*, or *." },
+  "optionsInvalidLine": {
+    "message": "Line $line$: $text$",
+    "placeholders": { "line": { "content": "$1" }, "text": { "content": "$2" } }
+  },
+  "optionsLoadFailed": {
+    "message": "Could not load the saved options: $error$",
+    "placeholders": { "error": { "content": "$1" } }
+  },
+  "pageLang": { "message": "en" }
+}

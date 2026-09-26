@@ -1,0 +1,156 @@
+{
+  "extName": { "message": "go-tebanare" },
+  "extDescription": { "message": "GitHub の PR の diff で、チームがレビュー不要と合意した Go のコード（生成されたモックや getter など）を折りたたみます。" },
+  "commandToggle": { "message": "非表示の ON/OFF" },
+  "countLinesOne": { "message": "1 行" },
+  "countLines": {
+    "message": "$count$ 行",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "foldShowTitle": {
+    "message": "gotebanare が隠した $lines$を表示",
+    "placeholders": { "lines": { "content": "$1" } }
+  },
+  "foldHideTitle": {
+    "message": "$lines$をもう一度隠す",
+    "placeholders": { "lines": { "content": "$1" } }
+  },
+  "fileShowTitle": {
+    "message": "このファイルで gotebanare が隠した $lines$をすべて表示",
+    "placeholders": { "lines": { "content": "$1" } }
+  },
+  "fileHideTitle": {
+    "message": "このファイルの $lines$をもう一度隠す",
+    "placeholders": { "lines": { "content": "$1" } }
+  },
+  "foldRuleMatched": {
+    "message": "マッチ: $labels$",
+    "placeholders": { "labels": { "content": "$1" } }
+  },
+  "debugRowTitle": {
+    "message": "$rules$ により非表示: $labels$",
+    "placeholders": { "rules": { "content": "$1" }, "labels": { "content": "$2" } }
+  },
+  "debugRowTitleNoLabels": {
+    "message": "$rules$ により非表示",
+    "placeholders": { "rules": { "content": "$1" } }
+  },
+  "debugRowTitleNoRules": { "message": "非表示" },
+  "bannerTitle": { "message": "gotebanare" },
+  "bannerConfigError": {
+    "message": "$path$ にエラーがあるため、何も隠していません。",
+    "placeholders": { "path": { "content": "$1" } }
+  },
+  "diagnosticText": {
+    "message": "$location$: $message$",
+    "placeholders": { "location": { "content": "$1" }, "message": { "content": "$2" } }
+  },
+  "diagnosticLine": {
+    "message": "$line$ 行目",
+    "placeholders": { "line": { "content": "$1" } }
+  },
+  "diagnosticColumn": {
+    "message": "$column$ 列目",
+    "placeholders": { "column": { "content": "$1" } }
+  },
+  "diagnosticRule": {
+    "message": "ルール $rule$",
+    "placeholders": { "rule": { "content": "$1" } }
+  },
+  "diagnosticField": {
+    "message": "フィールド $field$",
+    "placeholders": { "field": { "content": "$1" } }
+  },
+  "bannerConfigChanged": {
+    "message": "この PR は設定ファイル $path$ を変更しています（適用中: base 側の設定）。",
+    "placeholders": { "path": { "content": "$1" } }
+  },
+  "bannerBothConfigs": { "message": ".gotebanare.yml と .gotebanare.yaml の両方があります。.gotebanare.yml を使います。" },
+  "bannerHeadPreview": {
+    "message": "head 側の設定 $path$ でプレビュー中です。この設定は PR の作成者が変更できます。",
+    "placeholders": { "path": { "content": "$1" } }
+  },
+  "bannerFetchFailed": {
+    "message": "$path$ では何も隠していません。$reason$",
+    "placeholders": { "path": { "content": "$1" }, "reason": { "content": "$2" } }
+  },
+  "bannerConfigFetchFailed": {
+    "message": "設定ファイル $path$ を取得できないため、何も隠していません。$reason$",
+    "placeholders": { "path": { "content": "$1" }, "reason": { "content": "$2" } }
+  },
+  "fetchNotFound": { "message": "このコミットにファイルが見つかりません。" },
+  "fetchUnauthorized": { "message": "GitHub にアクセスを拒否されました。GitHub にログインしてページを再読み込みしてください。" },
+  "fetchSso": { "message": "組織が SSO を要求しています。SSO のセッションを承認してページを再読み込みしてください。" },
+  "fetchNetwork": { "message": "ネットワークエラーで取得できませんでした。" },
+  "fetchTooLarge": { "message": "ファイルが 1 MiB を超えています。" },
+  "bannerUnsupportedUi": { "message": "この GitHub の diff の表示には未対応のため、何も隠していません。" },
+  "bannerSplitView": { "message": "split 表示には未対応です。unified 表示に切り替えると折りたたみます。" },
+  "bannerSourceMismatch": {
+    "message": "$path$ は表示内容と解析したソースが一致しないため、何も隠していません。",
+    "placeholders": { "path": { "content": "$1" } }
+  },
+  "bannerContextError": { "message": "このページから PR のコミットを読み取れないため、何も隠していません。" },
+  "bannerAnalysisFailed": {
+    "message": "$path$ の解析に失敗したため、何も隠していません: $error$",
+    "placeholders": { "path": { "content": "$1" }, "error": { "content": "$2" } }
+  },
+  "popupNoPage": { "message": "PR の「Files changed」タブを開いてください。" },
+  "popupStateInactive": { "message": "PR の diff ではありません" },
+  "popupStateExcluded": { "message": "このリポジトリでは無効です（オプションで設定）" },
+  "popupStateLoading": { "message": "読み込み中" },
+  "popupStateNoConfig": { "message": "このリポジトリに .gotebanare.yml / .gotebanare.yaml がありません" },
+  "popupStateNoConfigHead": { "message": "head 側に .gotebanare.yml / .gotebanare.yaml がありません" },
+  "popupStateConfigError": { "message": "設定にエラーがあります" },
+  "popupStateUnsupportedUi": { "message": "未対応の GitHub UI" },
+  "popupStateReady": { "message": "有効" },
+  "popupStateError": { "message": "エラー" },
+  "popupPullRequest": {
+    "message": "$repo$ #$number$",
+    "placeholders": { "repo": { "content": "$1" }, "number": { "content": "$2" } }
+  },
+  "popupConfigLabel": { "message": "設定" },
+  "popupConfigBase": {
+    "message": "$path$（base 側）",
+    "placeholders": { "path": { "content": "$1" } }
+  },
+  "popupConfigHead": {
+    "message": "$path$（head 側でプレビュー中）",
+    "placeholders": { "path": { "content": "$1" } }
+  },
+  "popupRulesLabel": { "message": "ルール" },
+  "popupFilesLabel": { "message": "解析したファイル" },
+  "popupFilesWithFoldsLabel": { "message": "折りたたみのあるファイル" },
+  "popupLinesHiddenLabel": { "message": "非表示の行" },
+  "popupMessagesLabel": { "message": "メッセージ" },
+  "popupHidingOn": { "message": "非表示: ON" },
+  "popupHidingOff": { "message": "非表示: OFF" },
+  "popupHeadPreviewStart": { "message": "head 側の設定でプレビュー" },
+  "popupHeadPreviewStop": { "message": "head 側の設定でのプレビューを終了" },
+  "popupHeadPreviewActive": { "message": "head 側の設定でプレビュー中です。この設定は PR の作成者が変更できます。" },
+  "popupActionFailed": {
+    "message": "設定を変更できませんでした: $error$",
+    "placeholders": { "error": { "content": "$1" } }
+  },
+  "popupOptions": { "message": "オプション" },
+  "optionsTitle": { "message": "go-tebanare のオプション" },
+  "optionsExcludedLabel": { "message": "対象外のリポジトリ" },
+  "optionsExcludedHelp": { "message": "1 行に 1 つ: owner/name、owner/*、またはすべてのリポジトリを表す *。大文字と小文字は区別しません。" },
+  "optionsDebugLabel": { "message": "デバッグモード" },
+  "optionsDebugHelp": { "message": "隠す代わりに対象のコードを枠で示し、ホバーでマッチしたルールを表示します。" },
+  "optionsSave": { "message": "保存" },
+  "optionsSaved": { "message": "保存しました。" },
+  "optionsSaveFailed": {
+    "message": "保存できませんでした: $error$",
+    "placeholders": { "error": { "content": "$1" } }
+  },
+  "optionsNotSaved": { "message": "保存していません。次の行を直してください。各行は owner/name、owner/*、* のいずれかで指定してください。" },
+  "optionsInvalidLine": {
+    "message": "$line$ 行目: $text$",
+    "placeholders": { "line": { "content": "$1" }, "text": { "content": "$2" } }
+  },
+  "optionsLoadFailed": {
+    "message": "保存済みのオプションを読み込めませんでした: $error$",
+    "placeholders": { "error": { "content": "$1" } }
+  },
+  "pageLang": { "message": "ja" }
+}
