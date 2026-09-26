@@ -1,0 +1,60 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 3,
+      "end": 6,
+      "hits": [
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) Name",
+          "preset": "getter"
+        },
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) Email",
+          "preset": "getter"
+        },
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) Phone",
+          "preset": "getter"
+        }
+      ]
+    },
+    {
+      "start": 10,
+      "end": 10,
+      "hits": [
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) Age",
+          "preset": "getter"
+        }
+      ]
+    },
+    {
+      "start": 16,
+      "end": 16,
+      "hits": [
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) ID",
+          "preset": "getter"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

@@ -1,0 +1,15 @@
+{
+  "old": [],
+  "new": [],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "skipped",
+      "message": "new side skipped (parse-error): expected ';', found 'EOF'",
+      "side": "new",
+      "line": 6,
+      "column": 17
+    }
+  ],
+  "skipped": "parse-error"
+}

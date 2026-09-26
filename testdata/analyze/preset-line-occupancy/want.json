@@ -1,0 +1,53 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 8,
+      "end": 8,
+      "hits": [
+        {
+          "ruleId": "noop",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Store) Close",
+          "preset": "noop"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "line-shared",
+      "message": "rule \"getter\" matched func (*Store) Name; line 4 also holds other code, so it stays visible",
+      "side": "new",
+      "ruleId": "getter",
+      "line": 4
+    },
+    {
+      "severity": "info",
+      "code": "line-shared",
+      "message": "rule \"noop\" matched func (*Store) Flush; line 6 also holds other code, so it stays visible",
+      "side": "new",
+      "ruleId": "noop",
+      "line": 6
+    },
+    {
+      "severity": "info",
+      "code": "line-shared",
+      "message": "rule \"noop\" matched func (*Store) Reset; line 6 also holds other code, so it stays visible",
+      "side": "new",
+      "ruleId": "noop",
+      "line": 6
+    },
+    {
+      "severity": "info",
+      "code": "line-shared",
+      "message": "rule \"iferr\" matched if err != nil { return err }; line 12 also holds other code, so it stays visible",
+      "side": "new",
+      "ruleId": "iferr",
+      "line": 12
+    }
+  ],
+  "skipped": ""
+}
