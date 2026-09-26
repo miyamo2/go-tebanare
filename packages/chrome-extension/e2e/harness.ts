@@ -98,6 +98,10 @@ const LAUNCH_ATTEMPTS = 3;
  * Playwright attaches to new targets, and Playwright then never reports
  * it. launch starts the browser again with a new profile when no worker
  * shows up within 10 s.
+ *
+ * Chromium picks the UI locale, and so the extension's strings, from the
+ * environment. LANGUAGE=en pins it to English, so the tests pass on
+ * machines with another locale as well.
  */
 async function launch(headless: boolean): Promise<Launched> {
   for (let attempt = 1; ; attempt++) {
@@ -105,6 +109,7 @@ async function launch(headless: boolean): Promise<Launched> {
     const context = await chromium.launchPersistentContext(profile, {
       channel: 'chromium',
       headless,
+      env: { ...process.env, LANGUAGE: 'en' },
       args: [`--disable-extensions-except=${distDir}`, `--load-extension=${distDir}`],
     });
     const worker =
