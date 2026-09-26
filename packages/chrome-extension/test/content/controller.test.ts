@@ -21,7 +21,7 @@ describe('pipeline', () => {
     await h.settle();
     expect(hiddenRows(store!)).toEqual(['+26', '+27', '+28', '+29']);
     expect(store!.querySelectorAll('[data-gotebanare-fold]')).toHaveLength(1);
-    expect(store!.querySelector('[data-gotebanare-badge]')?.textContent).toContain('1 fold / 4 lines hidden');
+    expect(store!.querySelector('[data-gotebanare-badge]')?.getAttribute('aria-label')).toBe('Show the 4 lines that gotebanare hid in this file');
     expect(h.fetcher.calls).toEqual(['base:.gotebanare.yml', 'base:.gotebanare.yaml', 'base:store/store.go', 'head:store/store.go']);
     expect(h.bg.types()).toEqual(['get-tab-state', 'compile', 'lookup', 'analyze store/store.go']);
     expect(h.bg.requests[0]).toEqual({ type: 'get-tab-state', pr: PR_KEY });
