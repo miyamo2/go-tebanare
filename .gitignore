@@ -111,3 +111,17 @@ dist
 
 # TernJS port file
 .tern-port
+
+# Go
+/bin/
+*.test
+*.out
+coverage.txt
+
+# Build outputs
+*.wasm
+packages/chrome-extension/dist.zip
+
+# Playwright
+test-results/
+playwright-report/
