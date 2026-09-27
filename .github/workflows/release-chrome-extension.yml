@@ -1,10 +1,11 @@
 name: release-chrome-extension
 
 # Runs ci.yml on the tag packages/chrome-extension/vX.Y.Z and attaches its
-# dist.zip to the GitHub release of that tag. tag-chrome-extension.yml
-# pushes the tag when a push to main raises the version in
-# packages/chrome-extension/package.json. A tag pushed by hand starts this
-# workflow too.
+# dist.zip to the GitHub release of that tag. A prerelease version such as
+# X.Y.Z-rc.1 gets a GitHub prerelease and skips the Chrome Web Store.
+# tag-chrome-extension.yml pushes the tag when a push to main raises the
+# version in packages/chrome-extension/package.json. A tag pushed by hand
+# starts this workflow too.
 on:
   push:
     tags: ["packages/chrome-extension/v*"]
@@ -28,7 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.check.outputs.version }}
-      previous: ${{ steps.check.outputs.previous }}
+      prerelease: ${{ steps.check.outputs.prerelease }}
+      notes-start: ${{ steps.check.outputs.notes-start }}
     steps:
       # All tags and origin/main, for the checks below.
       - uses: actions/checkout@v4
@@ -54,21 +56,24 @@ jobs:
             echo "::error::tag $GITHUB_REF_NAME does not match packages/chrome-extension/package.json version $want"
             exit 1
           fi
-          # tag-chrome-extension.yml commits this version to manifest.json
-          # before tagging; a tag pushed by hand needs the same commit.
+          # The same rules as tag-chrome-extension.yml, for a tag pushed by
+          # hand: a plain version or a prerelease such as -rc.1, higher than
+          # every other release. The script ignores the tag's own version.
+          # Tags hold no whitespace, so the list splits into one argument each.
+          # shellcheck disable=SC2046
+          plan="$(node packages/chrome-extension/scripts/release-version.mjs \
+            $(git tag --list "$TAG_PREFIX*" | sed "s|^$TAG_PREFIX||"))"
+          echo "$plan"
+          # tag-chrome-extension.yml commits this version, without a
+          # prerelease suffix, to manifest.json before tagging; a tag pushed
+          # by hand needs the same commit.
+          want_manifest="$(echo "$plan" | sed -n 's/^manifest-version=//p')"
           manifest="$(jq -r .version packages/chrome-extension/manifest.json)"
-          if [ "$manifest" != "$version" ]; then
-            echo "::error::packages/chrome-extension/manifest.json has version $manifest, want $version"
+          if [ "$manifest" != "$want_manifest" ]; then
+            echo "::error::packages/chrome-extension/manifest.json has version $manifest, want $want_manifest"
             exit 1
           fi
-          # The same rules as tag-chrome-extension.yml, for a tag pushed by
-          # hand: a plain version, higher than every other release.
-          previous="$(git tag --list "$TAG_PREFIX*" \
-            | sed "s|^$TAG_PREFIX||" | { grep -E '^[0-9]+(\.[0-9]+)*$' || true; } \
-            | { grep -vxF "$version" || true; } | sort -V | tail -n 1)"
-          node packages/chrome-extension/scripts/release-version.mjs ${previous:+--previous "$previous"} > /dev/null
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "previous=$previous" >> "$GITHUB_OUTPUT"
+          echo "$plan" >> "$GITHUB_OUTPUT"
 
   # The release ships the dist.zip this CI run built, and only after every
   # CI job passes.
@@ -83,7 +88,8 @@ jobs:
       contents: write
     env:
       VERSION: ${{ needs.version.outputs.version }}
-      PREVIOUS: ${{ needs.version.outputs.previous }}
+      PRERELEASE: ${{ needs.version.outputs.prerelease }}
+      NOTES_START: ${{ needs.version.outputs.notes-start }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -92,7 +98,8 @@ jobs:
       - name: Check the package
         working-directory: ${{ runner.temp }}/chrome-extension
         run: |
-          got="$(unzip -p dist.zip manifest.json | jq -r .version)"
+          # build.mjs moves a prerelease suffix into version_name.
+          got="$(unzip -p dist.zip manifest.json | jq -r '.version_name // .version')"
           if [ "$got" != "$VERSION" ]; then
             echo "::error::dist.zip has manifest version $got, want $VERSION"
             exit 1
@@ -124,13 +131,18 @@ jobs:
             exit 0
           fi
           # --generate-notes starts at the latest release of any package;
-          # start it at the previous Chrome extension tag instead.
+          # start it at the previous Chrome extension tag instead: any
+          # earlier release for a prerelease, the previous plain release
+          # otherwise. A prerelease is marked so and never becomes latest.
+          prerelease=()
+          if [ "$PRERELEASE" = true ]; then prerelease=(--prerelease --latest=false); fi
           gh release create "$GITHUB_REF_NAME" ./* \
             --repo "$GITHUB_REPOSITORY" \
             --verify-tag \
             --title "Chrome extension v$VERSION" \
             --generate-notes \
-            ${PREVIOUS:+--notes-start-tag "$TAG_PREFIX$PREVIOUS"}
+            "${prerelease[@]}" \
+            ${NOTES_START:+--notes-start-tag "$TAG_PREFIX$NOTES_START"}
       - uses: actions/upload-artifact@v4
         with:
           name: release-assets
@@ -138,7 +150,9 @@ jobs:
           if-no-files-found: error
 
   # Uploads the package to the Chrome Web Store and submits it for review;
-  # the store publishes it once the review passes.
+  # the store publishes it once the review passes. A prerelease such as
+  # X.Y.Z-rc.1 skips it: its manifest version X.Y.Z would use up the version
+  # the final release needs, since the store wants a higher one each upload.
   #
   # Disabled until the first upload: the store creates the item from a
   # zip uploaded by hand in the developer dashboard, together with the store
@@ -160,6 +174,7 @@ jobs:
   #
   # publish:
   #   needs: [version, release]
+  #   if: needs.version.outputs.prerelease != 'true'
   #   runs-on: ubuntu-latest
   #   environment: chrome-web-store
   #   steps:
