@@ -167,12 +167,14 @@ describe('pipeline', () => {
 
 describe('loading indicator', () => {
   const loading = () => document.querySelector('[data-gotebanare-banner] .gotebanare-banner-loading') !== null;
+  // The tests below check what the indicator shows, not when; the delay has its own tests.
+  const now = { loadingDelayMs: 0 };
 
   it('shows while the commits are fetched and until every file has its result', async () => {
     const [store] = buildPage(modified());
     for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
     let answer: (ctx: PullRequestContext) => void = () => {};
-    const h = harness({ deps: { fetchContext: () => new Promise((resolve) => (answer = resolve)) } });
+    const h = harness({ deps: { ...now, fetchContext: () => new Promise((resolve) => (answer = resolve)) } });
     h.bg.ranges.set('store/store.go', getter);
     h.fetcher.hold((p) => p === 'store/store.go');
     const started = h.controller.start();
@@ -194,7 +196,7 @@ describe('loading indicator', () => {
   it('keeps the messages when loading ends in an error', async () => {
     buildPage(modified());
     for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
-    const h = harness({ deps: { fetchContext: async () => null } });
+    const h = harness({ deps: { ...now, fetchContext: async () => null } });
     await h.controller.start();
     await h.settle();
     expect(loading()).toBe(false);
@@ -203,15 +205,15 @@ describe('loading indicator', () => {
 
   it('never shows in an excluded repository', async () => {
     buildPage(modified());
-    const h = harness({ options: { excludedRepos: ['octo-org/*'] } });
+    const h = harness({ options: { excludedRepos: ['octo-org/*'] }, deps: now });
     await h.controller.start();
     await h.settle();
     expect(addedMarks()).toBe(0);
   });
 
-  it('hides while hiding is off', async () => {
+  it('hides at once while hiding is off, and waits the delay again when it comes back on', async () => {
     buildPage(modified());
-    const h = harness();
+    const h = harness({ deps: now });
     h.fetcher.hold((p) => p === 'store/store.go');
     await h.controller.start();
     await h.settle();
@@ -219,9 +221,62 @@ describe('loading indicator', () => {
     h.controller.setTabState({ type: 'tab-state', enabled: false, headPreview: false });
     expect(loading()).toBe(false);
     h.controller.setTabState({ type: 'tab-state', enabled: true, headPreview: false });
+    expect(loading()).toBe(false);
+    await h.settle();
     expect(loading()).toBe(true);
     h.fetcher.release();
     await h.settle();
     expect(loading()).toBe(false);
+  });
+});
+
+describe('loading delay', () => {
+  const banner = () => document.querySelector('[data-gotebanare-banner]');
+  const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  it('never shows the indicator when the lines are known within the delay', async () => {
+    const [store] = buildPage(modified());
+    const h = harness();
+    h.bg.ranges.set('store/store.go', getter);
+    const seen: boolean[] = [];
+    const observer = new MutationObserver(() => seen.push(banner() !== null));
+    observer.observe(document.body, { childList: true, subtree: true });
+    await h.controller.start();
+    await h.settle();
+    observer.disconnect();
+    expect(hiddenRows(store!)).toHaveLength(4);
+    expect(seen).not.toContain(true);
+    expect(banner()).toBeNull();
+  });
+
+  it('shows the indicator once loading lasts the delay, across the context fetch and the run', async () => {
+    buildPage(modified());
+    for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
+    let answer: (ctx: PullRequestContext) => void = () => {};
+    const h = harness({ deps: { loadingDelayMs: 200, fetchContext: () => new Promise((resolve) => (answer = resolve)) } });
+    h.bg.ranges.set('store/store.go', getter);
+    h.fetcher.hold((p) => p === 'store/store.go');
+    const started = h.controller.start();
+    await wait(20);
+    answer({ ...PAGE, baseSha: BASE, headSha: HEAD });
+    await started;
+    await h.settle();
+    // 20 ms in the fetch plus the run so far: the delay has not passed.
+    expect(banner()).toBeNull();
+    await wait(250);
+    expect(banner()?.querySelector('.gotebanare-banner-loading')).not.toBeNull();
+    h.fetcher.release();
+    await h.settle();
+    expect(banner()).toBeNull();
+  });
+
+  it('cancels the timer on dispose', async () => {
+    buildPage(modified());
+    const h = harness({ deps: { loadingDelayMs: 20 } });
+    h.fetcher.hold((p) => p === 'store/store.go');
+    await h.controller.start();
+    h.controller.dispose();
+    await wait(40);
+    expect(banner()).toBeNull();
   });
 });

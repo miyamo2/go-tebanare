@@ -11,6 +11,7 @@ import { clearFile } from './apply.js';
 import type { PullRequestContext, PullRequestContextProvider } from './context.js';
 import type { SendFn } from './controller/file.js';
 import { Run } from './controller/run.js';
+import { LOADING_DELAY_MS, LoadingDelay } from './controller/loading.js';
 import { inactiveStatus } from './controller/status.js';
 import { watchMutations, type Changes, type FrameApi, type ObserverCtor } from './controller/watch.js';
 import type { DiffUiVariant } from './dom/variant.js';
@@ -39,6 +40,8 @@ export interface ControllerDeps {
   MutationObserver: ObserverCtor;
   /** Defaults to MAX_FILES_IN_FLIGHT. */
   maxFilesInFlight?: number;
+  /** Defaults to LOADING_DELAY_MS. */
+  loadingDelayMs?: number;
 }
 
 /** clearPage removes every row mark, fold row, badge, and banner of the extension from doc. */
@@ -56,6 +59,7 @@ export class Controller {
   readonly #repo: string;
   readonly #prKey: string;
   readonly #limit: Semaphore;
+  readonly #loading: LoadingDelay;
 
   #disposed = false;
   // The state before the first run, and after the controller stops.
@@ -76,6 +80,11 @@ export class Controller {
     this.#repo = `${page.owner}/${page.repo}`;
     this.#prKey = pullRequestKey(this.#repo, page.number);
     this.#limit = new Semaphore(deps.maxFilesInFlight ?? MAX_FILES_IN_FLIGHT);
+    this.#loading = new LoadingDelay(deps.loadingDelayMs ?? LOADING_DELAY_MS, () => {
+      if (this.#disposed) return;
+      if (this.#run) this.#run.render();
+      else if (this.#unwatch) this.#renderLoading();
+    });
   }
 
   /** start runs the pipeline up to the first scan of the files. It never rejects. */
@@ -153,7 +162,7 @@ export class Controller {
   #renderLoading(): void {
     const { doc } = this.#deps;
     const [anchor = null] = this.#deps.detectVariant(doc)?.fileContainers(doc) ?? [];
-    renderBanner(doc, [], anchor, this.#enabled);
+    renderBanner(doc, [], anchor, this.#loading.visible(this.#enabled));
   }
 
   #resolve(): PullRequestContext | null {
@@ -200,6 +209,7 @@ export class Controller {
         detectVariant: (doc) => this.#deps.detectVariant(doc),
         debug: this.#options.debug,
         enabled: () => this.#enabled,
+        loadingShown: (loading) => this.#loading.visible(loading),
       },
       ctx,
       this.#headPreview ? 'head' : 'base',
@@ -221,6 +231,7 @@ export class Controller {
   }
 
   #stop(): void {
+    this.#loading.stop();
     this.#unwatch?.();
     this.#unwatch = null;
     this.#run?.stop();

@@ -25,7 +25,7 @@ function setup(ctx: PullRequestContext | null = CTX, source: ConfigSource = 'bas
   const fetcher = new FakeFetcher();
   fetcher.set(BASE, '.gotebanare.yml', CONFIG);
   fetcher.set(HEAD, '.gotebanare.yml', CONFIG);
-  const deps = { doc: document, send: bg.send, fetcher, limit: new Semaphore(4), detectVariant, debug: false, enabled: () => true };
+  const deps = { doc: document, send: bg.send, fetcher, limit: new Semaphore(4), detectVariant, debug: false, enabled: () => true, loadingShown: (loading: boolean) => loading };
   return { run: new Run(deps, ctx, source), bg, fetcher };
 }
 
