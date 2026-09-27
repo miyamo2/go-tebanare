@@ -81,7 +81,7 @@ describe('buildErrors', () => {
   it('accepts dist.zip for a prerelease version and refuses build metadata', () => {
     expect(buildErrors({ ...ok, version: '0.2.0-rc.1', zip: true })).toEqual([]);
     expect(buildErrors({ ...ok, version: '0.2.0+build.5', zip: true })).toEqual([
-      'package.json version 0.2.0+build.5 has a suffix other than a prerelease. dist.zip needs a version such as 0.2.0 or 0.2.0-rc.1.',
+      'package.json version 0.2.0+build.5 is not a plain version or a semver prerelease. dist.zip needs a version such as 0.2.0 or 0.2.0-rc.1.',
     ]);
     expect(buildErrors({ ...ok, version: '0.2.0+build.5' })).toEqual([]);
   });
@@ -122,7 +122,7 @@ describe('releaseVersionErrors', () => {
 
   it('refuses build metadata or a version Chrome cannot use', () => {
     expect(releaseVersionErrors('0.1.0', '0.2.0+build.5')).toEqual([
-      'version 0.2.0+build.5 has a suffix other than a prerelease. A release needs a version such as 0.2.0 or 0.2.0-rc.1.',
+      'version 0.2.0+build.5 is not a plain version or a semver prerelease. A release needs a version such as 0.2.0 or 0.2.0-rc.1.',
     ]);
     expect(releaseVersionErrors(undefined, 'v0.2.0')).toEqual(['version "v0.2.0" does not map to a Chrome manifest version.']);
   });

@@ -133,7 +133,7 @@ jobs:
           # --generate-notes starts at the latest release of any package;
           # start it at the previous Chrome extension tag instead: any
           # earlier release for a prerelease, the previous plain release
-          # otherwise. A prerelease is marked so and never becomes latest.
+          # otherwise. gh marks a prerelease as such and never as latest.
           prerelease=()
           if [ "$PRERELEASE" = true ]; then prerelease=(--prerelease --latest=false); fi
           gh release create "$GITHUB_REF_NAME" ./* \

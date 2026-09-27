@@ -72,7 +72,7 @@ export function buildErrors({ version, missingEntries, wasmMissing, zip, allowSt
     for (const src of missingEntries) errors.push(`${src} does not exist. dist.zip needs every entry point.`);
     if (wasmMissing) errors.push('engine.wasm is missing. Run "make wasm" at the repository root before --zip.');
     if (mapped && !parseReleaseVersion(version)) {
-      errors.push(`package.json version ${version} has a suffix other than a prerelease. dist.zip needs a version such as 0.2.0 or 0.2.0-rc.1.`);
+      errors.push(`package.json version ${version} is not a plain version or a semver prerelease. dist.zip needs a version such as 0.2.0 or 0.2.0-rc.1.`);
     }
   } else if (!allowStubs) {
     for (const src of missingEntries) errors.push(`${src} does not exist. Pass --allow-stubs to build an empty stub for it.`);
@@ -149,7 +149,7 @@ export function compareReleaseVersions(a, b) {
 export function releaseVersionErrors(previous, next) {
   if (!parseVersion(next)) return [`version ${JSON.stringify(next)} does not map to a Chrome manifest version.`];
   if (!parseReleaseVersion(next)) {
-    return [`version ${next} has a suffix other than a prerelease. A release needs a version such as 0.2.0 or 0.2.0-rc.1.`];
+    return [`version ${next} is not a plain version or a semver prerelease. A release needs a version such as 0.2.0 or 0.2.0-rc.1.`];
   }
   if (previous !== undefined && compareReleaseVersions(next, previous) <= 0) {
     return [`version ${next} is not higher than the last release ${previous}.`];
@@ -162,8 +162,9 @@ export function releaseVersionErrors(previous, next) {
  * @property {string[]} errors the reasons next cannot be released
  * @property {string} version next
  * @property {string} manifestVersion the version manifest.json must hold
- * @property {boolean} prerelease whether next is a prerelease, which is
- *   marked so on GitHub and not uploaded to the Chrome Web Store
+ * @property {boolean} prerelease whether next is a prerelease; the release
+ *   workflow marks its GitHub release as a prerelease and skips the Chrome
+ *   Web Store
  * @property {string | undefined} previous the highest earlier release
  * @property {string | undefined} notesStart the release the notes start
  *   after: the highest earlier release for a prerelease, and the highest
@@ -171,9 +172,9 @@ export function releaseVersionErrors(previous, next) {
  */
 
 /**
- * releasePlan checks next against the versions of the earlier releases.
- * Entries of released that parseReleaseVersion refuses, or that equal next,
- * are ignored.
+ * releasePlan checks next against the versions of the earlier releases. It
+ * skips entries of released that parseReleaseVersion refuses or that equal
+ * next.
  * @param {string} next
  * @param {readonly string[]} released
  * @returns {ReleasePlan}

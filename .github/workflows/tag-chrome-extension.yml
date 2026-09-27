@@ -81,8 +81,8 @@ jobs:
             echo "::notice::$tag exists; nothing to release"
             exit 0
           fi
-          # Refuses a suffix other than a prerelease such as -rc.1, or a
-          # version not higher than every earlier release. Tags hold no
+          # Accepts a plain version or a semver prerelease such as 0.3.0-rc.1
+          # that is higher than every earlier release. Tags hold no
           # whitespace, so the list splits into one argument each.
           # shellcheck disable=SC2046
           node packages/chrome-extension/scripts/release-version.mjs \

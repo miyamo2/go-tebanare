@@ -6,7 +6,8 @@
 //   node scripts/release-version.mjs [released-version...]
 //
 // Each argument is the version of an earlier release (a tag without its
-// prefix). Arguments that are not release versions are ignored. It prints:
+// prefix). It skips arguments that are not release versions, such as a
+// stray tag. It prints:
 //
 //   version=0.3.0-rc.1        the package.json version
 //   manifest-version=0.3.0    the version manifest.json must hold
@@ -22,11 +23,6 @@ import { releasePlan } from './build-lib.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const released = process.argv.slice(2);
-if (released.some((v) => v.startsWith('-'))) {
-  console.error('usage: node scripts/release-version.mjs [released-version...]');
-  process.exit(2);
-}
-
 const version = String(JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version);
 const plan = releasePlan(version, released);
 if (plan.errors.length > 0) {
