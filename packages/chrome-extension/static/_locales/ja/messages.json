@@ -1,6 +1,6 @@
 {
   "extName": { "message": "go-tebanare" },
-  "extDescription": { "message": "GitHub の PR の diff で、チームがレビュー不要と合意した Go のコード（getter、no-op メソッド、if err != nil の定型的な返却など）を折りたたみ、コードレビューの手離れを良くします。" },
+  "extDescription": { "message": "GitHub の PR の diff で、チームがレビュー不要と合意した Go のコードを行単位で折りたたみ、コードレビューの手離れを良くします。" },
   "commandToggle": { "message": "非表示の ON/OFF" },
   "countLinesOne": { "message": "1 行" },
   "countLines": {

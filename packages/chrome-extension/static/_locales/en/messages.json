@@ -1,6 +1,6 @@
 {
   "extName": { "message": "go-tebanare" },
-  "extDescription": { "message": "Folds reviewer-agreed Go code (getters, no-op methods, if err != nil) in GitHub PR diffs, taking review off your hands." },
+  "extDescription": { "message": "Folds reviewer-agreed Go code line by line in GitHub PR diffs, taking review off your hands." },
   "commandToggle": { "message": "Turn hiding on or off" },
   "countLinesOne": { "message": "1 line" },
   "countLines": {
