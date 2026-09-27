@@ -110,6 +110,12 @@ presets:
 > [!NOTE]
 > The extension reads the configuration from the base branch of the pull request. A change to `.gotebanare.yml` applies after you merge it. Until then, you can preview the head branch configuration from the popup.
 
+For completion and validation in your editor, point it at the [JSON Schema](schema/gotebanare.schema.json) of the configuration, for example with a first-line comment for [yaml-language-server](https://github.com/redhat-developer/yaml-language-server):
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miyamo2/go-tebanare/main/schema/gotebanare.schema.json
+```
+
 With an invalid configuration, go-tebanare hides nothing and shows each error with its position in a banner above the diff. The [configuration reference](docs/configuration.md) covers the top-level keys and validation, and [presets](docs/presets.md) covers the criteria and settings of each preset.
 
 ## Usage

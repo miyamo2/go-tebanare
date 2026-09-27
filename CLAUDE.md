@@ -21,6 +21,8 @@ It is a polyglot monorepo: a Go module at the repository root plus a bun workspa
 - `make fuzz-vectors` — dumps the Go fuzz cache into test vectors under `$TMPDIR/gotebanare-fuzz-vectors`
 - `make parity` — analyzes the Go standard library natively and through `engine.wasm` and compares results; `PARITY_FLAGS=-pairs` pairs declarations across files (needs `engine.wasm`, so run `make wasm` first)
 
+- `make schema` — regenerates `schema/gotebanare.schema.json` (JSON Schema of `.gotebanare.yml`) from the preset declarations; `make schema-check` checks it is up to date and agrees with `tebanare.Compile`. The generator (`internal/presetdoc/schema*.go`) is not part of the product and builds only with `-tags schemagen`, so plain `go test ./...` skips it. Run `make schema` after changing preset settings or top-level config keys.
+
 ### WebAssembly engine
 
 - `make wasm` — TinyGo build of `packages/engine/wasm/engine.wasm`. Run this after any change to Go code under `internal/`, `cmd/gotebanare-wasm`, or the root package — nothing rebuilds it automatically.
@@ -95,4 +97,4 @@ Root `package.json` defines the bun workspace over `packages/*`; `bun.lock` pins
 
 ## CI
 
-`.github/workflows/ci.yml` runs five jobs on every push/PR to `main`: `go` (fmt-check, vet, lint, race tests, fuzz-smoke, uploads fuzz vectors), `wasm` (builds `engine.wasm` and `wasm-wasip1`, uploads `engine.wasm`), `fuzz-wasm` (replays fuzz vectors against the built wasm), `parity` (native vs. wasm on the Go stdlib, twice — once with `-pairs`), `ts` (typecheck/lint/test, builds and uploads the extension zip), `e2e` (Playwright against the built extension). Bumping `GO_VERSION` can break `TestCorpusSnapshot` — the comment in the workflow notes it needs `internal/presets/testdata/corpus_snapshot.json` regenerated with `-update`.
+`.github/workflows/ci.yml` runs five jobs on every push/PR to `main`: `go` (fmt-check, vet, lint, race tests, schema-check, fuzz-smoke, uploads fuzz vectors), `wasm` (builds `engine.wasm` and `wasm-wasip1`, uploads `engine.wasm`), `fuzz-wasm` (replays fuzz vectors against the built wasm), `parity` (native vs. wasm on the Go stdlib, twice — once with `-pairs`), `ts` (typecheck/lint/test, builds and uploads the extension zip), `e2e` (Playwright against the built extension). Bumping `GO_VERSION` can break `TestCorpusSnapshot` — the comment in the workflow notes it needs `internal/presets/testdata/corpus_snapshot.json` regenerated with `-update`.

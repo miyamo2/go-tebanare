@@ -23,6 +23,29 @@ presets:                    # built-in rules, enabled by name
       names: [err, "*Err"]
 ```
 
+## Editor support
+
+[`schema/gotebanare.schema.json`](../schema/gotebanare.schema.json) is a JSON Schema (draft-07) of the configuration, for completion, hover documentation, and validation in editors and linters. Editors that use [yaml-language-server](https://github.com/redhat-developer/yaml-language-server), such as VS Code with the YAML extension, pick it up from a comment on the first line:
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miyamo2/go-tebanare/main/schema/gotebanare.schema.json
+version: 1
+presets:
+  - getter
+```
+
+To apply it without the comment, map the file names to the schema in the editor settings, for example in VS Code:
+
+```json
+{
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/miyamo2/go-tebanare/main/schema/gotebanare.schema.json": [".gotebanare.yml", ".gotebanare.yaml"]
+  }
+}
+```
+
+The schema accepts every valid configuration, but go-tebanare remains the authority: it also reports errors that the schema cannot express, such as a preset listed twice, an invalid glob, a duplicate key, or a merge key (`<<`).
+
 ## Keys
 
 ### Top-level keys

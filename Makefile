@@ -8,7 +8,7 @@ FUZZTIME ?= 10s
 # short run: FuzzCompile stops executing inputs after a few seconds.
 FUZZMINIMIZETIME ?= 1s
 
-.PHONY: all test vet lint fmt-check fuzz-smoke
+.PHONY: all test vet lint fmt-check fuzz-smoke schema schema-check
 
 all: vet test
 
@@ -20,6 +20,20 @@ vet:
 
 lint:
 	golangci-lint run ./...
+
+# The JSON Schema generator is not part of the product, so it builds only
+# with the schemagen tag.
+SCHEMA_TAGS := schemagen
+
+# Regenerates schema/gotebanare.schema.json from the preset declarations.
+schema:
+	$(GO) test -tags $(SCHEMA_TAGS) ./internal/presetdoc -run '^TestSchemaUpToDate$$' -update
+
+# Checks that the schema is up to date and agrees with the configuration
+# validation.
+schema-check:
+	$(GO) vet -tags $(SCHEMA_TAGS) ./internal/presetdoc
+	$(GO) test -tags $(SCHEMA_TAGS) ./internal/presetdoc
 
 # Files under testdata are skipped: some hold syntax errors on purpose.
 fmt-check:

@@ -1,0 +1,300 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/miyamo2/go-tebanare/main/schema/gotebanare.schema.json",
+  "title": "go-tebanare configuration",
+  "description": "Configuration of go-tebanare, read from `.gotebanare.yml` or `.gotebanare.yaml` at the repository root. See https://github.com/miyamo2/go-tebanare/blob/main/docs/configuration.md.",
+  "markdownDescription": "Configuration of go-tebanare, read from `.gotebanare.yml` or `.gotebanare.yaml` at the repository root. See https://github.com/miyamo2/go-tebanare/blob/main/docs/configuration.md.",
+  "type": "object",
+  "required": [
+    "version"
+  ],
+  "properties": {
+    "version": {
+      "description": "Version of the configuration format. Must be `1`.",
+      "markdownDescription": "Version of the configuration format. Must be `1`.",
+      "type": "integer",
+      "const": 1
+    },
+    "files": {
+      "description": "The files to analyze.",
+      "markdownDescription": "The files to analyze.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "include": {
+          "description": "Files to analyze, as doublestar globs relative to the repository root. The default, also used for an empty list, is `[\"**/*.go\"]`.",
+          "markdownDescription": "Files to analyze, as doublestar globs relative to the repository root. The default, also used for an empty list, is `[\"**/*.go\"]`.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclude": {
+          "description": "Files to skip even when `include` matches them.",
+          "markdownDescription": "Files to skip even when `include` matches them.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "presets": {
+      "description": "Built-in presets to enable. Listing a preset twice is an error.",
+      "markdownDescription": "Built-in presets to enable. Listing a preset twice is an error.",
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "description": "A preset name, or `name: settings` to change its settings.",
+        "markdownDescription": "A preset name, or `name: settings` to change its settings.",
+        "anyOf": [
+          {
+            "description": "A preset with its default settings.",
+            "markdownDescription": "A preset with its default settings.",
+            "type": "string",
+            "enum": [
+              "getter",
+              "iferr",
+              "noop"
+            ]
+          },
+          {
+            "description": "A preset name as the only key, with its settings as the value.",
+            "markdownDescription": "A preset name as the only key, with its settings as the value.",
+            "type": "object",
+            "properties": {
+              "getter": {
+                "$ref": "#/definitions/getterSettings"
+              },
+              "iferr": {
+                "$ref": "#/definitions/iferrSettings"
+              },
+              "noop": {
+                "$ref": "#/definitions/noopSettings"
+              }
+            },
+            "additionalProperties": false,
+            "minProperties": 1,
+            "maxProperties": 1
+          }
+        ]
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "getterSettings": {
+      "description": "Settings of the `getter` preset. Methods that only return a field of the receiver. Settings left out keep their defaults. See https://github.com/miyamo2/go-tebanare/blob/main/docs/presets.md#getter.",
+      "markdownDescription": "Settings of the `getter` preset. Methods that only return a field of the receiver. Settings left out keep their defaults. See https://github.com/miyamo2/go-tebanare/blob/main/docs/presets.md#getter.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "paths": {
+          "description": "Globs that limit the files this preset applies to, on top of `files.include` and `files.exclude`. Default: none.",
+          "markdownDescription": "Globs that limit the files this preset applies to, on top of `files.include` and `files.exclude`. Default: none.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclude_paths": {
+          "description": "Globs of files this preset skips, on top of `files.exclude`. Default: none.",
+          "markdownDescription": "Globs of files this preset skips, on top of `files.exclude`. Default: none.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "include_doc": {
+          "description": "Hide the doc comment together with the function. Default: true.",
+          "markdownDescription": "Hide the doc comment together with the function. Default: true.",
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": true
+        },
+        "max_depth": {
+          "description": "The maximum number of fields in the returned chain: with 1, `u.name` matches and `u.cfg.timeout` does not. Default: unlimited.",
+          "markdownDescription": "The maximum number of fields in the returned chain: with 1, `u.name` matches and `u.cfg.timeout` does not. Default: unlimited.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 2147483647
+        }
+      },
+      "additionalProperties": false
+    },
+    "iferrSettings": {
+      "description": "Settings of the `iferr` preset. `if err != nil` blocks that return the error unchanged. Settings left out keep their defaults. See https://github.com/miyamo2/go-tebanare/blob/main/docs/presets.md#iferr.",
+      "markdownDescription": "Settings of the `iferr` preset. `if err != nil` blocks that return the error unchanged. Settings left out keep their defaults. See https://github.com/miyamo2/go-tebanare/blob/main/docs/presets.md#iferr.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "paths": {
+          "description": "Globs that limit the files this preset applies to, on top of `files.include` and `files.exclude`. Default: none.",
+          "markdownDescription": "Globs that limit the files this preset applies to, on top of `files.include` and `files.exclude`. Default: none.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclude_paths": {
+          "description": "Globs of files this preset skips, on top of `files.exclude`. Default: none.",
+          "markdownDescription": "Globs of files this preset skips, on top of `files.exclude`. Default: none.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "names": {
+          "description": "Names of error variables, as globs matched against the whole name, where `*` matches any run of characters and `?` matches one. Default: [err].",
+          "markdownDescription": "Names of error variables, as globs matched against the whole name, where `*` matches any run of characters and `?` matches one. Default: [err].",
+          "type": [
+            "array",
+            "null"
+          ],
+          "default": [
+            "err"
+          ],
+          "items": {
+            "type": "string",
+            "pattern": "^[\\p{L}\\p{Nd}_*?]+$"
+          },
+          "minItems": 1
+        },
+        "allow_comments": {
+          "description": "Hide the statement even when a comment is on the hidden lines. Default: false.",
+          "markdownDescription": "Hide the statement even when a comment is on the hidden lines. Default: false.",
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": false
+        },
+        "init": {
+          "description": "How to treat if statements with an init statement: `exclude` keeps them visible; `fold-body` hides the lines from `return` to the closing brace and keeps the header line visible. Default: exclude.",
+          "markdownDescription": "How to treat if statements with an init statement: `exclude` keeps them visible; `fold-body` hides the lines from `return` to the closing brace and keeps the header line visible. Default: exclude.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "exclude",
+            "fold-body",
+            null
+          ],
+          "default": "exclude"
+        },
+        "allow_bare_return": {
+          "description": "Also hide a bare return. Default: false.",
+          "markdownDescription": "Also hide a bare return. Default: false.",
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": false
+        },
+        "allow_calls_in_results": {
+          "description": "Allow function calls in the results before the error; function literals and channel receives still do not match. Default: false.",
+          "markdownDescription": "Allow function calls in the results before the error; function literals and channel receives still do not match. Default: false.",
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "noopSettings": {
+      "description": "Settings of the `noop` preset. Methods that take no parameters, return nothing, and have an empty body. Settings left out keep their defaults. See https://github.com/miyamo2/go-tebanare/blob/main/docs/presets.md#noop.",
+      "markdownDescription": "Settings of the `noop` preset. Methods that take no parameters, return nothing, and have an empty body. Settings left out keep their defaults. See https://github.com/miyamo2/go-tebanare/blob/main/docs/presets.md#noop.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "paths": {
+          "description": "Globs that limit the files this preset applies to, on top of `files.include` and `files.exclude`. Default: none.",
+          "markdownDescription": "Globs that limit the files this preset applies to, on top of `files.include` and `files.exclude`. Default: none.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclude_paths": {
+          "description": "Globs of files this preset skips, on top of `files.exclude`. Default: none.",
+          "markdownDescription": "Globs of files this preset skips, on top of `files.exclude`. Default: none.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "include_doc": {
+          "description": "Hide the doc comment together with the function. Default: true.",
+          "markdownDescription": "Hide the doc comment together with the function. Default: true.",
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": true
+        },
+        "allow_comments": {
+          "description": "Hide the method even when a comment other than the doc comment is on its lines. Default: true.",
+          "markdownDescription": "Hide the method even when a comment other than the doc comment is on its lines. Default: true.",
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": true
+        },
+        "include_functions": {
+          "description": "Also hide empty functions that are not methods, such as `func noop() {}`. Default: false.",
+          "markdownDescription": "Also hide empty functions that are not methods, such as `func noop() {}`. Default: false.",
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
