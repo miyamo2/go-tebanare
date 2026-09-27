@@ -35,6 +35,7 @@ The release workflow holds a commented-out `publish` job that uploads the zip wi
 | `bun run --filter @go-tebanare/chrome-extension lint` | ESLint over the package |
 | `bun run --filter @go-tebanare/chrome-extension test` | the unit tests in `test/` (vitest, happy-dom for DOM tests) |
 | `bun run --filter @go-tebanare/chrome-extension e2e` | the end-to-end tests in `e2e/` (Playwright) |
+| `make e2e-live` (at the repository root) | the live end-to-end tests in `e2e-live/`, on github.com |
 
 ## End-to-end tests
 
@@ -80,3 +81,22 @@ The popup request is sent from `popup.html` opened in a tab. The command is fire
 ### Synthetic fixtures
 
 The page and the sources are synthetic. `pull-7-files.html` follows the same model of GitHub's classic (server-rendered) diff markup as `test/fixtures/classic-*.html`, and its rows are the `git diff` of the two `store.go` files. That markup is confirmed against a saved "Files changed" page; the page and raw files are the regression fixture and are not regenerated from a live one. The Go sources live under `testdata/` so that the Go tool skips them.
+
+## Live end-to-end tests
+
+`e2e-live/` runs the built extension on a real pull request, signed in to github.com: the "Files changed" tab of [miyamo2/go-tebanare-sample#1](https://github.com/miyamo2/go-tebanare-sample/pull/1/changes), a reference pull request kept open for this. It checks the page status, the fold rows, and which rows are hidden or visible in each file, so it catches changes of GitHub's React diff markup that the synthetic fixtures cannot.
+
+| Variable | Meaning |
+|---|---|
+| `E2E_GH_USERNAME`, `E2E_GH_PASSWORD` | the account the tests sign in with (required) |
+| `E2E_GH_TOTP_SECRET` | the base32 secret of the account's authenticator app, when it uses two-factor authentication |
+| `E2E_GH_AUTH_STATE` | where the signed-in session is kept; `e2e-live/.auth/github.json` by default |
+
+To run them locally:
+
+1. Copy `.env.e2e-live.example` to `.env.e2e-live` and fill it in. Both `.env.e2e-live` and `e2e-live/.auth/` are ignored by git.
+2. Run `make e2e-live` at the repository root. It runs `make wasm` when `engine.wasm` is missing, then `scripts/e2e-live.sh`, which reads `.env.e2e-live` and runs Playwright with `playwright.live.config.ts`. Pass Playwright flags with `E2E_LIVE_FLAGS`, for example `make e2e-live E2E_LIVE_FLAGS=--headed`, or run `bun run --cwd packages/chrome-extension e2e:live --headed`.
+
+`e2e-live/global-setup.ts` builds `dist/` and signs in once in a separate browser, then each test copies the session cookies into its own profile. A saved session that GitHub still accepts is reused, so repeated local runs do not sign in again. GitHub asks an account without two-factor authentication to verify a new device with an e-mailed code: with `--headed`, enter the code in the browser within 5 minutes; without it, the setup stops and says so.
+
+On CI, `.github/workflows/e2e-live.yml` runs the tests on pull requests to `main` from this repository, on pushes to `main`, daily, and by hand, with the repository secrets of the same names. Pull requests from forks and Dependabot get no secrets and skip it. A CI runner is a new device on every run, so an account without two-factor authentication may be stopped by device verification there; turning on authenticator-app two-factor authentication for the account and adding `E2E_GH_TOTP_SECRET` avoids that. The workflow uploads no traces or screenshots, since they would carry the session.

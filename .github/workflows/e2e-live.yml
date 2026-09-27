@@ -1,0 +1,66 @@
+name: e2e-live
+
+# Runs the built extension on real pull requests on github.com
+# (packages/chrome-extension/e2e-live), signed in as the account in the
+# secrets E2E_GH_USERNAME and E2E_GH_PASSWORD (and E2E_GH_TOTP_SECRET when
+# the account uses an authenticator app). GitHub changes its diff markup
+# without notice, so this also runs daily, not only on changes.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One sign-in at a time for the account.
+concurrency:
+  group: e2e-live
+  cancel-in-progress: false
+
+# Keep these in step with ci.yml.
+env:
+  GO_VERSION: "1.26.8"
+  TINYGO_VERSION: "0.42.0"
+  NODE_VERSION: "22"
+
+jobs:
+  e2e-live:
+    # Pull requests from forks and Dependabot get no secrets.
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Install TinyGo
+        run: |
+          wget -q "https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VERSION}/tinygo_${TINYGO_VERSION}_amd64.deb"
+          sudo dpkg -i "tinygo_${TINYGO_VERSION}_amd64.deb"
+          tinygo version
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: make wasm
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd packages/chrome-extension playwright install --with-deps chromium
+      # No traces, screenshots, or the session file are uploaded: they
+      # would carry the account's session cookies or name.
+      - name: Run the live end-to-end tests
+        env:
+          E2E_GH_USERNAME: ${{ secrets.E2E_GH_USERNAME }}
+          E2E_GH_PASSWORD: ${{ secrets.E2E_GH_PASSWORD }}
+          E2E_GH_TOTP_SECRET: ${{ secrets.E2E_GH_TOTP_SECRET }}
+          E2E_GH_AUTH_STATE: ${{ runner.temp }}/e2e-live/github.json
+        run: bun run --cwd packages/chrome-extension e2e:live

@@ -95,3 +95,11 @@ parity: $(ENGINE_WASM)
 	$(GO) run ./internal/tools/corpusdump -config testdata/parity/config.yml -root "$$root" $(PARITY_FLAGS) > $(PARITY_JSON) && \
 	GOTEBANARE_PARITY=$(PARITY_JSON) GOTEBANARE_PARITY_ROOT="$$root" \
 		bun run --cwd packages/engine vitest run test/parity.test.ts
+
+.PHONY: e2e-live
+
+# Runs the extension on real pull requests on github.com, signed in as
+# E2E_GH_USERNAME (see packages/chrome-extension/.env.e2e-live.example).
+# E2E_LIVE_FLAGS=--headed shows the browser.
+e2e-live: $(ENGINE_WASM)
+	bun run --cwd packages/chrome-extension e2e:live $(E2E_LIVE_FLAGS)

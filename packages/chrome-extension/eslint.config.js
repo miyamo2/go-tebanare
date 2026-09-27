@@ -21,7 +21,7 @@ export default defineConfig(
   },
   {
     // Test fakes stand in for Chrome APIs with empty functions on purpose.
-    files: ['test/**/*.ts', 'e2e/**/*.ts'],
+    files: ['test/**/*.ts', 'e2e/**/*.ts', 'e2e-live/**/*.ts'],
     rules: { '@typescript-eslint/no-empty-function': 'off' },
   },
   {

@@ -5,5 +5,5 @@
     "allowJs": true,
     "checkJs": true
   },
-  "include": [".", "../scripts", "../e2e", "../vitest.config.ts", "../playwright.config.ts"]
+  "include": [".", "../scripts", "../e2e", "../e2e-live", "../vitest.config.ts", "../playwright.config.ts", "../playwright.live.config.ts"]
 }
