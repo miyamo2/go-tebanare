@@ -21,7 +21,7 @@ All three returned the same results.
 ## Decision
 
 Build `cmd/gotebanare-wasm` with TinyGo 0.42 for a custom target that
-inherits `wasm-unknown`, with the precise GC, no scheduler, and an 8 MB
+inherits `wasm-unknown`, with the conservative GC, no scheduler, and an 8 MB
 stack (`build/tinygo/engine.json`). Export the API with `//go:wasmexport`
 and pass bytes through linear memory. The tests use the standard Go
 toolchain. CI runs the same corpus through both builds and
@@ -45,6 +45,12 @@ requires identical results.
 - A stack overflow corrupts memory in TinyGo, so the analyzer limits bracket
   nesting (200), `else if` chains (1,000), and syntax tree depth (1,500)
   before it walks a file.
+- The build first used the precise GC. With it, compiling
+  `!!!!000aaaa: 0\n--- 0` as the first call on a new instance trapped in
+  yaml.v3's `panic("read handler must be set")`, although the parser sets
+  that handler before it reads. The GC most likely reclaimed memory the
+  parser still used. The conservative GC and the leaking GC compile the
+  same input without a trap.
 - The standard Go toolchain can build the same exports for `GOOS=wasip1`
   with `-buildmode=c-shared`; CI keeps that build compiling as a fallback.
 - Measured on this repository: the engine is 0.84 MB (0.36 MB gzip), a

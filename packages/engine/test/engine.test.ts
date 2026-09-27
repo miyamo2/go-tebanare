@@ -87,6 +87,19 @@ describe.skipIf(!haveWasm)('engine', () => {
     expect(res.new).toHaveLength(1);
   });
 
+  // With TinyGo's precise GC, this config trapped inside yaml.v3 when it
+  // was the first call on a new instance (see docs/adr/0001).
+  it('compiles a config as the first call on a new instance', async () => {
+    const reasons: RecreateReason[] = [];
+    engine = await loadEngine({ onRecreate: (r) => reasons.push(r) });
+    await engine.compile('{').catch(() => undefined);
+    expect(reasons).toEqual(['crash']);
+    const err = await engine.compile('!!!!000aaaa: 0\n--- 0').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ConfigError);
+    expect((err as ConfigError).diagnostics[0]?.code).toBe('config-invalid');
+    expect(reasons).toEqual(['crash']);
+  });
+
   it.each([
     ['a tab', 'version: 1\n\tpresets: []\n', 2],
     ['bad indentation', 'version: 1\npresets:\n  - getter: a\n    noop: b\n   bad: 1\n', 5],
