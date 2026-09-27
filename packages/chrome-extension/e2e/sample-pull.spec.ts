@@ -9,19 +9,12 @@
 
 import { createHash } from 'node:crypto';
 import type { Locator, Page } from '@playwright/test';
-import { expect, pageStatus, tabIdOf, test as base } from '../e2e/harness.js';
-import { sessionCookies } from './github-session.js';
+import { expect, pageStatus, tabIdOf, test } from './harness.js';
 
 const REPO = 'miyamo2/go-tebanare-sample';
 const PULL_NUMBER = 1;
 const PULL_URL = `https://github.com/${REPO}/pull/${PULL_NUMBER}/changes`;
 
-const test = base.extend({
-  context: async ({ context }, use) => {
-    await context.addCookies(sessionCookies());
-    await use(context);
-  },
-});
 
 /**
  * fileRegion returns the React view's container of path, the region whose

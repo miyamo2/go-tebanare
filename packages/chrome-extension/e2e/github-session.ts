@@ -1,6 +1,6 @@
 // Signs in to github.com with the account in E2E_GH_USER and
 // E2E_GH_PASSWORD, and keeps the session as a Playwright storage state, so
-// the live tests can open pull requests as a signed-in reader.
+// the end-to-end tests can open pull requests as a signed-in reader.
 
 import { createHmac } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -12,11 +12,11 @@ const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
  * authStatePath is the file that holds the session: E2E_GH_AUTH_STATE, or
- * e2e-live/.auth/github.json, which .gitignore leaves out. It holds session
+ * e2e/.auth/github.json, which .gitignore leaves out. It holds session
  * cookies, so it must never be committed or uploaded.
  */
 export function authStatePath(): string {
-  return process.env['E2E_GH_AUTH_STATE'] || join(packageRoot, 'e2e-live', '.auth', 'github.json');
+  return process.env['E2E_GH_AUTH_STATE'] || join(packageRoot, 'e2e', '.auth', 'github.json');
 }
 
 interface Credentials {
@@ -32,8 +32,8 @@ function credentials(): Credentials {
   const totpSecret = process.env['E2E_GH_TOTP_SECRET'] ?? '';
   if (username === '' || password === '' || totpSecret === '') {
     throw new Error(
-      'The live end-to-end tests sign in to github.com: set E2E_GH_USER, E2E_GH_PASSWORD, and E2E_GH_TOTP_SECRET, ' +
-        'for example in packages/chrome-extension/.env.e2e-live (see .env.e2e-live.example).',
+      'The end-to-end tests sign in to github.com: set E2E_GH_USER, E2E_GH_PASSWORD, and E2E_GH_TOTP_SECRET, ' +
+        'for example in packages/chrome-extension/.env.e2e (see .env.e2e.example).',
     );
   }
   return { username, password, totpSecret };

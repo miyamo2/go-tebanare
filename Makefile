@@ -96,11 +96,11 @@ parity: $(ENGINE_WASM)
 	GOTEBANARE_PARITY=$(PARITY_JSON) GOTEBANARE_PARITY_ROOT="$$root" \
 		bun run --cwd packages/engine vitest run test/parity.test.ts
 
-.PHONY: e2e-live
+.PHONY: e2e
 
 # Runs the extension on the sample pull request miyamo2/go-tebanare-sample#1
-# on github.com, signed in as
-# E2E_GH_USER (see packages/chrome-extension/.env.e2e-live.example).
-# E2E_LIVE_FLAGS=--headed shows the browser.
-e2e-live: $(ENGINE_WASM)
-	bun run --cwd packages/chrome-extension e2e:live $(E2E_LIVE_FLAGS)
+# on github.com, signed in as E2E_GH_USER (see
+# packages/chrome-extension/.env.e2e.example). E2E_FLAGS=--headed shows the
+# browser.
+e2e: $(ENGINE_WASM)
+	bun run --cwd packages/chrome-extension e2e $(E2E_FLAGS)
