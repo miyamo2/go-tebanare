@@ -29,8 +29,9 @@ export interface ControllerDeps {
   fetcher: SourceFetcher;
   contexts: PullRequestContextProvider;
   /**
-   * Resolves the context from the server's copy of the page when contexts
-   * finds none in the DOM. It never rejects. Without it, such a page hides
+   * Resolves the context from the server's copy of the page, or for a
+   * signed-out visitor from the REST API, when contexts finds none in the
+   * DOM. It never rejects. Without it, such a page hides
    * nothing.
    */
   fetchContext?: (page: PullPage) => Promise<PullRequestContext | null>;

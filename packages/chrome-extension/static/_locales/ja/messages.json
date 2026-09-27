@@ -1,6 +1,6 @@
 {
   "extName": { "message": "go-tebanare" },
-  "extDescription": { "message": "GitHub の PR の diff で、getter や if err != nil ブロックなど、レビュアー間で合意した Go のコードを折りたたみます。GitHub へのログインが必要です。" },
+  "extDescription": { "message": "GitHub の PR の diff で、getter や if err != nil ブロックなど、レビュアー間で合意した Go のコードを折りたたみます。private リポジトリでは GitHub へのログインが必要です。" },
   "commandToggle": { "message": "非表示の ON/OFF" },
   "countLinesOne": { "message": "1 行" },
   "countLines": {

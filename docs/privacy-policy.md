@@ -9,8 +9,10 @@ reviewer-agreed Go code in the "Files changed" tab of GitHub pull requests.
 
 - The extension does not collect, transmit, or sell any personal data.
 - It does not use analytics, tracking, advertising, or crash-reporting SDKs.
-- It does not communicate with any server other than `github.com`, using the
-  browser's existing session on pages the user already has access to.
+- It communicates only with GitHub: `github.com`, using the browser's
+  existing session on pages the user already has access to, and, for
+  visitors who are not signed in, GitHub's public REST API at
+  `api.github.com`, without credentials.
 - All analysis runs locally in the browser.
 - The use of information received by the extension adheres to the Chrome
   Web Store User Data Policy, including the Limited Use requirements.
@@ -30,20 +32,30 @@ pull request's "Files changed" page it:
 - Uses the browser's existing GitHub session for these requests
   (`credentials: "same-origin"`); the extension requests no separate token
   and can read only what the signed-in user could already read on GitHub.
+- Only when the user is not signed in to GitHub, and the page does not name
+  the pull request's base and head commits, asks GitHub's REST API for them:
+  `https://api.github.com/repos/<owner>/<repo>/pulls/<number>` and
+  `https://api.github.com/repos/<owner>/<repo>/compare/<base>...<head>`.
+  These requests carry no cookies or token (`credentials: "omit"`), so they
+  work only for public repositories. The extension keeps the answers in
+  memory until the page reloads, and asks again about a pull request after
+  5 minutes, so moving between pages does not repeat the requests. A
+  signed-in user's pages never send these requests.
 - Hides nothing where the configuration or a file isn't accessible, or a
   fetch fails (no access, SSO required, network error, or a file over
   1 MiB).
 
 The extension requests only the `storage` permission. It has no
 `host_permissions` beyond the content script's match on `github.com`, and it
-does not request access to any other site.
+does not request access to any other site. The requests to `api.github.com`
+need no permission, because that API allows cross-origin requests.
 
 ## Where processing happens
 
 - Diff matching runs inside the extension itself, in a WebAssembly module
   loaded by its background service worker.
-- The only network requests the extension makes are the `github.com`
-  fetches described above.
+- The only network requests the extension makes are the `github.com` and
+  `api.github.com` fetches described above.
 
 ## What is stored, and where
 
