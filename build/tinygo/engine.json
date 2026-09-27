@@ -1,6 +1,6 @@
 {
   "inherits": ["wasm-unknown"],
-  "gc": "precise",
+  "gc": "conservative",
   "scheduler": "none",
   "ldflags": ["-zstack-size=8388608"]
 }
