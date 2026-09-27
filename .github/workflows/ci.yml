@@ -29,7 +29,12 @@ jobs:
       - uses: golangci/golangci-lint-action@v8
         with:
           version: v2.5.0
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.5.0
+          working-directory: dev
       - run: go test -race ./...
+      - run: make schema-check
       - run: make fuzz-smoke FUZZTIME=10s
       # The fuzz-wasm job replays what the fuzzers collected through engine.wasm.
       - run: make fuzz-vectors FUZZ_VECTORS="$RUNNER_TEMP/fuzz-vectors"
