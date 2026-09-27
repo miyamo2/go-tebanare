@@ -3,8 +3,14 @@ name: tag-chrome-extension
 # A push to main that changes the version in
 # packages/chrome-extension/package.json sets the same version in
 # manifest.json (committed to main), tags the result
-# packages/chrome-extension/vX.Y.Z, and starts release-chrome-extension.yml
-# on that tag.
+# packages/chrome-extension/vX.Y.Z; the tag push starts
+# release-chrome-extension.yml.
+#
+# It pushes with a token of the GitHub App go-tebanare-release (variable
+# RELEASE_APP_ID, secret RELEASE_APP_PRIVATE_KEY), which needs Contents: Read
+# and write on this repository and may push to main past its protection. A
+# push with GITHUB_TOKEN would start no workflow, so the tag would not start
+# the release.
 on:
   push:
     branches: [main]
@@ -23,18 +29,21 @@ env:
 jobs:
   tag:
     runs-on: ubuntu-latest
-    permissions:
-      # to push the manifest commit and the tag
-      contents: write
-      # to start the release workflow
-      actions: write
     steps:
+      - uses: actions/create-github-app-token@v2
+        id: app
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
       # The head of main, not the pushed commit: the manifest commit goes on
       # top of it.
       - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
+          # git push below runs with the App's token.
+          token: ${{ steps.app.outputs.token }}
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -53,16 +62,19 @@ jobs:
           node packages/chrome-extension/scripts/release-version.mjs ${previous:+--previous "$previous"}
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-      # A push with GITHUB_TOKEN starts no workflow, so the manifest commit
-      # runs no CI and does not start this workflow again.
+      # The manifest commit runs CI on main. It leaves package.json alone, so
+      # it does not start this workflow again.
       - name: Commit the manifest version
         id: manifest
         if: steps.version.outputs.tag != ''
         env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          APP_SLUG: ${{ steps.app.outputs.app-slug }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          user_id="$(gh api "/users/$APP_SLUG[bot]" --jq .id)"
+          git config user.name "$APP_SLUG[bot]"
+          git config user.email "$user_id+$APP_SLUG[bot]@users.noreply.github.com"
           node packages/chrome-extension/scripts/sync-manifest-version.mjs
           if ! git diff --quiet; then
             git commit -q -m "chore(chrome-extension): set the manifest version to $VERSION" packages/chrome-extension/manifest.json
@@ -82,16 +94,12 @@ jobs:
             fi
           fi
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      # A tag pushed with GITHUB_TOKEN starts no workflow, so this job starts
-      # the release itself. A tag pushed by hand starts the release through
-      # its push trigger.
-      - name: Tag the commit and start the release
+      # The tag push starts release-chrome-extension.yml.
+      - name: Tag the commit
         if: steps.manifest.outputs.sha != ''
         env:
-          GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
           SHA: ${{ steps.manifest.outputs.sha }}
         run: |
           git tag -a "$TAG" -m "chrome-extension ${TAG#"$TAG_PREFIX"}" "$SHA"
           git push origin "refs/tags/$TAG"
-          gh workflow run release-chrome-extension.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG"

@@ -2,13 +2,13 @@ name: release-chrome-extension
 
 # Publishes the Chrome Web Store package of the tag
 # packages/chrome-extension/vX.Y.Z as an asset of the GitHub release of that
-# tag. tag-chrome-extension.yml creates the tag and starts this workflow
-# when the version in packages/chrome-extension/package.json changes on main;
-# pushing the tag by hand starts it too.
+# tag. tag-chrome-extension.yml pushes the tag when the version in
+# packages/chrome-extension/package.json changes on main; pushing the tag by
+# hand starts this workflow too.
 on:
   push:
     tags: ["packages/chrome-extension/v*"]
-  # Run it on the tag, never on a branch.
+  # To run a release again by hand: run it on the tag, never on a branch.
   workflow_dispatch:
 
 permissions:
