@@ -1,8 +1,10 @@
 // Times the loading indicator of the banner. A page whose lines to hide are
-// known quickly never shows it, and once it shows, it stays long enough to
-// read as deliberate instead of flickering. Common UX guidance puts the
-// delay at 200 to 500 milliseconds and the minimum display at 400 to 500,
-// and Nielsen's limits say that waits under a second need no feedback.
+// known within the delay never shows it. Once it shows, it stays for the
+// minimum, so it never flashes for a few milliseconds. Nielsen puts the
+// limit for an uninterrupted flow of thought at one second and finds that
+// shorter waits need no feedback
+// (https://www.nngroup.com/articles/response-times-3-important-limits/);
+// both times stay well under it.
 
 /** The indicator shows once loading has lasted this many milliseconds. */
 export const LOADING_DELAY_MS = 300;
@@ -24,7 +26,7 @@ export class LoadingDelay {
   #delay: ReturnType<typeof setTimeout> | null = null;
   #min: ReturnType<typeof setTimeout> | null = null;
   #shown = false;
-  // Loading ended while the minimum held the indicator.
+  // Loading ended before the indicator had shown for the minimum.
   #ended = false;
 
   constructor(delayMs: number, minMs: number, changed: () => void) {

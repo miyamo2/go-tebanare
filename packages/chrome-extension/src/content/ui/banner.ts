@@ -100,7 +100,7 @@ function createBanner(doc: Document, messages: readonly BannerMessage[], loading
   banner.append(title);
   if (loading) {
     banner.setAttribute('aria-busy', 'true');
-    // Only the indicator: a quiet look instead of the attention color.
+    // content.css gives a banner with only the indicator the accent colors.
     if (messages.length === 0) banner.dataset['loadingOnly'] = '';
     const line = doc.createElement('div');
     line.className = 'gotebanare-banner-loading';

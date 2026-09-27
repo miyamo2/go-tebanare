@@ -115,8 +115,8 @@ describe('Run', () => {
     await settle();
     expect(hiddenRows(store!)).toHaveLength(4);
     run.stop();
-    // The banner, still showing the loading indicator for the held file, is
-    // left for the next run or the controller to replace.
+    // Run.stop leaves the banner, which still shows the indicator for the
+    // held file, for the next run or the controller to replace.
     removeBanner(document);
     expect(addedMarks()).toBe(0);
     fetcher.release();

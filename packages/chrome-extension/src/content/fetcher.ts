@@ -74,8 +74,8 @@ export class Semaphore {
 }
 
 /**
- * SessionFetcher GETs raw files, and with fetchPage pages, from github.com
- * with the page's cookies. A request that has not finished, body included,
+ * SessionFetcher GETs raw files (fetchText) and pages (fetchPage) from
+ * github.com with the page's cookies. A request that has not finished, body included,
  * after the timeout is aborted and fails with reason network, which frees
  * its slot.
  *
@@ -108,8 +108,8 @@ export class SessionFetcher implements SourceFetcher {
 
   /**
    * fetchPage GETs a github.com page with the page's cookies, up to
-   * MAX_PAGE_BYTES. A URL on any other origin is not-found. The hash is
-   * dropped, because the server never sees it.
+   * MAX_PAGE_BYTES. A URL on any other origin is not-found. It drops the
+   * hash, which the server never sees.
    */
   fetchPage(url: string): Promise<FetchResult> {
     let u: URL;

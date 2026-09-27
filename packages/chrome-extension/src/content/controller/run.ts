@@ -132,8 +132,8 @@ export class Run {
     if (this.#stopped) return;
     const { doc } = this.#deps;
     const messages = this.#report.messages();
-    // The indicator stays until every file shown has its result. With
-    // hiding off, nothing waits for a result, and loadingShown says so.
+    // The indicator stays until every file shown has its result.
+    // loadingShown returns false while hiding is off.
     const loading = this.#deps.loadingShown(this.#state === 'loading' || (this.#scanner?.busy() ?? false));
     const variant = messages.length > 0 || loading ? this.#deps.detectVariant(doc) : null;
     const [anchor = null] = variant ? variant.fileContainers(doc) : [];

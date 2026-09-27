@@ -125,7 +125,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage && typeof documen
     navigation: (window as { navigation?: EventTarget }).navigation,
     onMessage: chrome.runtime.onMessage,
     createController: (page) => {
-      // The URL of this page: a navigation disposes the controller.
+      // A navigation disposes the controller, so href stays this page's URL.
       const href = location.href;
       return new Controller(page, {
         doc: document,

@@ -148,9 +148,9 @@ export type FetchPageFn = (url: string) => Promise<FetchResult>;
  * that does not name its commits in the DOM: GitHub's React app moves from
  * the pull request list or the conversation to "Files changed" without a
  * page load, and the embedded data it keeps is that of the page it loaded
- * with, which has no pullRequestsChangesRoute. The server always renders
- * the route of the URL, as it does on a reload. It never rejects; a failed
- * request or a page without a context returns null.
+ * with, which has no pullRequestsChangesRoute. The server renders the page
+ * for the URL itself, as on a reload, and that page embeds the route. It
+ * never rejects; a failed request or a page without a context returns null.
  */
 export async function fetchContext(
   fetchPage: FetchPageFn,

@@ -167,7 +167,7 @@ describe('pipeline', () => {
 
 describe('loading indicator', () => {
   const loading = () => document.querySelector('[data-gotebanare-banner] .gotebanare-banner-loading') !== null;
-  // The tests below check what the indicator shows, not when; the delay has its own tests.
+  // Both times are 0 here; 'loading delay' below and loading.test.ts cover the timing.
   const now = { loadingDelayMs: 0, loadingMinMs: 0 };
 
   it('shows while the commits are fetched and until every file has its result', async () => {
@@ -261,13 +261,13 @@ describe('loading delay', () => {
     answer({ ...PAGE, baseSha: BASE, headSha: HEAD });
     await started;
     await h.settle();
-    // 20 ms in the fetch plus the run so far: the delay has not passed.
+    // About 20 ms have passed, less than the 200 ms delay.
     expect(banner()).toBeNull();
     await wait(250);
     expect(banner()?.querySelector('.gotebanare-banner-loading')).not.toBeNull();
     h.fetcher.release();
     await h.settle();
-    // Shown for about 50 ms: the minimum keeps it, while the folds are in.
+    // The indicator appeared about 50 ms ago, so it stays for the minimum although the folds are in.
     expect(hiddenRows(store!)).toHaveLength(4);
     expect(banner()?.querySelector('.gotebanare-banner-loading')).not.toBeNull();
     await wait(250);

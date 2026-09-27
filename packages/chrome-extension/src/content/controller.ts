@@ -71,8 +71,8 @@ export class Controller {
   #tabStateSeen = false;
   #options: Options = sanitizeOptions(undefined);
   #run: Run | null = null;
-  // The context fetchContext found. It stands in for the DOM until the DOM
-  // names commits itself.
+  // The context that fetchContext found. #resolve uses it while the DOM
+  // names no commits.
   #fetched: PullRequestContext | null = null;
   #unwatch: (() => void) | null = null;
 
@@ -167,9 +167,9 @@ export class Controller {
     renderBanner(doc, [], anchor, this.#loadingShown(true));
   }
 
-  // loadingShown reports whether the indicator shows. Turning hiding off is
-  // the reader's own action, so it removes the indicator at once instead of
-  // waiting out the minimum.
+  // loadingShown reports whether the indicator shows. The reader turns
+  // hiding off on purpose, so turning it off removes the indicator at once,
+  // before the minimum passes.
   #loadingShown(loading: boolean): boolean {
     if (this.#enabled) return this.#loading.visible(loading);
     this.#loading.stop();
