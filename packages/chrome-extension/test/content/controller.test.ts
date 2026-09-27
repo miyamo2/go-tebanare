@@ -168,7 +168,7 @@ describe('pipeline', () => {
 describe('loading indicator', () => {
   const loading = () => document.querySelector('[data-gotebanare-banner] .gotebanare-banner-loading') !== null;
   // The tests below check what the indicator shows, not when; the delay has its own tests.
-  const now = { loadingDelayMs: 0 };
+  const now = { loadingDelayMs: 0, loadingMinMs: 0 };
 
   it('shows while the commits are fetched and until every file has its result', async () => {
     const [store] = buildPage(modified());
@@ -249,11 +249,11 @@ describe('loading delay', () => {
     expect(banner()).toBeNull();
   });
 
-  it('shows the indicator once loading lasts the delay, across the context fetch and the run', async () => {
-    buildPage(modified());
+  it('shows the indicator once loading lasts the delay, across the context fetch and the run, for at least the minimum', async () => {
+    const [store] = buildPage(modified());
     for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
     let answer: (ctx: PullRequestContext) => void = () => {};
-    const h = harness({ deps: { loadingDelayMs: 200, fetchContext: () => new Promise((resolve) => (answer = resolve)) } });
+    const h = harness({ deps: { loadingDelayMs: 200, loadingMinMs: 200, fetchContext: () => new Promise((resolve) => (answer = resolve)) } });
     h.bg.ranges.set('store/store.go', getter);
     h.fetcher.hold((p) => p === 'store/store.go');
     const started = h.controller.start();
@@ -267,7 +267,23 @@ describe('loading delay', () => {
     expect(banner()?.querySelector('.gotebanare-banner-loading')).not.toBeNull();
     h.fetcher.release();
     await h.settle();
+    // Shown for about 50 ms: the minimum keeps it, while the folds are in.
+    expect(hiddenRows(store!)).toHaveLength(4);
+    expect(banner()?.querySelector('.gotebanare-banner-loading')).not.toBeNull();
+    await wait(250);
     expect(banner()).toBeNull();
+  });
+
+  it('removes the indicator at once when hiding is turned off within the minimum', async () => {
+    buildPage(modified());
+    const h = harness({ deps: { loadingDelayMs: 0, loadingMinMs: 10_000 } });
+    h.fetcher.hold((p) => p === 'store/store.go');
+    await h.controller.start();
+    await h.settle();
+    expect(banner()).not.toBeNull();
+    h.controller.setTabState({ type: 'tab-state', enabled: false, headPreview: false });
+    expect(banner()).toBeNull();
+    h.controller.dispose();
   });
 
   it('cancels the timer on dispose', async () => {

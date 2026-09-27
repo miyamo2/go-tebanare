@@ -11,7 +11,7 @@ import { clearFile } from './apply.js';
 import type { PullRequestContext, PullRequestContextProvider } from './context.js';
 import type { SendFn } from './controller/file.js';
 import { Run } from './controller/run.js';
-import { LOADING_DELAY_MS, LoadingDelay } from './controller/loading.js';
+import { LOADING_DELAY_MS, LOADING_MIN_MS, LoadingDelay } from './controller/loading.js';
 import { inactiveStatus } from './controller/status.js';
 import { watchMutations, type Changes, type FrameApi, type ObserverCtor } from './controller/watch.js';
 import type { DiffUiVariant } from './dom/variant.js';
@@ -42,6 +42,8 @@ export interface ControllerDeps {
   maxFilesInFlight?: number;
   /** Defaults to LOADING_DELAY_MS. */
   loadingDelayMs?: number;
+  /** Defaults to LOADING_MIN_MS. */
+  loadingMinMs?: number;
 }
 
 /** clearPage removes every row mark, fold row, badge, and banner of the extension from doc. */
@@ -80,7 +82,7 @@ export class Controller {
     this.#repo = `${page.owner}/${page.repo}`;
     this.#prKey = pullRequestKey(this.#repo, page.number);
     this.#limit = new Semaphore(deps.maxFilesInFlight ?? MAX_FILES_IN_FLIGHT);
-    this.#loading = new LoadingDelay(deps.loadingDelayMs ?? LOADING_DELAY_MS, () => {
+    this.#loading = new LoadingDelay(deps.loadingDelayMs ?? LOADING_DELAY_MS, deps.loadingMinMs ?? LOADING_MIN_MS, () => {
       if (this.#disposed) return;
       if (this.#run) this.#run.render();
       else if (this.#unwatch) this.#renderLoading();
@@ -162,7 +164,16 @@ export class Controller {
   #renderLoading(): void {
     const { doc } = this.#deps;
     const [anchor = null] = this.#deps.detectVariant(doc)?.fileContainers(doc) ?? [];
-    renderBanner(doc, [], anchor, this.#loading.visible(this.#enabled));
+    renderBanner(doc, [], anchor, this.#loadingShown(true));
+  }
+
+  // loadingShown reports whether the indicator shows. Turning hiding off is
+  // the reader's own action, so it removes the indicator at once instead of
+  // waiting out the minimum.
+  #loadingShown(loading: boolean): boolean {
+    if (this.#enabled) return this.#loading.visible(loading);
+    this.#loading.stop();
+    return false;
   }
 
   #resolve(): PullRequestContext | null {
@@ -209,7 +220,7 @@ export class Controller {
         detectVariant: (doc) => this.#deps.detectVariant(doc),
         debug: this.#options.debug,
         enabled: () => this.#enabled,
-        loadingShown: (loading) => this.#loading.visible(loading),
+        loadingShown: (loading) => this.#loadingShown(loading),
       },
       ctx,
       this.#headPreview ? 'head' : 'base',
