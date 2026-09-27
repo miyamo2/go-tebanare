@@ -1,6 +1,6 @@
 <div align="center">
 
-# go-tebanare
+![go-tebanare-logo](.assets/go-tebanare-with-caption.png)
 
 "Tebanare" in Japanese means "off one's hands." This tool takes Go code reviews more off your hands.
 
