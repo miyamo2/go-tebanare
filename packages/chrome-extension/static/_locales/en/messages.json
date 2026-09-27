@@ -1,6 +1,6 @@
 {
   "extName": { "message": "go-tebanare" },
-  "extDescription": { "message": "Folds reviewer-agreed Go code, such as getters and if err != nil blocks, in GitHub PR diffs. Requires being signed in to GitHub." },
+  "extDescription": { "message": "Folds reviewer-agreed Go code, such as getters and if err != nil blocks, in GitHub PR diffs. Private repos require GitHub sign-in." },
   "commandToggle": { "message": "Turn hiding on or off" },
   "countLinesOne": { "message": "1 line" },
   "countLines": {

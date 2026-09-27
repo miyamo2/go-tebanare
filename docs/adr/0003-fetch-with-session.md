@@ -35,3 +35,12 @@ interface. Each tab runs at most four requests at once and skips files over
   lets CORS through on the redirected response, and a required SSO
   authorization surfaces as a failed fetch rather than a silent success. The
   session is enough; no personal access token is needed.
+- For a signed-out visitor, GitHub's pages name no commits, while `/raw/`
+  still serves public repositories. Only then, the content script asks the
+  REST API without credentials: `pulls/<n>` for the head, and
+  `compare/<base>...<head>?per_page=1&page=2` for the merge base, since the
+  pull request's `base.sha` is the base branch tip, not always the diff's
+  old side. api.github.com allows CORS, so no `host_permissions` are added.
+  The unauthenticated limit is 60 requests an hour, so answers are cached
+  and a 403 or 429 stops requests for 15 minutes. A private repository
+  answers 404, and the page hides nothing and asks the visitor to sign in.

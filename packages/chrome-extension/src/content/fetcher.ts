@@ -1,6 +1,8 @@
 // Fetches repository files through the signed-in GitHub session (plan 6.4).
 // The content script runs on github.com, so a same-origin request carries
 // the session cookies and reads private repositories without a token.
+// Signed-out visitors read public repositories the same way, and look up
+// the commits through GitHub's REST API (fetchApi) without credentials.
 
 export type FetchFailureReason = 'not-found' | 'unauthorized' | 'sso' | 'network' | 'too-large';
 
@@ -20,6 +22,8 @@ export const MAX_SOURCE_BYTES = 1 << 20;
  * embeds the whole diff, so it gets more room than a source file.
  */
 export const MAX_PAGE_BYTES = 32 << 20;
+/** REST API responses larger than this many bytes are too-large. */
+export const MAX_API_BYTES = 1 << 20;
 /** SessionFetcher keeps at most this many requests in flight. */
 export const MAX_IN_FLIGHT = 4;
 /** SessionFetcher gives up on a request, body included, after this many milliseconds. */
@@ -75,7 +79,8 @@ export class Semaphore {
 
 /**
  * SessionFetcher GETs raw files (fetchText) and pages (fetchPage) from
- * github.com with the page's cookies. A request that has not finished, body included,
+ * github.com with the page's cookies, and REST API resources (fetchApi)
+ * from api.github.com without them. A request that has not finished, body included,
  * after the timeout is aborted and fails with reason network, which frees
  * its slot.
  *
@@ -125,11 +130,30 @@ export class SessionFetcher implements SourceFetcher {
   }
 
   /**
+   * fetchApi GETs a JSON resource of GitHub's REST API, up to
+   * MAX_API_BYTES, without credentials: the request carries no cookies or
+   * token, so it reads only public data. A URL on any other origin is
+   * not-found.
+   */
+  fetchApi(url: string): Promise<FetchResult> {
+    let u: URL;
+    try {
+      u = new URL(url);
+    } catch {
+      return Promise.resolve({ ok: false, reason: 'not-found' });
+    }
+    if (u.origin !== 'https://api.github.com') return Promise.resolve({ ok: false, reason: 'not-found' });
+    const href = u.href;
+    const init: RequestInit = { credentials: 'omit', headers: { Accept: 'application/vnd.github+json' } };
+    return this.#limit.run(() => this.#getWithTimeout(href, MAX_API_BYTES, init));
+  }
+
+  /**
    * getWithTimeout aborts the request after the timeout. It also stops
    * waiting then, so a fetch function that ignores the signal cannot keep
    * the slot.
    */
-  async #getWithTimeout(url: string, maxBytes: number): Promise<FetchResult> {
+  async #getWithTimeout(url: string, maxBytes: number, init: RequestInit = { credentials: 'same-origin' }): Promise<FetchResult> {
     const ctrl = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<FetchResult>((resolve) => {
@@ -139,16 +163,16 @@ export class SessionFetcher implements SourceFetcher {
       }, this.#timeoutMs);
     });
     try {
-      return await Promise.race([this.#get(url, ctrl.signal, maxBytes), timeout]);
+      return await Promise.race([this.#get(url, { ...init, redirect: 'follow', signal: ctrl.signal }, maxBytes), timeout]);
     } finally {
       clearTimeout(timer);
     }
   }
 
   /** get never rejects: every error becomes a failed result. */
-  async #get(url: string, signal: AbortSignal, maxBytes: number): Promise<FetchResult> {
+  async #get(url: string, init: RequestInit, maxBytes: number): Promise<FetchResult> {
     try {
-      const res = await this.#fetch(url, { credentials: 'same-origin', redirect: 'follow', signal });
+      const res = await this.#fetch(url, init);
       const { status } = res;
       const page = signInPage(res.url);
       if (status === 401 || status === 403) {
