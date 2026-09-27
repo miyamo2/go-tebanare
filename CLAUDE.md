@@ -124,14 +124,15 @@ Root `package.json` defines the bun workspace over `packages/*`; `bun.lock` pins
 
 ## CI
 
-`.github/workflows/ci.yml` runs six jobs on every push/PR to `main`:
+`.github/workflows/ci.yml` runs seven jobs on every PR to `main`:
 
-- `go` — fmt-check, vet, lint of both Go modules, race tests, schema-check, fuzz-smoke, uploads fuzz vectors
-- `wasm` — builds `engine.wasm` and `wasm-wasip1`, uploads `engine.wasm`
+- `go` — fmt-check, vet, lint of both Go modules, race tests (`-short`; `TestCorpusSnapshot` runs separately without `-race`), schema-check, `wasm-wasip1`
+- `fuzz` — fuzz-smoke, uploads fuzz vectors
+- `wasm` — builds `engine.wasm` (TinyGo's build cache is kept with `actions/cache`), uploads `engine.wasm`
 - `fuzz-wasm` — replays fuzz vectors against the built wasm
 - `parity` — native vs. wasm on the Go stdlib, run twice, once with `-pairs`
 - `ts` — typecheck/lint/test, builds and uploads the extension zip
-- `e2e` — Playwright against the built extension on miyamo2/go-tebanare-sample#1, signed in with the `E2E_GH_*` secrets; skipped for PRs from forks and Dependabot. `release-chrome-extension.yml` passes the secrets with `secrets: inherit`
+- `e2e` — Playwright (browsers cached per Playwright version) against the built extension on miyamo2/go-tebanare-sample#1, signed in with the `E2E_GH_*` secrets; skipped for PRs from forks and Dependabot. `release-chrome-extension.yml` passes the secrets with `secrets: inherit`
 
 Raising `version` in `packages/chrome-extension/package.json` on `main` releases the Chrome extension. `tag-chrome-extension.yml` commits that version to `manifest.json` on `main` and tags the commit `packages/chrome-extension/vX.Y.Z`. The tag starts `release-chrome-extension.yml`, which runs `ci.yml` through `workflow_call` and attaches the extension zip to a GitHub release. A prerelease version such as `X.Y.Z-rc.N` becomes a GitHub prerelease and skips the Chrome Web Store. The release workflow's Chrome Web Store `publish` job stays commented out until the first manual store upload. The release steps and the GitHub App setup are in `packages/chrome-extension/README.md`.
 

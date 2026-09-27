@@ -34,8 +34,24 @@ jobs:
         with:
           version: v2.5.0
           working-directory: dev
-      - run: go test -race ./...
+      # -short skips TestCorpusSnapshot, which walks GOROOT/src on one
+      # goroutine: the race detector finds nothing there and makes it take
+      # most of the job. The next step runs it without -race.
+      - run: go test -race -short ./...
+      - run: go test -run '^TestCorpusSnapshot$' ./internal/presets
       - run: make schema-check
+      # Here rather than in the wasm job, which the parity, ts, and e2e jobs
+      # wait for.
+      - run: make wasm-wasip1
+
+  # Separate from the go job so that the fuzzers run while the tests do.
+  fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
       - run: make fuzz-smoke FUZZTIME=10s
       # The fuzz-wasm job replays what the fuzzers collected through engine.wasm.
       - run: make fuzz-vectors FUZZ_VECTORS="$RUNNER_TEMP/fuzz-vectors"
@@ -57,11 +73,20 @@ jobs:
           wget -q "https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VERSION}/tinygo_${TINYGO_VERSION}_amd64.deb"
           sudo dpkg -i "tinygo_${TINYGO_VERSION}_amd64.deb"
           tinygo version
+          echo "TINYGO_CACHE=$(tinygo env GOCACHE)" >> "$GITHUB_ENV"
+      # TinyGo keeps the libraries and packages it compiled here, keyed by
+      # their contents, so a stale entry is never used.
+      - name: Restore the TinyGo build cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TINYGO_CACHE }}
+          key: tinygo-build-${{ env.TINYGO_VERSION }}-go${{ env.GO_VERSION }}-${{ hashFiles('go.sum', '**/*.go', 'build/tinygo/**') }}
+          restore-keys: |
+            tinygo-build-${{ env.TINYGO_VERSION }}-go${{ env.GO_VERSION }}-
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
       - run: make wasm wasm-check
-      - run: make wasm-wasip1
       - uses: actions/upload-artifact@v4
         with:
           name: engine-wasm
@@ -69,7 +94,7 @@ jobs:
           if-no-files-found: error
 
   fuzz-wasm:
-    needs: [go, wasm]
+    needs: [fuzz, wasm]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -172,6 +197,15 @@ jobs:
           name: engine-wasm
           path: packages/engine/wasm
       - run: bun install --frozen-lockfile
+      - name: Find the Playwright version
+        run: echo "PLAYWRIGHT_VERSION=$(jq -r '.devDependencies["@playwright/test"]' packages/chrome-extension/package.json)" >> "$GITHUB_ENV"
+      # The browsers only; install --with-deps still installs the system
+      # packages they need.
+      - name: Restore the Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ env.PLAYWRIGHT_VERSION }}
       - run: bun run --cwd packages/chrome-extension playwright install --with-deps chromium
       # This job uploads no traces, screenshots, or session file: they would
       # carry the account's session cookies or name.
