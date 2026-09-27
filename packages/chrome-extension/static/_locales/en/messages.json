@@ -1,6 +1,6 @@
 {
   "extName": { "message": "go-tebanare" },
-  "extDescription": { "message": "Folds Go code that your team agreed not to review, such as generated mocks and getters, in GitHub pull request diffs." },
+  "extDescription": { "message": "Folds Go code your team agreed not to review (getters, no-op methods, if err != nil boilerplate) in GitHub PR diffs." },
   "commandToggle": { "message": "Turn hiding on or off" },
   "countLinesOne": { "message": "1 line" },
   "countLines": {
