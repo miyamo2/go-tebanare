@@ -56,9 +56,6 @@ export function parsePullUrl(url: string): PullPage | null {
  * the body has the class "logged-out", or the user-login meta tag is empty.
  * A page with neither counts as signed in, so a signed-in user does not see
  * the sign-in hint.
- *
- * S3: the tests use synthetic pages. Confirm the class and the meta tag on a
- * real signed-out page.
  */
 export function isSignedOut(doc: Document): boolean {
   if (doc.body?.classList.contains('logged-out')) return true;
