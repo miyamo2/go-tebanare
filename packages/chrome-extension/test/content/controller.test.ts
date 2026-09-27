@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PullPage } from '../../src/content/page.js';
 import { FakeChrome, installChrome } from '../fakes/chrome.js';
-import { BASE, CONFIG, PR_KEY, addedMarks, bannerTexts, buildPage, fileHtml, harness, hiddenRows, hide } from './controller-setup.js';
+import { BASE, CONFIG, HEAD, PAGE, PR_KEY, addedMarks, bannerTexts, buildPage, fileHtml, harness, hiddenRows, hide } from './controller-setup.js';
 
 let restore = () => {};
 beforeEach(() => {
@@ -93,6 +94,61 @@ describe('pipeline', () => {
     await h.settle();
     expect(h.controller.status()).toMatchObject({ state: 'error', messages: ['Could not read the pull request commits from this page, so nothing is hidden.'] });
     expect(h.fetcher.calls).toEqual([]);
+  });
+
+  it("reads the commits from the server's copy of a page that does not name them", async () => {
+    const [store] = buildPage(modified());
+    for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
+    const fetchContext = vi.fn(async (p: PullPage) => ({ ...p, baseSha: BASE, headSha: HEAD }));
+    const h = harness({ deps: { fetchContext } });
+    h.bg.ranges.set('store/store.go', getter);
+    await h.controller.start();
+    await h.settle();
+    expect(fetchContext).toHaveBeenCalledWith(PAGE);
+    expect(hiddenRows(store!)).toEqual(['+26', '+27', '+28', '+29']);
+    expect(h.controller.status()).toMatchObject({ state: 'ready', linesHidden: 4 });
+    // Later DOM changes still name no commits; the run keeps the fetched ones.
+    const types = h.bg.types().length;
+    document.body.append(document.createElement('div'));
+    await h.settle();
+    expect(fetchContext).toHaveBeenCalledTimes(1);
+    expect(h.bg.types()).toHaveLength(types);
+    expect(hiddenRows(store!)).toEqual(['+26', '+27', '+28', '+29']);
+  });
+
+  it('hides nothing when the server copy does not name the commits either', async () => {
+    buildPage(modified());
+    for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
+    const h = harness({ deps: { fetchContext: async () => null } });
+    await h.controller.start();
+    await h.settle();
+    expect(h.controller.status()).toMatchObject({ state: 'error', messages: ['Could not read the pull request commits from this page, so nothing is hidden.'] });
+    expect(h.fetcher.calls).toEqual([]);
+  });
+
+  it('starts no run when disposed while the page is fetched', async () => {
+    buildPage(modified());
+    for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
+    let answer: (ctx: null) => void = () => {};
+    const h = harness({ deps: { fetchContext: () => new Promise((resolve) => (answer = resolve)) } });
+    const started = h.controller.start();
+    await h.settle();
+    h.controller.dispose();
+    answer(null);
+    await started;
+    await h.settle();
+    expect(bannerTexts()).toEqual([]);
+    expect(addedMarks()).toBe(0);
+  });
+
+  it('does not fetch the page when the DOM names the commits', async () => {
+    buildPage(modified());
+    const fetchContext = vi.fn(async () => null);
+    const h = harness({ deps: { fetchContext } });
+    await h.controller.start();
+    await h.settle();
+    expect(fetchContext).not.toHaveBeenCalled();
+    expect(h.controller.status()).toMatchObject({ state: 'ready' });
   });
 
   it('answers loading until the config is compiled', async () => {

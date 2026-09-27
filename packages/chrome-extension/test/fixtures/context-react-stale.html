@@ -1,0 +1,23 @@
+<!-- A "Files changed" page of GitHub's React UI after the app moved to it from the pull request list without a page load: the react-app element keeps the embedded data of the list page it loaded with, which has no pullRequestsChangesRoute. The route and field names are from a real page's data; the repository, pull request, and commit are the test values, and most fields are cut. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pull requests · octo/repo</title>
+</head>
+<body>
+<main id="js-repo-pjax-container">
+<react-app app-name="repo" initial-path="/octo/repo/pulls" style="display: block; min-height: calc(100vh - 64px);" data-attempted-ssr="true" data-ssr="true" data-lazy="false" data-alternate="false" data-data-router-enabled="true" data-react-profiling="false">
+  <script type="application/json" data-target="react-app.embeddedData">{"payload":{
+ "repoPullsDashboardContentRoute":{
+  "results":[{"author":{"displayLogin":"octo"},"displayState":"REPO_PULL_REQUEST_DISPLAY_STATE_OPEN","headSha":"89abcdef0123456789abcdef0123456789abcdef","number":12,"permalink":"https://github.com/octo/repo/pull/12","repoNameWithOwner":"octo/repo","state":"REPO_PULL_REQUEST_STATE_OPEN","title":"Add user getters"}],
+  "currentPage":1,"totalPages":1,"totalCount":1,"openCount":1,"closedCount":0
+ },
+ "repoPullsDashboardLayoutRoute":{"repository":{"name":"repo","ownerLogin":"octo","defaultBranch":"main"}},
+ "repoLayoutRoute":{}
+}}</script>
+  <div data-target="react-app.reactRoot"></div>
+</react-app>
+</main>
+</body>
+</html>

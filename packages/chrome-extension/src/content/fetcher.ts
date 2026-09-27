@@ -15,6 +15,11 @@ export type FetchFn = (url: string, init: RequestInit) => Promise<Response>;
 
 /** Files larger than this many bytes are too-large. */
 export const MAX_SOURCE_BYTES = 1 << 20;
+/**
+ * Pages larger than this many bytes are too-large. A "Files changed" page
+ * embeds the whole diff, so it gets more room than a source file.
+ */
+export const MAX_PAGE_BYTES = 32 << 20;
 /** SessionFetcher keeps at most this many requests in flight. */
 export const MAX_IN_FLIGHT = 4;
 /** SessionFetcher gives up on a request, body included, after this many milliseconds. */
@@ -69,9 +74,10 @@ export class Semaphore {
 }
 
 /**
- * SessionFetcher GETs raw files from github.com with the page's cookies. A
- * request that has not finished, body included, after the timeout is
- * aborted and fails with reason network, which frees its slot.
+ * SessionFetcher GETs raw files, and with fetchPage pages, from github.com
+ * with the page's cookies. A request that has not finished, body included,
+ * after the timeout is aborted and fails with reason network, which frees
+ * its slot.
  *
  * S3: synthetic tests model the responses. Verify on real private
  * repositories that /raw/ redirects to raw.githubusercontent.com, that the
@@ -97,7 +103,25 @@ export class SessionFetcher implements SourceFetcher {
   fetchText(owner: string, repo: string, sha: string, path: string): Promise<FetchResult> {
     const url = rawUrl(owner, repo, sha, path);
     if (url === null) return Promise.resolve({ ok: false, reason: 'not-found' });
-    return this.#limit.run(() => this.#getWithTimeout(url));
+    return this.#limit.run(() => this.#getWithTimeout(url, this.#maxBytes));
+  }
+
+  /**
+   * fetchPage GETs a github.com page with the page's cookies, up to
+   * MAX_PAGE_BYTES. A URL on any other origin is not-found. The hash is
+   * dropped, because the server never sees it.
+   */
+  fetchPage(url: string): Promise<FetchResult> {
+    let u: URL;
+    try {
+      u = new URL(url);
+    } catch {
+      return Promise.resolve({ ok: false, reason: 'not-found' });
+    }
+    if (u.origin !== 'https://github.com') return Promise.resolve({ ok: false, reason: 'not-found' });
+    u.hash = '';
+    const href = u.href;
+    return this.#limit.run(() => this.#getWithTimeout(href, MAX_PAGE_BYTES));
   }
 
   /**
@@ -105,7 +129,7 @@ export class SessionFetcher implements SourceFetcher {
    * waiting then, so a fetch function that ignores the signal cannot keep
    * the slot.
    */
-  async #getWithTimeout(url: string): Promise<FetchResult> {
+  async #getWithTimeout(url: string, maxBytes: number): Promise<FetchResult> {
     const ctrl = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<FetchResult>((resolve) => {
@@ -115,14 +139,14 @@ export class SessionFetcher implements SourceFetcher {
       }, this.#timeoutMs);
     });
     try {
-      return await Promise.race([this.#get(url, ctrl.signal), timeout]);
+      return await Promise.race([this.#get(url, ctrl.signal, maxBytes), timeout]);
     } finally {
       clearTimeout(timer);
     }
   }
 
   /** get never rejects: every error becomes a failed result. */
-  async #get(url: string, signal: AbortSignal): Promise<FetchResult> {
+  async #get(url: string, signal: AbortSignal, maxBytes: number): Promise<FetchResult> {
     try {
       const res = await this.#fetch(url, { credentials: 'same-origin', redirect: 'follow', signal });
       const { status } = res;
@@ -139,7 +163,7 @@ export class SessionFetcher implements SourceFetcher {
         const reason = page ?? (status === 404 ? 'not-found' : 'network');
         return { ok: false, reason, status };
       }
-      const bytes = await readAtMost(res, this.#maxBytes);
+      const bytes = await readAtMost(res, maxBytes);
       if (bytes === null) return { ok: false, reason: 'too-large', status };
       return { ok: true, text: new TextDecoder().decode(bytes) };
     } catch {

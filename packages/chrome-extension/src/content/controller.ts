@@ -27,6 +27,12 @@ export interface ControllerDeps {
   send: SendFn;
   fetcher: SourceFetcher;
   contexts: PullRequestContextProvider;
+  /**
+   * Resolves the context from the server's copy of the page when contexts
+   * finds none in the DOM. It never rejects. Without it, such a page hides
+   * nothing.
+   */
+  fetchContext?: (page: PullPage) => Promise<PullRequestContext | null>;
   detectVariant(doc: Document): DiffUiVariant | null;
   loadOptions(): Promise<Options>;
   frames: FrameApi;
@@ -59,6 +65,9 @@ export class Controller {
   #tabStateSeen = false;
   #options: Options = sanitizeOptions(undefined);
   #run: Run | null = null;
+  // The context fetchContext found. It stands in for the DOM until the DOM
+  // names commits itself.
+  #fetched: PullRequestContext | null = null;
   #unwatch: (() => void) | null = null;
 
   constructor(page: PullPage, deps: ControllerDeps) {
@@ -131,11 +140,23 @@ export class Controller {
     }
     const { doc, MutationObserver, frames } = this.#deps;
     this.#unwatch = watchMutations(doc.documentElement, MutationObserver, frames, (changes) => this.#onBatch(changes));
-    await this.#startRun(this.#resolve());
+    const ctx = this.#resolve() ?? (await this.#fetchContext());
+    if (this.#disposed) return;
+    await this.#startRun(ctx);
   }
 
   #resolve(): PullRequestContext | null {
-    return this.#deps.contexts.resolve(this.#deps.doc, this.#page);
+    return this.#deps.contexts.resolve(this.#deps.doc, this.#page) ?? this.#fetched;
+  }
+
+  // fetchContext asks the server for the commits once, at the start. DOM
+  // batches that arrive meanwhile find no run and are dropped; the run
+  // scans the whole page when it starts.
+  async #fetchContext(): Promise<PullRequestContext | null> {
+    const fetch = this.#deps.fetchContext;
+    if (!fetch) return null;
+    this.#fetched = await fetch(this.#page);
+    return this.#resolve();
   }
 
   #onBatch(changes: Changes): void {

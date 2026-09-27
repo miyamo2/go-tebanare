@@ -3,6 +3,7 @@
 // separate strategy, and every strategy returns null for a missing,
 // malformed, or ambiguous value. A null context means the page hides nothing.
 
+import type { FetchResult } from './fetcher.js';
 import type { PullPage } from './page.js';
 
 export interface PullRequestContext {
@@ -137,6 +138,34 @@ export function firstOf(...providers: PullRequestContextProvider[]): PullRequest
 
 /** The strategies in the order the content script tries them. The embedded data comes first because it was checked on a real page. */
 export const defaultContextProvider: PullRequestContextProvider = firstOf(embeddedDataProvider, hiddenInputProvider, diffUrlProvider);
+
+/** The page request fetchContext makes. SessionFetcher.fetchPage provides it. */
+export type FetchPageFn = (url: string) => Promise<FetchResult>;
+
+/**
+ * fetchContext fetches url, the page on display, and resolves the context
+ * from the page the server renders for it. It is the fallback for a page
+ * that does not name its commits in the DOM: GitHub's React app moves from
+ * the pull request list or the conversation to "Files changed" without a
+ * page load, and the embedded data it keeps is that of the page it loaded
+ * with, which has no pullRequestsChangesRoute. The server always renders
+ * the route of the URL, as it does on a reload. It never rejects; a failed
+ * request or a page without a context returns null.
+ */
+export async function fetchContext(
+  fetchPage: FetchPageFn,
+  url: string,
+  page: PullPage,
+  provider: PullRequestContextProvider = defaultContextProvider,
+): Promise<PullRequestContext | null> {
+  try {
+    const res = await fetchPage(url);
+    if (!res.ok) return null;
+    return provider.resolve(new DOMParser().parseFromString(res.text, 'text/html'), page);
+  } catch {
+    return null;
+  }
+}
 
 function context(page: PullPage, base: string | null, head: string | null): PullRequestContext | null {
   if (base === null || head === null || !SHA.test(base) || !SHA.test(head)) return null;

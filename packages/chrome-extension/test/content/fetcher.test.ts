@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   MAX_IN_FLIGHT,
+  MAX_PAGE_BYTES,
   MAX_SOURCE_BYTES,
   REQUEST_TIMEOUT_MS,
   Semaphore,
@@ -247,5 +248,34 @@ describe('Semaphore', () => {
     expect(secondRan).toBe(false);
     release();
     expect([await first, await second]).toEqual(['first', 'second']);
+  });
+});
+
+describe('SessionFetcher.fetchPage', () => {
+  const PAGE_URL = 'https://github.com/octo/repo/pull/12/changes';
+
+  it('GETs the page without its hash and with the session cookies', async () => {
+    const { fetch, fetcher } = fetcherFor(respond('<html></html>', 200, PAGE_URL));
+    expect(await fetcher.fetchPage(`${PAGE_URL}?w=1#diff-1`)).toEqual({ ok: true, text: '<html></html>' });
+    expect(fetch).toHaveBeenCalledWith(`${PAGE_URL}?w=1`, expect.objectContaining({ credentials: 'same-origin' }));
+  });
+
+  it('reads pages larger than a source file up to MAX_PAGE_BYTES', async () => {
+    const big = fetcherFor(respond('a'.repeat(MAX_SOURCE_BYTES + 1), 200, PAGE_URL));
+    expect(await big.fetcher.fetchPage(PAGE_URL)).toMatchObject({ ok: true });
+    const huge = fetcherFor(respond('', 200, PAGE_URL, { 'content-length': String(MAX_PAGE_BYTES + 1) }));
+    expect(await huge.fetcher.fetchPage(PAGE_URL)).toEqual({ ok: false, reason: 'too-large', status: 200 });
+  });
+
+  it('answers not-found for a URL off github.com without a request', async () => {
+    const { fetch, fetcher } = fetcherFor(respond(''));
+    expect(await fetcher.fetchPage('https://example.com/octo/repo/pull/12/changes')).toEqual({ ok: false, reason: 'not-found' });
+    expect(await fetcher.fetchPage('not a url')).toEqual({ ok: false, reason: 'not-found' });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('reports a redirect to the sign-in page', async () => {
+    const { fetcher } = fetcherFor(respond('', 200, 'https://github.com/login?return_to=x'));
+    expect(await fetcher.fetchPage(PAGE_URL)).toEqual({ ok: false, reason: 'unauthorized', status: 200 });
   });
 });
