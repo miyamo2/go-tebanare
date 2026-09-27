@@ -26,7 +26,7 @@ export type Notice =
   | { kind: 'fetch-failed'; path: string; reason: FetchFailureReason }
   | { kind: 'source-mismatch'; path: string }
   | { kind: 'analysis-failed'; path: string; error: string }
-  /** signedOut: the page shows GitHub's signed-out layout, so signing in may bring the commits back. */
+  /** signedOut: GitHub rendered the page for a signed-out visitor, and signing in may bring the commits back. */
   | { kind: 'context-error'; signedOut?: boolean }
   | { kind: 'unsupported-ui' }
   | { kind: 'split-view' };

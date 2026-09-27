@@ -52,10 +52,13 @@ export function parsePullUrl(url: string): PullPage | null {
 }
 
 /**
- * isSignedOut reports whether doc is a github.com page for a signed-out
- * visitor. GitHub gives the body the class "logged-out" and an empty
- * user-login meta tag on those pages. A page with neither counts as signed
- * in, so the banner never tells a signed-in user to sign in.
+ * isSignedOut reports whether GitHub rendered doc for a signed-out visitor:
+ * the body has the class "logged-out", or the user-login meta tag is empty.
+ * A page with neither counts as signed in, so a signed-in user does not see
+ * the sign-in hint.
+ *
+ * S3: the tests use synthetic pages. Confirm the class and the meta tag on a
+ * real signed-out page.
  */
 export function isSignedOut(doc: Document): boolean {
   if (doc.body?.classList.contains('logged-out')) return true;
