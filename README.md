@@ -9,7 +9,7 @@
 [![Chrome MV3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?logo=googlechrome&logoColor=white)](packages/chrome-extension)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[Overview](#overview) • [Screenshots](#screenshots) • [Features](#features) • [Getting started](#getting-started) • [Configuration](#configuration) • [Usage](#usage) • [How it works](#how-it-works) • [Development](#development) • [Documentation](#documentation)
+[Overview](#overview) • [In action](#in-action) • [Features](#features) • [Getting started](#getting-started) • [Configuration](#configuration) • [Usage](#usage) • [How it works](#how-it-works) • [Development](#development) • [Documentation](#documentation)
 
 </div>
 
@@ -36,7 +36,7 @@ if err != nil {                                  // visible: it wraps the error
 }
 ```
 
-## Screenshots
+## In action
 
 <p align="center">
   <img src=".assets/screenshots/1-overview-popup.png" width="800" alt="A pull request's Files changed tab with the extension popup open, reporting 6 files analyzed, 3 files with folds, and 10 lines hidden">
