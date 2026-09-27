@@ -18,6 +18,8 @@ func (e *Error) Caret(indent string) string {
 	b.WriteString(strings.TrimSuffix(e.Src[start:end], "\r"))
 	b.WriteByte('\n')
 	b.WriteString(indent)
+	// One space per rune: display width is not considered, so the caret
+	// is misaligned after East Asian wide characters.
 	for _, r := range e.Src[start:off] {
 		if r == '\t' {
 			b.WriteByte('\t')

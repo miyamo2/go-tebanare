@@ -16,15 +16,21 @@ type item struct {
 	// nl reports that Go would insert a semicolon before the token,
 	// because a newline follows the previous token.
 	nl bool
-	// errMsg is the scanner error reported while scanning the token, at
-	// byte offset errOff.
+	// errMsg is the first scanner error reported while scanning the
+	// token, at byte offset errOff. go/scanner reads one rune ahead, so an
+	// error in the rune right after a token (an invalid UTF-8 byte or a
+	// byte order mark, as in "Get\xff" or "a\uFEFFb") is carried by that
+	// token, not by the next one. Callers must judge an error by errOff,
+	// not by which token carries it.
 	errMsg string
 	errOff int
 }
 
 // lexer tokenizes a pattern with go/scanner. It scans lazily, one token of
-// lookahead, and can restart at any byte offset. Restarting lets the parser
-// read a /regexp/ name as raw text and rewind after a trial parse.
+// lookahead. The parser can read a /regexp/ name as raw text, after which
+// scanning restarts, and can mark a position and rewind to it after a
+// trial parse. A rewind replays exactly the tokens, including errors and
+// nl flags, that were scanned after the mark.
 type lexer struct {
 	src     string
 	sc      scanner.Scanner
@@ -32,31 +38,25 @@ type lexer struct {
 	base    int  // offset of the scanner's input in src
 	cur     item // lookahead, valid when has is set
 	has     bool
-	prevEnd int  // end offset of the last consumed token
-	nlNext  bool // nl value for the next scanned token after a rewind
+	prevEnd int // end offset of the last consumed token
 	errMsg  string
 	errOff  int
 }
 
 func (l *lexer) init(src string) {
-	l.src = src
-	l.reset(0)
+	*l = lexer{src: src}
+	l.start(0, src)
 }
 
-// reset restarts scanning at byte offset off.
-func (l *lexer) reset(off int) {
+// start makes the scanner read input, which holds the source from byte
+// offset base on.
+func (l *lexer) start(base int, input string) {
 	fset := token.NewFileSet()
-	l.file = fset.AddFile("", -1, len(l.src)-off)
-	l.base = off
+	l.file = fset.AddFile("", -1, len(input))
+	l.base = base
 	l.has = false
-	l.nlNext = false
 	l.errMsg = ""
-	l.sc.Init(l.file, []byte(l.src[off:]), l.onError, 0)
-	if off > 0 && strings.HasPrefix(l.src[off:], "\uFEFF") {
-		// go/scanner skips a byte order mark at the start of its input.
-		// Only the pattern itself may start with one.
-		l.errMsg, l.errOff = "illegal byte order mark", off
-	}
+	l.sc.Init(l.file, []byte(input), l.onError, 0)
 }
 
 func (l *lexer) onError(pos token.Position, msg string) {
@@ -71,8 +71,7 @@ func (l *lexer) peek() item {
 	if l.has {
 		return l.cur
 	}
-	nl := l.nlNext
-	l.nlNext = false
+	nl := false
 	for {
 		pos, tok, lit := l.sc.Scan()
 		if tok == token.SEMICOLON && lit == "\n" {
@@ -121,7 +120,8 @@ func (l *lexer) next() item {
 // slash reports whether the next non-blank byte after the last consumed
 // token is '/', and returns its offset. The parser calls it where a name
 // is expected, before the scanner can read the '/' as an operator or a
-// comment.
+// comment. Only blanks are skipped, not comments: in "func /* x */ F()"
+// the name is the regexp "* x *".
 func (l *lexer) slash() (int, bool) {
 	o := l.prevEnd
 	for o < len(l.src) && isSpace(l.src[o]) {
@@ -136,7 +136,8 @@ func isSpace(c byte) bool { return c == ' ' || c == '\t' || c == '\n' || c == '\
 // offset off and ends at the next '/' that is not escaped. A backslash
 // escapes the byte after it: "\/" becomes "/" and any other pair is kept
 // as written. ok is false when the closing '/' is missing. Scanning
-// restarts after the closing '/'.
+// restarts after the closing '/', in the state that follows an
+// identifier, so a newline after the regexp sets nl on the next token.
 func (l *lexer) regexp(off int) (expr string, ok bool) {
 	var b strings.Builder
 	for i := off + 1; i < len(l.src); i++ {
@@ -149,7 +150,13 @@ func (l *lexer) regexp(off int) (expr string, ok bool) {
 			b.WriteByte(l.src[i+1])
 			i++
 		case c == '/':
-			l.reset(i + 1)
+			// Scan ")" in place of the closing '/' and drop it. The
+			// scanner then inserts a semicolon at a following newline as
+			// after an identifier, and reports a byte order mark after
+			// the regexp as it would anywhere else. ")" cannot join
+			// with the byte after it into a longer token.
+			l.start(i, ")"+l.src[i+1:])
+			l.sc.Scan()
 			l.prevEnd = i + 1
 			return b.String(), true
 		default:
@@ -159,19 +166,19 @@ func (l *lexer) regexp(off int) (expr string, ok bool) {
 	return "", false
 }
 
-// mark is a saved lexer position for rewind.
-type mark struct {
-	off, prevEnd int
-	nl           bool
-}
+// mark is a saved lexer state for rewind. It copies the whole lexer,
+// scanner included, so that a rewind does not rescan anything: rescanning
+// from a token's offset would miss errors in comments before it and the
+// newline state left by the token before it.
+type mark struct{ l lexer }
 
 func (l *lexer) mark() mark {
-	it := l.peek()
-	return mark{off: it.off, prevEnd: l.prevEnd, nl: it.nl}
+	return mark{*l}
 }
 
+// rewind restores the state saved by mark. The token.File is shared with
+// the saved scanner; rescanning adds the same line offsets again, which
+// the file ignores.
 func (l *lexer) rewind(m mark) {
-	l.reset(m.off)
-	l.prevEnd = m.prevEnd
-	l.nlNext = m.nl
+	*l = m.l
 }

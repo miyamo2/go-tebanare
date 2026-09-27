@@ -8,7 +8,8 @@ import (
 
 // Error is a syntax error in a pattern.
 type Error struct {
-	// Offset is the byte offset of the error in Src.
+	// Offset is the byte offset of the error in Src. An offset past the
+	// last non-empty line is moved to the end of that line.
 	Offset int
 	// Line is the 1-based line of Offset. It is 1 unless the pattern
 	// contains newlines.
@@ -22,6 +23,15 @@ type Error struct {
 
 func newError(src string, off int, msg string) *Error {
 	off = min(max(off, 0), len(src))
+	// A pattern from a YAML block scalar ends with a newline. An error
+	// past the last non-empty line, such as at the end of the input,
+	// points at the end of that line instead of at an empty line.
+	if last := len(strings.TrimRight(src, " \t\r\n")); off > last && strings.Contains(src[last:off], "\n") {
+		off = last + strings.IndexByte(src[last:], '\n')
+		if off > last && src[off-1] == '\r' {
+			off--
+		}
+	}
 	start := strings.LastIndexByte(src[:off], '\n') + 1
 	return &Error{
 		Offset: off,

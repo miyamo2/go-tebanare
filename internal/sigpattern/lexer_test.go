@@ -79,13 +79,16 @@ func TestLexerErrors(t *testing.T) {
 	if eof := got[len(got)-1]; eof.errMsg != "comment not terminated" || eof.errOff != 5 {
 		t.Errorf("EOF: got %q at %d", eof.errMsg, eof.errOff)
 	}
-	// go/scanner skips a byte order mark at the start of its input, so the
-	// lexer reports one where it restarts after a regexp.
+	// go/scanner skips a byte order mark at the start of its input, but
+	// one right after a regexp is illegal, as anywhere else but the start.
 	var l lexer
 	l.init("/a/\xef\xbb\xbf)")
 	l.regexp(0)
-	if n := l.next(); n.tok != token.RPAREN || n.errMsg != "illegal byte order mark" || n.errOff != 3 {
+	if n := l.next(); n.tok != token.ILLEGAL || n.off != 3 || n.end != 6 || n.errMsg != "illegal byte order mark" || n.errOff != 3 {
 		t.Errorf("after the regexp: got %+v", n)
+	}
+	if n := l.next(); n.tok != token.RPAREN {
+		t.Errorf("after the byte order mark: got %+v", n)
 	}
 	if a := scanAll("\xef\xbb\xbfa")[0]; a.lit != "a" || a.errMsg != "" {
 		t.Errorf("leading byte order mark: got %+v", a)
@@ -153,5 +156,123 @@ func TestLexerRewind(t *testing.T) {
 	l.rewind(m)
 	if b := l.next(); b.lit != "b" || !b.nl || b.off != 2 || l.prevEnd != 3 {
 		t.Errorf("after rewind got %+v, prevEnd %d", b, l.prevEnd)
+	}
+}
+
+// regexpTok marks a /regexp/ name in the token streams of stepAll.
+const regexpTok token.Token = -1
+
+// step consumes one token. With regexps set, it reads a /regexp/ name
+// wherever slash reports one, as the parser does in name position.
+func step(l *lexer, regexps bool) item {
+	if regexps {
+		if off, ok := l.slash(); ok {
+			if expr, ok := l.regexp(off); ok {
+				return item{tok: regexpTok, lit: expr, off: off, end: l.prevEnd}
+			}
+		}
+	}
+	return l.next()
+}
+
+func stepAll(l *lexer, regexps bool) []item {
+	var out []item
+	for {
+		it := step(l, regexps)
+		out = append(out, it)
+		if it.tok == token.EOF || len(out) > 1000 {
+			return out
+		}
+	}
+}
+
+// checkRewind checks that marking before any token and rewinding after
+// any later token replays exactly the token stream of a plain scan.
+func checkRewind(t *testing.T, src string, regexps bool) {
+	t.Helper()
+	var l lexer
+	l.init(src)
+	want := stepAll(&l, regexps)
+	for k := range want {
+		for j := 1; k+j <= len(want); j++ {
+			l.init(src)
+			for range k {
+				step(&l, regexps)
+			}
+			m := l.mark()
+			prevEnd := l.prevEnd
+			for range j {
+				step(&l, regexps)
+			}
+			l.rewind(m)
+			if l.prevEnd != prevEnd {
+				t.Fatalf("%q (regexps %v) mark at %d, rewind after %d: prevEnd %d, want %d", src, regexps, k, j, l.prevEnd, prevEnd)
+			}
+			got := stepAll(&l, regexps)
+			if !equalItems(got, want[k:]) {
+				t.Fatalf("%q (regexps %v) mark at %d, rewind after %d:\n got %+v\nwant %+v", src, regexps, k, j, got, want[k:])
+			}
+		}
+	}
+}
+
+func equalItems(a, b []item) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+var rewindInputs = []string{
+	"a /* x",
+	"a // \xff\nb",
+	"a /* \x00 */ b",
+	"a /* \n */ b",
+	"a\nb c",
+	"func (r *T) Get() (int, error)\n",
+	"Get\xff x",
+	"a\uFEFFb",
+	"a\uFEFF\nb",
+	"x /y/\nz",
+	"(/x/\n b /* \x00 */ c)",
+	"/a/\uFEFF)",
+	"f(/a\\/b/ // c\n, ...)",
+	"`a\r\nb` 'c' \"d\" 1.5e3 ?",
+	"a\n\n\n",
+	"/* x */ /* \n",
+	"/x/ /* \xff */ y",
+	"a\r\nb\rc",
+}
+
+func TestLexerRewindReplays(t *testing.T) {
+	for _, src := range rewindInputs {
+		checkRewind(t, src, false)
+		checkRewind(t, src, true)
+	}
+}
+
+func TestLexerRegexpNewline(t *testing.T) {
+	for _, src := range []string{"/x/\nb", "/x/ // c\nb", "/x/ /* \n */ b"} {
+		var l lexer
+		l.init(src)
+		off, _ := l.slash()
+		if _, ok := l.regexp(off); !ok {
+			t.Fatalf("%q: regexp failed", src)
+		}
+		if b := l.next(); b.lit != "b" || !b.nl {
+			t.Errorf("%q: got %+v, want b with nl", src, b)
+		}
+	}
+	var l lexer
+	l.init("/x/ b")
+	off, _ := l.slash()
+	l.regexp(off)
+	if b := l.next(); b.lit != "b" || b.nl {
+		t.Errorf("/x/ b: got %+v, want b without nl", b)
 	}
 }
