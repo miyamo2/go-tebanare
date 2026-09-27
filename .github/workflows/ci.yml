@@ -1,8 +1,6 @@
 name: ci
 
 on:
-  push:
-    branches: [main]
   # Pull requests stacked on other pull requests run CI once they target main.
   pull_request:
     branches: [main]
