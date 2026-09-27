@@ -38,7 +38,7 @@ The release workflow holds a commented-out `publish` job that uploads the zip wi
 
 ## End-to-end tests
 
-`e2e/` runs the built extension on a real pull request, signed in to github.com: the "Files changed" tab of [miyamo2/go-tebanare-sample#1](https://github.com/miyamo2/go-tebanare-sample/pull/1/changes), a pull request that stays open as the fixture for these tests. It checks the page status, the fold rows, and which rows are hidden or visible in each file, so it catches changes to GitHub's React diff markup.
+`e2e/` runs the built extension on a real pull request, signed in to github.com: the "Files changed" tab of [miyamo2/go-tebanare-sample#1](https://github.com/miyamo2/go-tebanare-sample/pull/1/changes), a pull request that stays open as the fixture for these tests. It checks the page status, the fold rows, and which rows are hidden or visible in each file. One test opens the page signed in, where GitHub shows the React view; the other opens it signed out (`test.use({ signedIn: false })`), where GitHub redirects to `/files`, shows the classic table, and leaves out the commits, so the extension asks the REST API for them. Both must fold the same rows, so the tests catch changes to either markup and to the signed-out lookup. The signed-out test makes two unauthenticated API requests, which count against GitHub's limit of 60 an hour per IP address.
 
 | Variable | Meaning |
 |---|---|

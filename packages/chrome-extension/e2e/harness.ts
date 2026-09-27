@@ -1,7 +1,6 @@
 // Fixtures for the end-to-end tests. Each test gets a new Chromium profile
-// with dist/ loaded as an unpacked extension and the github.com session
-// that global-setup.ts signed in, so the tests open real pull requests as a
-// signed-in reader.
+// with dist/ loaded as an unpacked extension and, unless it sets signedIn
+// to false, the github.com session that global-setup.ts signed in.
 
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -16,9 +15,12 @@ export { expect } from '@playwright/test';
 const distDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 
 interface ExtensionFixtures {
+  /** Whether context carries the session cookies. Defaults to true; test.use({ signedIn: false }) opens pages signed out. */
+  signedIn: boolean;
   /**
-   * A persistent context with dist/ loaded and the session cookies of
-   * global-setup.ts. The built-in page fixture opens its page here.
+   * A persistent context with dist/ loaded and, when signedIn, the session
+   * cookies of global-setup.ts. The built-in page fixture opens its page
+   * here.
    */
   context: BrowserContext;
   /** The extension's service worker (background.js). */
@@ -70,11 +72,12 @@ async function launch(headless: boolean): Promise<Launched> {
 const workers = new WeakMap<BrowserContext, Worker>();
 
 export const test = base.extend<ExtensionFixtures>({
-  context: async ({ headless }, use) => {
+  signedIn: [true, { option: true }],
+  context: async ({ headless, signedIn }, use) => {
     const { context, worker, profile } = await launch(headless);
     workers.set(context, worker);
     try {
-      await context.addCookies(sessionCookies());
+      if (signedIn) await context.addCookies(sessionCookies());
       await use(context);
     } finally {
       await context.close();
