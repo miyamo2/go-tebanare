@@ -8,6 +8,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/miyamo2/go-tebanare.svg)](https://pkg.go.dev/github.com/miyamo2/go-tebanare)
 [![Chrome MV3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?logo=googlechrome&logoColor=white)](packages/chrome-extension)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/miyamo2/go-tebanare)
 
 [Overview](#overview) • [In action](#in-action) • [Features](#features) • [Getting started](#getting-started) • [Configuration](#configuration) • [Usage](#usage) • [How it works](#how-it-works) • [Development](#development) • [Documentation](#documentation)
 
