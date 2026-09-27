@@ -1,6 +1,6 @@
-//go:build schemagen
-
-package presetdoc
+// Package schemagen generates the JSON Schema of the configuration file,
+// schema/gotebanare.schema.json, from the preset declarations.
+package schemagen
 
 import (
 	"bytes"

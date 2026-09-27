@@ -21,7 +21,7 @@ It is a polyglot monorepo: a Go module at the repository root plus a bun workspa
 - `make fuzz-vectors` — dumps the Go fuzz cache into test vectors under `$TMPDIR/gotebanare-fuzz-vectors`
 - `make parity` — analyzes the Go standard library natively and through `engine.wasm` and compares results; `PARITY_FLAGS=-pairs` pairs declarations across files (needs `engine.wasm`, so run `make wasm` first)
 
-- `make schema` — regenerates `schema/gotebanare.schema.json` (JSON Schema of `.gotebanare.yml`) from the preset declarations; `make schema-check` checks it is up to date and agrees with `tebanare.Compile`. The generator (`internal/presetdoc/schema*.go`) is not part of the product and builds only with `-tags schemagen`, so plain `go test ./...` skips it. Run `make schema` after changing preset settings or top-level config keys.
+- `make schema` — regenerates `schema/gotebanare.schema.json` (JSON Schema of `.gotebanare.yml`) from the preset declarations; `make schema-check` checks it is up to date and agrees with `tebanare.Compile`. The generator lives in `dev/schemagen`, inside the separate `dev` module (`dev/go.mod`, which uses the root module through a `replace`), so its dependencies stay out of the root `go.mod` and plain `go test ./...` at the root skips it. Run `make schema` after changing preset settings or top-level config keys.
 
 ### WebAssembly engine
 

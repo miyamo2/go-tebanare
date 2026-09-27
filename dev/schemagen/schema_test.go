@@ -1,6 +1,4 @@
-//go:build schemagen
-
-package presetdoc
+package schemagen
 
 import (
 	"bytes"
@@ -161,7 +159,7 @@ func TestSchemaAcceptsFixtures(t *testing.T) {
 	for _, p := range tebanare.Presets() {
 		for _, ex := range p.Examples {
 			if ex.Settings != "" {
-				srcs = append(srcs, "version: 1\npresets:\n  - "+p.Name+":\n"+indent(ex.Settings, "      "))
+				srcs = append(srcs, "version: 1\npresets:\n  - "+p.Name+":\n"+indentLines(ex.Settings, "      "))
 			}
 		}
 	}
@@ -222,6 +220,21 @@ func mustJSON(t *testing.T, v any) string {
 	var b bytes.Buffer
 	if err := json.NewEncoder(&b).Encode(v); err != nil {
 		t.Fatal(err)
+	}
+	return b.String()
+}
+
+// indentLines prefixes each non-empty line of s with prefix.
+func indentLines(s, prefix string) string {
+	var b strings.Builder
+	for line := range strings.Lines(s) {
+		if strings.TrimSpace(line) != "" {
+			b.WriteString(prefix)
+		}
+		b.WriteString(line)
+	}
+	if !strings.HasSuffix(s, "\n") {
+		b.WriteString("\n")
 	}
 	return b.String()
 }

@@ -21,19 +21,18 @@ vet:
 lint:
 	golangci-lint run ./...
 
-# The JSON Schema generator is not part of the product, so it builds only
-# with the schemagen tag.
-SCHEMA_TAGS := schemagen
+# Development tools that are not part of the product live in the dev
+# module, so that their dependencies stay out of the root go.mod.
+DEV_MODULE := dev
 
 # Regenerates schema/gotebanare.schema.json from the preset declarations.
 schema:
-	$(GO) test -tags $(SCHEMA_TAGS) ./internal/presetdoc -run '^TestSchemaUpToDate$$' -update
+	cd $(DEV_MODULE) && $(GO) test ./schemagen -run '^TestSchemaUpToDate$$' -update
 
 # Checks that the schema is up to date and agrees with the configuration
 # validation.
 schema-check:
-	$(GO) vet -tags $(SCHEMA_TAGS) ./internal/presetdoc
-	$(GO) test -tags $(SCHEMA_TAGS) ./internal/presetdoc
+	cd $(DEV_MODULE) && $(GO) vet ./... && $(GO) test ./...
 
 # Files under testdata are skipped: some hold syntax errors on purpose.
 fmt-check:
