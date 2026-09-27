@@ -89,7 +89,7 @@ describe.skipIf(!haveWasm)('engine', () => {
 
   // With TinyGo's precise GC, this config trapped inside yaml.v3 when it
   // was the first call on a new instance (see docs/adr/0001).
-  it('compiles a config as the first call on a new instance', async () => {
+  it('rejects a config without a trap as the first call on a new instance', async () => {
     const reasons: RecreateReason[] = [];
     engine = await loadEngine({ onRecreate: (r) => reasons.push(r) });
     await engine.compile('{').catch(() => undefined);

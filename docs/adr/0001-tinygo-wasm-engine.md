@@ -48,9 +48,9 @@ requires identical results.
 - The build first used the precise GC. With it, compiling
   `!!!!000aaaa: 0\n--- 0` as the first call on a new instance trapped in
   yaml.v3's `panic("read handler must be set")`, although the parser sets
-  that handler before it reads. The GC most likely reclaimed memory the
-  parser still used. The conservative GC and the leaking GC compile the
-  same input without a trap.
+  that handler before it reads. The precise GC most likely freed memory
+  the parser still used; we did not identify which object. Builds with the
+  conservative or the leaking GC reject the same input without a trap.
 - The standard Go toolchain can build the same exports for `GOOS=wasip1`
   with `-buildmode=c-shared`; CI keeps that build compiling as a fallback.
 - Measured on this repository: the engine is 0.84 MB (0.36 MB gzip), a
