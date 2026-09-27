@@ -9,6 +9,22 @@ The Chrome extension (Manifest V3) that folds reviewer-agreed Go code in the "Fi
 
 To try it, turn on Developer mode in `chrome://extensions` and load `dist/` with "Load unpacked".
 
+## Release
+
+Merge a change to `main` that raises `version` in `package.json`, for example to `0.2.0`. The Chrome Web Store needs a plain version, higher than the last upload. You need not edit `manifest.json`; the workflow commits it.
+
+1. `.github/workflows/tag-chrome-extension.yml` checks the version with `scripts/release-version.mjs`, commits it to `manifest.json` on `main` with `scripts/sync-manifest-version.mjs`, and tags that commit `packages/chrome-extension/v0.2.0`.
+2. The tag starts `.github/workflows/release-chrome-extension.yml`. After all of CI passes on the tag, it attaches the CI build of `dist.zip` as `go-tebanare-chrome-extension-v0.2.0.zip`, with `SHA256SUMS`, to the GitHub release of the tag.
+3. Upload that zip in the Chrome Web Store developer dashboard.
+
+The tag workflow pushes as the GitHub App `go-tebanare-release`. It needs the variable `RELEASE_APP_ID` and the secret `RELEASE_APP_PRIVATE_KEY`, Contents: Read and write, and permission to bypass any protection of `main`.
+
+A push to `main` that leaves the version as it was tags nothing. To tag the version already on `main`, for the first release for example, run the tag workflow by hand from the Actions tab.
+
+If CI fails on the tag, no release exists yet: fix the cause on `main`, delete the tag, and run the tag workflow by hand again. A release run that failed after CI passed can be retried by running the release workflow by hand on the tag; it finishes a draft and leaves a published release alone. The repository uses immutable releases, so a published release keeps its tag and assets. To replace one, raise the version. A tag pushed by hand also starts the release workflow, which checks that the tag is on `main`, matches `package.json` and `manifest.json`, and is higher than every other release.
+
+The release workflow holds a commented-out `publish` job that uploads the zip with the Chrome Web Store API and submits it for review. It stays commented out until someone uploads the first zip by hand in the developer dashboard, which creates the store item. The comment above the job lists the settings it needs.
+
 ## Tests
 
 | Command | Runs |

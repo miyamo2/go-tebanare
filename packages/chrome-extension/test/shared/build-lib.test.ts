@@ -2,7 +2,14 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { buildErrors, chromeVersion, esbuildTarget } from '../../scripts/build-lib.mjs';
+import {
+  buildErrors,
+  chromeVersion,
+  compareVersions,
+  esbuildTarget,
+  releaseVersionErrors,
+  withVersion,
+} from '../../scripts/build-lib.mjs';
 
 const pkgRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const readJson = (name: string) => JSON.parse(readFileSync(join(pkgRoot, name), 'utf8')) as Record<string, unknown>;
@@ -80,6 +87,56 @@ describe('buildErrors', () => {
     expect(buildErrors({ ...ok, version: '0.0.0' })).toEqual([
       'package.json version "0.0.0" does not map to a Chrome manifest version.',
     ]);
+  });
+});
+
+describe('releaseVersionErrors', () => {
+  it('accepts a plain version higher than the last release', () => {
+    expect(releaseVersionErrors(undefined, '0.1.0')).toEqual([]);
+    expect(releaseVersionErrors('0.1.0', '0.2.0')).toEqual([]);
+    expect(releaseVersionErrors('0.9.0', '0.10.0')).toEqual([]);
+    expect(releaseVersionErrors('1.0', '1.0.0.1')).toEqual([]);
+  });
+
+  it('refuses a version that is not higher', () => {
+    expect(releaseVersionErrors('0.10.0', '0.9.0')).toEqual(['version 0.9.0 is not higher than the last release 0.10.0.']);
+    expect(releaseVersionErrors('1.0.0', '1.0')).toEqual(['version 1.0 is not higher than the last release 1.0.0.']);
+  });
+
+  it('refuses a suffix or a version Chrome cannot use', () => {
+    expect(releaseVersionErrors('0.1.0', '0.2.0-rc.1')).toEqual([
+      'version 0.2.0-rc.1 has a suffix. A release needs a plain version such as 0.2.0.',
+    ]);
+    expect(releaseVersionErrors(undefined, 'v0.2.0')).toEqual(['version "v0.2.0" does not map to a Chrome manifest version.']);
+  });
+
+  it('accepts the package version as a first release', () => {
+    expect(releaseVersionErrors(undefined, String(readJson('package.json')['version']))).toEqual([]);
+  });
+});
+
+describe('compareVersions', () => {
+  it.each([
+    ['1.0.0', '1.0.0', 0],
+    ['1.0', '1.0.0', 0],
+    ['0.10.0', '0.9.0', 1],
+    ['0.9.0', '0.10.0', -1],
+    ['1.2.3.4', '1.2.3', 1],
+  ])('compares %s with %s', (a, b, sign) => {
+    expect(Math.sign(compareVersions(a, b))).toBe(sign);
+  });
+});
+
+describe('withVersion', () => {
+  it('sets version and keeps manifest_version and the line count', () => {
+    const manifest = readFileSync(join(pkgRoot, 'manifest.json'), 'utf8');
+    const got = withVersion(manifest, '9.8.7');
+    expect(JSON.parse(got)).toEqual({ ...JSON.parse(manifest), version: '9.8.7' });
+    expect(got.split('\n')).toHaveLength(manifest.split('\n').length);
+  });
+
+  it('throws without a version member', () => {
+    expect(() => withVersion('{"manifest_version": 3}', '1.0.0')).toThrow('no "version" member');
   });
 });
 

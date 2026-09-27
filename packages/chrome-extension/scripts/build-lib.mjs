@@ -1,4 +1,5 @@
-// Checks and conversions used by build.mjs, kept free of I/O so that
+// Checks and conversions used by build.mjs, release-version.mjs, and
+// sync-manifest-version.mjs, kept free of I/O so that
 // test/shared/build-lib.test.ts can run them.
 
 /**
@@ -77,4 +78,54 @@ export function buildErrors({ version, missingEntries, wasmMissing, zip, allowSt
     for (const src of missingEntries) errors.push(`${src} does not exist. Pass --allow-stubs to build an empty stub for it.`);
   }
   return errors;
+}
+
+/**
+ * releaseVersionErrors returns the reasons next cannot be released after
+ * previous, the version of the last release (undefined before the first).
+ * The Chrome Web Store needs a plain version, one to four integers, and a
+ * higher one for every upload.
+ * @param {string | undefined} previous
+ * @param {string} next
+ * @returns {string[]}
+ */
+export function releaseVersionErrors(previous, next) {
+  const mapped = parseVersion(next);
+  if (!mapped) return [`version ${JSON.stringify(next)} does not map to a Chrome manifest version.`];
+  if (mapped.version_name !== undefined) return [`version ${next} has a suffix. A release needs a plain version such as 0.2.0.`];
+  if (previous !== undefined && compareVersions(next, previous) <= 0) {
+    return [`version ${next} is not higher than the last release ${previous}.`];
+  }
+  return [];
+}
+
+/**
+ * compareVersions compares two dot-separated versions of integers, reading a
+ * missing part as 0.
+ * @param {string} a
+ * @param {string} b
+ * @returns {number} negative, zero, or positive as a is lower, equal, or higher
+ */
+export function compareVersions(a, b) {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (d !== 0) return d;
+  }
+  return 0;
+}
+
+/**
+ * withVersion returns the JSON text with the first string-valued "version"
+ * member in the text set to version, keeping the rest of the text as it is.
+ * "manifest_version" does not match.
+ * @param {string} text
+ * @param {string} version
+ * @returns {string}
+ */
+export function withVersion(text, version) {
+  const re = /("version"\s*:\s*)"[^"]*"/;
+  if (!re.test(text)) throw new Error('no "version" member');
+  return text.replace(re, (_, key) => `${key}${JSON.stringify(version)}`);
 }
