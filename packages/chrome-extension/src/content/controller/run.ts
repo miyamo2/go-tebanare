@@ -6,6 +6,7 @@
 
 import type { ConfigSource, PageState, PageStatus } from '../../shared/messages.js';
 import type { PullRequestContext } from '../context.js';
+import { isSignedOut } from '../page.js';
 import type { DiffUiVariant } from '../dom/variant.js';
 import type { Semaphore, SourceFetcher } from '../fetcher.js';
 import { renderBanner } from '../ui/banner.js';
@@ -53,7 +54,7 @@ export class Run {
   /** start loads the config and shows the files. Without commits it ends in the error state. */
   async start(): Promise<void> {
     if (!this.ctx) {
-      this.#report.addPage({ kind: 'context-error' });
+      this.#report.addPage({ kind: 'context-error', signedOut: isSignedOut(this.#deps.doc) });
       return this.#finish('error');
     }
     this.#finish('loading');

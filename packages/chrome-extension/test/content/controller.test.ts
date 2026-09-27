@@ -97,6 +97,18 @@ describe('pipeline', () => {
     expect(h.fetcher.calls).toEqual([]);
   });
 
+  it('asks a signed-out visitor to sign in when the page does not name the commits', async () => {
+    buildPage(modified());
+    for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
+    document.body.classList.add('logged-out');
+    const h = harness();
+    await h.controller.start();
+    await h.settle();
+    const text = 'Could not read the pull request commits from this page, so nothing is hidden. Sign in to GitHub and reload the page.';
+    expect(h.controller.status()).toMatchObject({ state: 'error', messages: [text] });
+    expect(bannerTexts()).toEqual([text]);
+  });
+
   it("reads the commits from the server's copy of a page that does not name them", async () => {
     const [store] = buildPage(modified());
     for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();

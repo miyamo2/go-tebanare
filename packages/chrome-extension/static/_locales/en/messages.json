@@ -1,6 +1,6 @@
 {
   "extName": { "message": "go-tebanare" },
-  "extDescription": { "message": "Folds reviewer-agreed Go code, such as getters and if err != nil blocks, in GitHub pull request diffs." },
+  "extDescription": { "message": "Folds reviewer-agreed Go code, such as getters and if err != nil blocks, in GitHub PR diffs. Requires being signed in to GitHub." },
   "commandToggle": { "message": "Turn hiding on or off" },
   "countLinesOne": { "message": "1 line" },
   "countLines": {
@@ -99,6 +99,7 @@
     "placeholders": { "path": { "content": "$1" } }
   },
   "bannerContextError": { "message": "Could not read the pull request commits from this page, so nothing is hidden." },
+  "bannerContextErrorSignedOut": { "message": "Could not read the pull request commits from this page, so nothing is hidden. Sign in to GitHub and reload the page." },
   "bannerAnalysisFailed": {
     "message": "Nothing is hidden in $path$ because the analysis failed: $error$",
     "placeholders": { "path": { "content": "$1" }, "error": { "content": "$2" } }

@@ -50,3 +50,15 @@ export function parsePullUrl(url: string): PullPage | null {
   if (!isOwnerName(owner) || !isRepoName(repo) || !NUMBER.test(num)) return null;
   return { owner, repo, number: Number(num) };
 }
+
+/**
+ * isSignedOut reports whether GitHub rendered doc for a signed-out visitor:
+ * the body has the class "logged-out", or the user-login meta tag is empty.
+ * A page with neither counts as signed in, so a signed-in user does not see
+ * the sign-in hint.
+ */
+export function isSignedOut(doc: Document): boolean {
+  if (doc.body?.classList.contains('logged-out')) return true;
+  const login = doc.querySelector<HTMLMetaElement>('meta[name="user-login"]');
+  return login !== null && login.content.trim() === '';
+}

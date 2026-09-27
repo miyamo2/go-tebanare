@@ -60,6 +60,7 @@ describe('texts', () => {
     [{ kind: 'source-mismatch', path: 'a.go' }, { level: 'warning', text: 'Nothing is hidden in a.go because the page does not match the analyzed source.' }],
     [{ kind: 'analysis-failed', path: 'a.go', error: 'boom' }, { level: 'warning', text: 'Nothing is hidden in a.go because the analysis failed: boom' }],
     [{ kind: 'context-error' }, { level: 'error', text: 'Could not read the pull request commits from this page, so nothing is hidden.' }],
+    [{ kind: 'context-error', signedOut: true }, { level: 'error', text: 'Could not read the pull request commits from this page, so nothing is hidden. Sign in to GitHub and reload the page.' }],
     [{ kind: 'unsupported-ui' }, { level: 'info', text: 'This GitHub diff layout is not supported yet, so nothing is hidden.' }],
     [{ kind: 'split-view' }, { level: 'info', text: 'Split view is not supported yet. Switch to the unified view to fold code.' }],
   ])('describes %o', (notice, want) => {

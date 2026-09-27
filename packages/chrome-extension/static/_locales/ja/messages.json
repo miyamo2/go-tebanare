@@ -1,6 +1,6 @@
 {
   "extName": { "message": "go-tebanare" },
-  "extDescription": { "message": "GitHub の PR の diff で、getter や if err != nil ブロックなど、レビュアー間で合意した Go のコードを折りたたみます。" },
+  "extDescription": { "message": "GitHub の PR の diff で、getter や if err != nil ブロックなど、レビュアー間で合意した Go のコードを折りたたみます。GitHub へのログインが必要です。" },
   "commandToggle": { "message": "非表示の ON/OFF" },
   "countLinesOne": { "message": "1 行" },
   "countLines": {
@@ -99,6 +99,7 @@
     "placeholders": { "path": { "content": "$1" } }
   },
   "bannerContextError": { "message": "このページから PR のコミットを読み取れないため、何も隠していません。" },
+  "bannerContextErrorSignedOut": { "message": "このページから PR のコミットを読み取れないため、何も隠していません。GitHub にログインしてページを再読み込みしてください。" },
   "bannerAnalysisFailed": {
     "message": "$path$ の解析に失敗したため、何も隠していません: $error$",
     "placeholders": { "path": { "content": "$1" }, "error": { "content": "$2" } }
