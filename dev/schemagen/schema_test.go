@@ -143,18 +143,16 @@ func TestSchemaAcceptsFixtures(t *testing.T) {
 	sch := compileSchema(t)
 	root := filepath.Join("..", "..")
 	var srcs []string
-	for _, dir := range []string{"testdata", filepath.Join("packages", "chrome-extension", "e2e", "fixtures")} {
-		err := filepath.WalkDir(filepath.Join(root, dir), func(path string, d fs.DirEntry, err error) error {
-			if err != nil || d.IsDir() || (filepath.Ext(path) != ".yml" && filepath.Ext(path) != ".yaml") {
-				return err
-			}
-			b, err := os.ReadFile(path)
-			srcs = append(srcs, string(b))
+	err := filepath.WalkDir(filepath.Join(root, "testdata"), func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || (filepath.Ext(path) != ".yml" && filepath.Ext(path) != ".yaml") {
 			return err
-		})
-		if err != nil {
-			t.Fatal(err)
 		}
+		b, err := os.ReadFile(path)
+		srcs = append(srcs, string(b))
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 	for _, p := range tebanare.Presets() {
 		for _, ex := range p.Examples {

@@ -1,5 +1,0 @@
-# Synthetic fixture: the config at the base commit of acme/widgets#7.
-version: 1
-presets:
-  - getter
-  - iferr

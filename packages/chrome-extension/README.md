@@ -34,49 +34,26 @@ The release workflow holds a commented-out `publish` job that uploads the zip wi
 | `bun run --filter @go-tebanare/chrome-extension typecheck` | `tsc` over `src/`, then over `test/`, `e2e/`, and the configs |
 | `bun run --filter @go-tebanare/chrome-extension lint` | ESLint over the package |
 | `bun run --filter @go-tebanare/chrome-extension test` | the unit tests in `test/` (vitest, happy-dom for DOM tests) |
-| `bun run --filter @go-tebanare/chrome-extension e2e` | the end-to-end tests in `e2e/` (Playwright) |
+| `make e2e` (at the repository root) | the end-to-end tests in `e2e/` (Playwright), on github.com |
 
 ## End-to-end tests
 
-`e2e/global-setup.ts` builds `dist/` before the tests and stops when `dist/engine.wasm` is missing, so run `make wasm` once first. Each test starts Chromium with a new profile and loads `dist/` as an unpacked extension, in the new headless mode of Playwright's `chromium` channel.
+`e2e/` runs the built extension on a real pull request, signed in to github.com: the "Files changed" tab of [miyamo2/go-tebanare-sample#1](https://github.com/miyamo2/go-tebanare-sample/pull/1/changes), a pull request that stays open as the fixture for these tests. It checks the page status, the fold rows, and which rows are hidden or visible in each file. One test opens the page signed in, where GitHub shows the React view; the other opens it signed out (`test.use({ signedIn: false })`), where GitHub redirects to `/files`, shows the classic table, and leaves out the commits, so the extension asks the REST API for them. Both must fold the same rows, so the tests catch changes to either markup and to the signed-out lookup. The signed-out test makes two unauthenticated API requests, which count against GitHub's limit of 60 an hour per IP address.
 
-Playwright needs the Chromium build that matches `@playwright/test` 1.56.1. Install it once:
-
-```sh
-bun run --cwd packages/chrome-extension playwright install chromium
-```
-
-Skip this step where `PLAYWRIGHT_BROWSERS_PATH` already points to a directory with that build.
-
-To watch the browser, pass `--headed`. Without a display, run it under Xvfb:
-
-```sh
-xvfb-run -a bun run --cwd packages/chrome-extension e2e --headed
-```
-
-The tests never contact github.com. `context.route` answers every `https://github.com/**` request from `e2e/fixtures/`, after the test has changed the page or the files where it needs to:
-
-| Request | Answer |
+| Variable | Meaning |
 |---|---|
-| `/acme/widgets/pull/7/files` | `pull-7-files.html` |
-| `/acme/widgets/raw/<sha>/<path>` | the file under `testdata/base/` or `testdata/head/`, chosen by the commit the page names |
-| anything else, including `.gotebanare.yaml` | 404 |
+| `E2E_GH_USER`, `E2E_GH_PASSWORD` | the account the tests sign in with (required) |
+| `E2E_GH_TOTP_SECRET` | the base32 setup key of the account's authenticator app (required) |
+| `E2E_GH_AUTH_STATE` | where the signed-in session is kept; `e2e/.auth/github.json` by default |
 
-`extension.spec.ts` checks that:
+To run them locally:
 
-- the getter's rows and the 3-line `if err != nil` block are hidden under fold rows that summarize the rules on one line (their tooltips give the details), and the other new code stays visible;
-- a fold row shows its rows and hides them again, and the button in the file header shows every fold and hides them all again;
-- turning hiding off with the popup's `set-tab-state` request shows every row, and the `toggle-hiding` command hides them again.
+1. Install the Chromium build that matches `@playwright/test` 1.56.1 once: `bun run --cwd packages/chrome-extension playwright install chromium`. Skip this where `PLAYWRIGHT_BROWSERS_PATH` already points to a directory with that build.
+2. Copy `.env.e2e.example` to `.env.e2e` and fill it in. Git ignores both `.env.e2e` and `e2e/.auth/`.
+3. Run `make e2e` at the repository root. To watch the browser, run `make e2e E2E_FLAGS=--headed` instead; without a display, run that under `xvfb-run -a`.
 
-The popup request is sent from `popup.html` opened in a tab. The command is fired in the service worker with `chrome.commands.onCommand.dispatch`, which Chromium exposes but the typed API leaves out.
+`make e2e` builds `engine.wasm` if it is missing, then runs `scripts/e2e.sh`. The script fills in the variables the environment leaves unset from `.env.e2e` and starts Playwright. `bun run --cwd packages/chrome-extension e2e` runs the same script and passes its arguments to Playwright.
 
-`failsafe.spec.ts` checks that the extension hides nothing when:
+`e2e/global-setup.ts` builds `dist/` and signs in once in a separate browser. Each test then starts Chromium with a new profile, loads `dist/` as an unpacked extension in the new headless mode of Playwright's `chromium` channel, and copies the session cookies into that profile. A saved session that GitHub still accepts is reused, so repeated local runs do not sign in again. The sign-in enters the code that `E2E_GH_TOTP_SECRET` gives at that moment. The account needs two-factor authentication with an authenticator app: without it, GitHub e-mails a code to verify each new device, and global setup stops with an error.
 
-- the base commit has no config, even though the head commit adds one;
-- the config has a YAML syntax error (`broken.gotebanare.yml`) or names an unknown preset, and a banner lists the errors;
-- the page lacks the `diff-table` class, so its diff UI is unknown, and a banner says so;
-- a raw source differs from the page by one line, and a banner names the file.
-
-### Synthetic fixtures
-
-The page and the sources are synthetic. `pull-7-files.html` follows the same model of GitHub's classic (server-rendered) diff markup as `test/fixtures/classic-*.html`, and its rows are the `git diff` of the two `store.go` files. That markup is confirmed against a saved "Files changed" page; the page and raw files are the regression fixture and are not regenerated from a live one. The Go sources live under `testdata/` so that the Go tool skips them.
+On CI, the `e2e` job of `.github/workflows/ci.yml` runs the tests with the repository secrets of the same names, and the release workflow passes them on with `secrets: inherit`. Pull requests from forks and Dependabot get no secrets and skip the job. GitHub keeps one pending run of the job, so a newer run cancels a pending one. The job uploads no traces or screenshots, since they would carry the session cookies and the account name.

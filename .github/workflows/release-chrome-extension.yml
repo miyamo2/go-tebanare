@@ -80,6 +80,8 @@ jobs:
   ci:
     needs: version
     uses: ./.github/workflows/ci.yml
+    # The e2e job signs in with the E2E_GH_* secrets.
+    secrets: inherit
 
   release:
     needs: [version, ci]

@@ -125,3 +125,7 @@ packages/chrome-extension/dist.zip
 # Playwright
 test-results/
 playwright-report/
+
+# End-to-end tests: the account and the signed-in session
+packages/chrome-extension/.env.e2e
+packages/chrome-extension/e2e/.auth/
