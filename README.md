@@ -57,9 +57,6 @@ Download the latest release, rather than building it yourself:
 2. Open `chrome://extensions` and turn on **Developer mode**.
 3. Click **Load unpacked** and select the unzipped folder.
 
-> [!TIP]
-> Each CI run also uploads a `chrome-extension` artifact holding the same build, if you want a specific commit instead of a tagged release.
-
 ### Build it yourself
 
 Only needed for development, or to try a change that has not been released yet.
