@@ -1,20 +1,24 @@
 name: tag-chrome-extension
 
-# A push to main that changes the version in
-# packages/chrome-extension/package.json sets the same version in
-# manifest.json (committed to main), tags the result
-# packages/chrome-extension/vX.Y.Z; the tag push starts
+# When a push to main raises the version in
+# packages/chrome-extension/package.json, this workflow commits the same
+# version to manifest.json on main and tags that commit
+# packages/chrome-extension/vX.Y.Z. The tag push starts
 # release-chrome-extension.yml.
 #
+# Run it by hand to tag the version on main when no push raised it: the
+# first release, or a retry after deleting a tag whose release failed.
+#
 # It pushes with a token of the GitHub App go-tebanare-release (variable
-# RELEASE_APP_ID, secret RELEASE_APP_PRIVATE_KEY), which needs Contents: Read
-# and write on this repository and may push to main past its protection. A
-# push with GITHUB_TOKEN would start no workflow, so the tag would not start
-# the release.
+# RELEASE_APP_ID, secret RELEASE_APP_PRIVATE_KEY). The App needs Contents:
+# Read and write on this repository and must be allowed to bypass any
+# protection of main. A tag pushed with GITHUB_TOKEN would not start
+# release-chrome-extension.yml.
 on:
   push:
     branches: [main]
     paths: [packages/chrome-extension/package.json]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -28,6 +32,8 @@ env:
 
 jobs:
   tag:
+    # Forks have no App to push with.
+    if: github.repository == 'miyamo2/go-tebanare'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/create-github-app-token@v2
@@ -49,11 +55,22 @@ jobs:
           node-version: "22"
       - name: Find the version to release
         id: version
+        env:
+          BEFORE: ${{ github.event.before }}
         run: |
-          version="$(jq -r .version packages/chrome-extension/package.json)"
+          pkg=packages/chrome-extension/package.json
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            pushed="$(git show "$GITHUB_SHA:$pkg" | jq -r .version)"
+            before="$( { git show "$BEFORE:$pkg" 2> /dev/null || true; } | jq -r .version)"
+            if [ "$pushed" = "$before" ]; then
+              echo "::notice::the push left the version at $pushed; nothing to release"
+              exit 0
+            fi
+          fi
+          version="$(jq -r .version "$pkg")"
           tag="$TAG_PREFIX$version"
           if git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null; then
-            echo "::notice::$tag exists; the version did not change, so there is nothing to release"
+            echo "::notice::$tag exists; nothing to release"
             exit 0
           fi
           previous="$(git ls-remote --tags --refs origin "refs/tags/$TAG_PREFIX*" \
@@ -62,8 +79,8 @@ jobs:
           node packages/chrome-extension/scripts/release-version.mjs ${previous:+--previous "$previous"}
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-      # The manifest commit runs CI on main. It leaves package.json alone, so
-      # it does not start this workflow again.
+      # Pushing the manifest commit starts CI on main. The commit leaves
+      # package.json alone, so it does not start this workflow again.
       - name: Commit the manifest version
         id: manifest
         if: steps.version.outputs.tag != ''
@@ -75,26 +92,27 @@ jobs:
           user_id="$(gh api "/users/$APP_SLUG[bot]" --jq .id)"
           git config user.name "$APP_SLUG[bot]"
           git config user.email "$user_id+$APP_SLUG[bot]@users.noreply.github.com"
-          node packages/chrome-extension/scripts/sync-manifest-version.mjs
-          if ! git diff --quiet; then
+          for attempt in 1 2 3; do
+            node packages/chrome-extension/scripts/sync-manifest-version.mjs
+            # main already holds the version in manifest.json.
+            if git diff --quiet; then break; fi
             git commit -q -m "chore(chrome-extension): set the manifest version to $VERSION" packages/chrome-extension/manifest.json
-            pushed=
-            for _ in 1 2 3; do
-              if git push origin HEAD:main; then pushed=1; break; fi
-              # main moved on; replay the commit on top of it.
-              git pull --rebase origin main
-              if [ "$(jq -r .version packages/chrome-extension/package.json)" != "$VERSION" ]; then
-                echo "::notice::the version on main changed from $VERSION; the run for that push releases it"
-                exit 0
-              fi
-            done
-            if [ -z "$pushed" ]; then
-              echo "::error::could not push the manifest commit to main"
+            if git push origin HEAD:main; then break; fi
+            if [ "$attempt" = 3 ]; then
+              echo "::error::could not push the manifest commit to main after 3 attempts"
               exit 1
             fi
-          fi
+            # Another push reached main first. Start again from it rather
+            # than rebase, which conflicts when it changed a line next to
+            # the version.
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            if [ "$(jq -r .version packages/chrome-extension/package.json)" != "$VERSION" ]; then
+              echo "::notice::the version on main changed from $VERSION; the run for that push releases it"
+              exit 0
+            fi
+          done
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      # The tag push starts release-chrome-extension.yml.
       - name: Tag the commit
         if: steps.manifest.outputs.sha != ''
         env:

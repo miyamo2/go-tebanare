@@ -1,14 +1,15 @@
 name: release-chrome-extension
 
-# Publishes the Chrome Web Store package of the tag
-# packages/chrome-extension/vX.Y.Z as an asset of the GitHub release of that
-# tag. tag-chrome-extension.yml pushes the tag when the version in
-# packages/chrome-extension/package.json changes on main; pushing the tag by
-# hand starts this workflow too.
+# Runs ci.yml on the tag packages/chrome-extension/vX.Y.Z and attaches its
+# dist.zip to the GitHub release of that tag. tag-chrome-extension.yml
+# pushes the tag when a push to main raises the version in
+# packages/chrome-extension/package.json. A tag pushed by hand starts this
+# workflow too.
 on:
   push:
     tags: ["packages/chrome-extension/v*"]
-  # To run a release again by hand: run it on the tag, never on a branch.
+  # To retry a failed release, run this workflow on the tag. The version job
+  # refuses a branch.
   workflow_dispatch:
 
 permissions:
@@ -26,9 +27,16 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.check.outputs.version }}
+      previous: ${{ steps.check.outputs.previous }}
     steps:
+      # All tags and origin/main, for the checks below.
       - uses: actions/checkout@v4
-      - name: Check the tag against package.json and manifest.json
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check the tag
         id: check
         run: |
           if [ "$GITHUB_REF_TYPE" != tag ] || [ "${GITHUB_REF_NAME#"$TAG_PREFIX"}" = "$GITHUB_REF_NAME" ]; then
@@ -36,20 +44,33 @@ jobs:
             exit 1
           fi
           version="${GITHUB_REF_NAME#"$TAG_PREFIX"}"
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::tag $GITHUB_REF_NAME is not on main"
+            exit 1
+          fi
           want="$(jq -r .version packages/chrome-extension/package.json)"
           if [ "$version" != "$want" ]; then
             echo "::error::tag $GITHUB_REF_NAME does not match packages/chrome-extension/package.json version $want"
             exit 1
           fi
-          # tag-chrome-extension.yml commits it before tagging.
+          # tag-chrome-extension.yml commits this version to manifest.json
+          # before tagging; a tag pushed by hand needs the same commit.
           manifest="$(jq -r .version packages/chrome-extension/manifest.json)"
           if [ "$manifest" != "$version" ]; then
             echo "::error::packages/chrome-extension/manifest.json has version $manifest, want $version"
             exit 1
           fi
+          # The same rules as tag-chrome-extension.yml, for a tag pushed by
+          # hand: a plain version, higher than every other release.
+          previous="$(git tag --list "$TAG_PREFIX*" \
+            | sed "s|^$TAG_PREFIX||" | { grep -E '^[0-9]+(\.[0-9]+)*$' || true; } \
+            | { grep -vxF "$version" || true; } | sort -V | tail -n 1)"
+          node packages/chrome-extension/scripts/release-version.mjs ${previous:+--previous "$previous"} > /dev/null
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "previous=$previous" >> "$GITHUB_OUTPUT"
 
-  # The release ships the dist.zip that this CI run built and tested.
+  # The release ships the dist.zip this CI run built, and only after every
+  # CI job passes.
   ci:
     needs: version
     uses: ./.github/workflows/ci.yml
@@ -61,6 +82,7 @@ jobs:
       contents: write
     env:
       VERSION: ${{ needs.version.outputs.version }}
+      PREVIOUS: ${{ needs.version.outputs.previous }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -87,17 +109,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Notes list the changes since the previous release of the Chrome
-          # extension, not of another package.
-          previous="$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/$TAG_PREFIX" --jq '.[].ref' \
-            | sed "s|^refs/tags/$TAG_PREFIX||" | { grep -E '^[0-9]+(\.[0-9]+)*$' || true; } | sort -V \
-            | awk -v v="$VERSION" '$0 == v { print prev; exit } { prev = $0 }')"
+          # A retried run finds the release, possibly a draft left by a
+          # failed upload, and replaces its assets.
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" ./* --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false
+            exit 0
+          fi
+          # --generate-notes starts at the latest release of any package;
+          # start it at the previous Chrome extension tag instead.
           gh release create "$GITHUB_REF_NAME" ./* \
             --repo "$GITHUB_REPOSITORY" \
             --verify-tag \
             --title "Chrome extension v$VERSION" \
             --generate-notes \
-            ${previous:+--notes-start-tag "$TAG_PREFIX$previous"}
+            ${PREVIOUS:+--notes-start-tag "$TAG_PREFIX$PREVIOUS"}
       - uses: actions/upload-artifact@v4
         with:
           name: release-assets
@@ -107,7 +133,7 @@ jobs:
   # Uploads the package to the Chrome Web Store and submits it for review;
   # the store publishes it once the review passes.
   #
-  # Disabled until the first release: the store creates the item from a
+  # Disabled until the first upload: the store creates the item from a
   # zip uploaded by hand in the developer dashboard, together with the store
   # listing and the privacy practices, and the API can only update an item
   # that exists. After that, uncomment this job and set up:

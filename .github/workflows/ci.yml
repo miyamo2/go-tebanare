@@ -6,7 +6,8 @@ on:
   # Pull requests stacked on other pull requests run CI once they target main.
   pull_request:
     branches: [main]
-  # release.yml runs the whole of CI before it publishes anything.
+  # release-chrome-extension.yml runs all of CI on the tag before it creates
+  # the release.
   workflow_call:
 
 permissions:

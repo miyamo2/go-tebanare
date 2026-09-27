@@ -1,4 +1,5 @@
-// Checks and conversions used by build.mjs, kept free of I/O so that
+// Checks and conversions used by build.mjs, release-version.mjs, and
+// sync-manifest-version.mjs, kept free of I/O so that
 // test/shared/build-lib.test.ts can run them.
 
 /**
@@ -116,9 +117,9 @@ export function compareVersions(a, b) {
 }
 
 /**
- * withVersion returns the JSON text with its first "version" member set to
- * version, keeping the rest of the text as it is. "manifest_version" does
- * not match.
+ * withVersion returns the JSON text with the first string-valued "version"
+ * member in the text set to version, keeping the rest of the text as it is.
+ * "manifest_version" does not match.
  * @param {string} text
  * @param {string} version
  * @returns {string}

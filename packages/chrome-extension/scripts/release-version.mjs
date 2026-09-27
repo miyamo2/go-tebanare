@@ -1,6 +1,6 @@
 // Prints the version in package.json after checking that it can be
-// released to the Chrome Web Store. The release workflows run it; see
-// .github/workflows/tag-chrome-extension.yml.
+// released to the Chrome Web Store. tag-chrome-extension.yml and
+// release-chrome-extension.yml run it before they tag or release.
 //
 //   node scripts/release-version.mjs [--previous <version>]
 //

@@ -128,7 +128,7 @@ describe('compareVersions', () => {
 });
 
 describe('withVersion', () => {
-  it('sets version and leaves manifest_version and the layout alone', () => {
+  it('sets version and keeps manifest_version and the line count', () => {
     const manifest = readFileSync(join(pkgRoot, 'manifest.json'), 'utf8');
     const got = withVersion(manifest, '9.8.7');
     expect(JSON.parse(got)).toEqual({ ...JSON.parse(manifest), version: '9.8.7' });

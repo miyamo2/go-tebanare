@@ -1,7 +1,8 @@
-// Sets the version in manifest.json to the one in package.json, keeping the
-// rest of the file as it is. build.mjs writes the same version into
-// dist/manifest.json in any case; this keeps the source in step for a
-// release. See .github/workflows/tag-chrome-extension.yml.
+// Sets the version in manifest.json to the one in package.json and leaves the
+// rest of the file alone. tag-chrome-extension.yml runs it before tagging,
+// because release-chrome-extension.yml requires manifest.json at the tag to
+// hold the tag's version. build.mjs writes the package.json version into
+// dist/manifest.json on every build, so no other build needs it.
 //
 //   node scripts/sync-manifest-version.mjs
 
