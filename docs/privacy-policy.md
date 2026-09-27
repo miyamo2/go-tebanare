@@ -12,6 +12,8 @@ reviewer-agreed Go code in the "Files changed" tab of GitHub pull requests.
 - It does not communicate with any server other than `github.com`, using the
   browser's existing session on pages the user already has access to.
 - All analysis runs locally in the browser.
+- The use of information received by the extension adheres to the Chrome
+  Web Store User Data Policy, including the Limited Use requirements.
 
 ## What the extension accesses
 
@@ -22,6 +24,9 @@ pull request's "Files changed" page it:
 - Fetches the repository's `.gotebanare.yml` (or `.yaml`) configuration file
   and the full old and new version of each changed file, from
   `https://github.com/<owner>/<repo>/raw/<sha>/<path>`.
+- Fetches the "Files changed" page's HTML from `github.com` when GitHub
+  switches to it via client-side navigation (without a full page load), to
+  read the pull request's base and head commits.
 - Uses the browser's existing GitHub session for these requests
   (`credentials: "same-origin"`); the extension requests no separate token
   and can read only what the signed-in user could already read on GitHub.
