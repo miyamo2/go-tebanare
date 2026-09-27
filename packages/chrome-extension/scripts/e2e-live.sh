@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Runs the live end-to-end tests (e2e-live/) against github.com.
 #
-# The tests sign in with E2E_GH_USER and E2E_GH_PASSWORD (and
-# E2E_GH_TOTP_SECRET when the account uses an authenticator app). The
+# The tests sign in with E2E_GH_USER, E2E_GH_PASSWORD, and
+# E2E_GH_TOTP_SECRET, the setup key of the account's authenticator app. The
 # environment wins; .env.e2e-live in this package, when it exists, fills in
-# the variables the environment leaves unset. See .env.e2e-live.example. Arguments go to "playwright test", for
-# example --headed to watch the browser or to enter a device verification
-# code by hand.
+# the variables the environment leaves unset. See .env.e2e-live.example.
+# Arguments go to "playwright test", for example --headed to watch the
+# browser.
 set -euo pipefail
 
 package_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -28,7 +28,7 @@ if [[ -f .env.e2e-live ]]; then
 fi
 
 missing=()
-for name in E2E_GH_USER E2E_GH_PASSWORD; do
+for name in E2E_GH_USER E2E_GH_PASSWORD E2E_GH_TOTP_SECRET; do
   [[ -n "${!name:-}" ]] || missing+=("$name")
 done
 if (( ${#missing[@]} > 0 )); then

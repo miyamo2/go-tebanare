@@ -22,21 +22,21 @@ export function authStatePath(): string {
 interface Credentials {
   username: string;
   password: string;
-  /** The base32 secret of an authenticator app, when the account uses one for two-factor authentication. */
-  totpSecret?: string;
+  /** The base32 setup key of the account's authenticator app. */
+  totpSecret: string;
 }
 
 function credentials(): Credentials {
   const username = process.env['E2E_GH_USER'] ?? '';
   const password = process.env['E2E_GH_PASSWORD'] ?? '';
-  if (username === '' || password === '') {
+  const totpSecret = process.env['E2E_GH_TOTP_SECRET'] ?? '';
+  if (username === '' || password === '' || totpSecret === '') {
     throw new Error(
-      'The live end-to-end tests sign in to github.com: set E2E_GH_USER and E2E_GH_PASSWORD, ' +
+      'The live end-to-end tests sign in to github.com: set E2E_GH_USER, E2E_GH_PASSWORD, and E2E_GH_TOTP_SECRET, ' +
         'for example in packages/chrome-extension/.env.e2e-live (see .env.e2e-live.example).',
     );
   }
-  const totpSecret = process.env['E2E_GH_TOTP_SECRET'];
-  return totpSecret ? { username, password, totpSecret } : { username, password };
+  return { username, password, totpSecret };
 }
 
 /** signedInLogin returns the content of the page's user-login meta tag: the signed-in login, or "" when signed out. */
@@ -65,9 +65,19 @@ export function totp(secret: string, now = Date.now()): string {
   return String((mac.readUInt32BE(offset) & 0x7fffffff) % 1_000_000).padStart(6, '0');
 }
 
-/** SIGN_IN_TIMEOUT bounds each step of the sign-in; a person verifying the device by hand gets VERIFY_BY_HAND_TIMEOUT. */
+/** SIGN_IN_TIMEOUT bounds each step of the sign-in. */
 const SIGN_IN_TIMEOUT = 60_000;
-const VERIFY_BY_HAND_TIMEOUT = 5 * 60_000;
+
+/**
+ * freshTotp returns a code with at least 5 seconds left in its 30-second
+ * step, waiting for the next step when the current one is about to end, so
+ * GitHub does not receive a code that expires in transit.
+ */
+async function freshTotp(secret: string): Promise<string> {
+  const left = 30_000 - (Date.now() % 30_000);
+  if (left < 5_000) await new Promise((resolve) => setTimeout(resolve, left + 100));
+  return totp(secret);
+}
 
 /**
  * waitAfterSubmit waits until the page leaves the form just submitted:
@@ -80,7 +90,7 @@ async function waitAfterSubmit(page: Page, from: string): Promise<string> {
   return new URL(page.url()).pathname;
 }
 
-async function signIn(context: BrowserContext, creds: Credentials, headed: boolean): Promise<void> {
+async function signIn(context: BrowserContext, creds: Credentials): Promise<void> {
   const page = await context.newPage();
   await page.goto('https://github.com/login');
   await page.locator('#login_field').fill(creds.username);
@@ -92,30 +102,24 @@ async function signIn(context: BrowserContext, creds: Credentials, headed: boole
     const flash = (await page.locator('.flash-error, #js-flash-container .flash').first().textContent({ timeout: 2_000 }).catch(() => null))?.trim();
     throw new Error(`GitHub rejected the sign-in of E2E_GH_USER${flash ? `: ${flash}` : ''}`);
   }
+  // An account with two-factor authentication gets this step instead of
+  // GitHub's e-mailed device verification, which a CI runner, a new device
+  // on every run, could not pass.
   if (path.startsWith('/sessions/two-factor')) {
-    if (!creds.totpSecret) {
-      throw new Error('GitHub asks for a two-factor code: set E2E_GH_TOTP_SECRET to the base32 secret of the account\'s authenticator app.');
-    }
     // Accounts with passkeys or security keys land on another method first.
     if (!path.startsWith('/sessions/two-factor/app')) {
       await page.goto('https://github.com/sessions/two-factor/app');
     }
     const input = page.locator('#app_totp, input[name="app_otp"]').first();
-    await input.fill(totp(creds.totpSecret));
+    await input.fill(await freshTotp(creds.totpSecret));
     // GitHub submits the form once the sixth digit is in.
     path = await waitAfterSubmit(page, new URL(page.url()).pathname);
   }
+  if (path.startsWith('/sessions/two-factor')) {
+    throw new Error('GitHub rejected the two-factor code: check that E2E_GH_TOTP_SECRET is the setup key of the account\'s authenticator app');
+  }
   if (path.startsWith('/sessions/verified-device')) {
-    // Accounts without two-factor authentication get an e-mailed code on an
-    // unknown device, and every CI run is one.
-    if (!headed || process.env['CI']) {
-      throw new Error(
-        'GitHub asks to verify this device with a code it e-mailed to the account. Run the tests with --headed and enter the code ' +
-          'in the browser, or enable two-factor authentication with an authenticator app on the account and set E2E_GH_TOTP_SECRET.',
-      );
-    }
-    console.log(`GitHub e-mailed a device verification code. Enter it in the browser within ${VERIFY_BY_HAND_TIMEOUT / 60_000} minutes.`);
-    await page.waitForURL((u) => !u.pathname.startsWith('/sessions/verified-device'), { timeout: VERIFY_BY_HAND_TIMEOUT });
+    throw new Error('GitHub asks for an e-mailed device verification code, so the account has no two-factor authentication: enable it with an authenticator app');
   }
 
   await page.goto('https://github.com/');
@@ -145,7 +149,7 @@ export async function ensureSession(headed: boolean): Promise<void> {
       if (login.toLowerCase() === creds.username.toLowerCase()) return;
     }
     const context = await browser.newContext();
-    await signIn(context, creds, headed);
+    await signIn(context, creds);
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, JSON.stringify(await context.storageState()), { mode: 0o600 });
     await context.close();
