@@ -14,7 +14,7 @@ Hide the Go code your team agreed not to review in GitHub pull request diffs.
 </div>
 
 > [!IMPORTANT]
-> go-tebanare is in early development. A Chrome Web Store release is planned. Until then, you can self-host the extension by building it from source.
+> go-tebanare is in early development. We plan to publish it on the Chrome Web Store. Until then, self-host it with the steps below. The same steps set up a development build.
 
 ## Overview
 
@@ -53,9 +53,6 @@ if err != nil {                                  // visible: it wraps the error
 - Google Chrome 120 or later
 
 ### Self-host the extension
-
-> [!NOTE]
-> These steps build and load your own copy of the extension. They are for self-hosting and development. Once the extension is on the Chrome Web Store, install it from there.
 
 1. Clone the repository and build the WebAssembly engine:
 
