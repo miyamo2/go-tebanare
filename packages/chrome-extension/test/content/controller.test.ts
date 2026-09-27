@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PullRequestContext } from '../../src/content/context.js';
 import type { PullPage } from '../../src/content/page.js';
 import { FakeChrome, installChrome } from '../fakes/chrome.js';
 import { BASE, CONFIG, HEAD, PAGE, PR_KEY, addedMarks, bannerTexts, buildPage, fileHtml, harness, hiddenRows, hide } from './controller-setup.js';
@@ -161,5 +162,66 @@ describe('pipeline', () => {
     h.fetcher.release();
     await h.settle();
     expect(h.controller.status().state).toBe('ready');
+  });
+});
+
+describe('loading indicator', () => {
+  const loading = () => document.querySelector('[data-gotebanare-banner] .gotebanare-banner-loading') !== null;
+
+  it('shows while the commits are fetched and until every file has its result', async () => {
+    const [store] = buildPage(modified());
+    for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
+    let answer: (ctx: PullRequestContext) => void = () => {};
+    const h = harness({ deps: { fetchContext: () => new Promise((resolve) => (answer = resolve)) } });
+    h.bg.ranges.set('store/store.go', getter);
+    h.fetcher.hold((p) => p === 'store/store.go');
+    const started = h.controller.start();
+    await h.settle();
+    expect(loading()).toBe(true);
+    answer({ ...PAGE, baseSha: BASE, headSha: HEAD });
+    await started;
+    await h.settle();
+    // The config is compiled, but store.go waits for its sources.
+    expect(h.controller.status().state).toBe('ready');
+    expect(loading()).toBe(true);
+    h.fetcher.release();
+    await h.settle();
+    expect(hiddenRows(store!)).toEqual(['+26', '+27', '+28', '+29']);
+    expect(loading()).toBe(false);
+    expect(document.querySelector('[data-gotebanare-banner]')).toBeNull();
+  });
+
+  it('keeps the messages when loading ends in an error', async () => {
+    buildPage(modified());
+    for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
+    const h = harness({ deps: { fetchContext: async () => null } });
+    await h.controller.start();
+    await h.settle();
+    expect(loading()).toBe(false);
+    expect(bannerTexts()).toEqual(['Could not read the pull request commits from this page, so nothing is hidden.']);
+  });
+
+  it('never shows in an excluded repository', async () => {
+    buildPage(modified());
+    const h = harness({ options: { excludedRepos: ['octo-org/*'] } });
+    await h.controller.start();
+    await h.settle();
+    expect(addedMarks()).toBe(0);
+  });
+
+  it('hides while hiding is off', async () => {
+    buildPage(modified());
+    const h = harness();
+    h.fetcher.hold((p) => p === 'store/store.go');
+    await h.controller.start();
+    await h.settle();
+    expect(loading()).toBe(true);
+    h.controller.setTabState({ type: 'tab-state', enabled: false, headPreview: false });
+    expect(loading()).toBe(false);
+    h.controller.setTabState({ type: 'tab-state', enabled: true, headPreview: false });
+    expect(loading()).toBe(true);
+    h.fetcher.release();
+    await h.settle();
+    expect(loading()).toBe(false);
   });
 });

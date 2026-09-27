@@ -75,6 +75,7 @@ export class Run {
   /** refresh shows every file again after hiding was turned on or off. */
   refresh(): void {
     this.#scanner?.refresh();
+    this.#renderBanner();
   }
 
   /** stop drops pending work and removes what the run added to the files. The next run or the controller replaces the banner. */
@@ -124,8 +125,11 @@ export class Run {
     if (this.#stopped) return;
     const { doc } = this.#deps;
     const messages = this.#report.messages();
-    const variant = messages.length > 0 ? this.#deps.detectVariant(doc) : null;
+    // The indicator stays until every file shown has its result. With
+    // hiding off, nothing waits for a result.
+    const loading = this.#deps.enabled() && (this.#state === 'loading' || (this.#scanner?.busy() ?? false));
+    const variant = messages.length > 0 || loading ? this.#deps.detectVariant(doc) : null;
     const [anchor = null] = variant ? variant.fileContainers(doc) : [];
-    renderBanner(doc, messages, anchor);
+    renderBanner(doc, messages, anchor, loading);
   }
 }

@@ -37,6 +37,7 @@
   },
   "debugRowTitleNoRules": { "message": "非表示" },
   "bannerTitle": { "message": "gotebanare" },
+  "bannerLoading": { "message": "隠す行を確認しています…" },
   "bannerConfigError": {
     "message": "$path$ にエラーがあるため、何も隠していません。",
     "placeholders": { "path": { "content": "$1" } }

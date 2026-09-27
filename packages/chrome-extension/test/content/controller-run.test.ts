@@ -4,6 +4,7 @@ import type { PullRequestContext } from '../../src/content/context.js';
 import { Run } from '../../src/content/controller/run.js';
 import { detectVariant } from '../../src/content/dom/variant.js';
 import { Semaphore } from '../../src/content/fetcher.js';
+import { removeBanner } from '../../src/content/ui/banner.js';
 import type { ConfigSource } from '../../src/shared/messages.js';
 import { FakeChrome, installChrome } from '../fakes/chrome.js';
 import { BASE, CONFIG, FakeBackground, FakeFetcher, HEAD, PAGE, addedMarks, bannerTexts, buildPage, fileHtml, hiddenRows, hide } from './controller-fakes.js';
@@ -114,6 +115,9 @@ describe('Run', () => {
     await settle();
     expect(hiddenRows(store!)).toHaveLength(4);
     run.stop();
+    // The banner, still showing the loading indicator for the held file, is
+    // left for the next run or the controller to replace.
+    removeBanner(document);
     expect(addedMarks()).toBe(0);
     fetcher.release();
     run.update({ targets: [document.body], added: [] });

@@ -11,6 +11,7 @@
   --gotebanare-fg-on-emphasis: var(--fgColor-onEmphasis, var(--color-fg-on-emphasis, #ffffff));
   --gotebanare-accent-fg: var(--fgColor-accent, var(--color-accent-fg, #0969da));
   --gotebanare-accent-bg: var(--bgColor-accent-muted, var(--color-accent-subtle, #ddf4ff));
+  --gotebanare-accent-border: var(--borderColor-accent-emphasis, var(--color-accent-emphasis, #0969da));
   --gotebanare-accent-emphasis: var(--bgColor-accent-emphasis, var(--color-accent-emphasis, #0969da));
   --gotebanare-control-hover-bg: var(--control-transparent-bgColor-hover, var(--color-action-list-item-default-hover-bg, #d1d9e03d));
   --gotebanare-attention-bg: var(--bgColor-attention-muted, var(--color-attention-subtle, #fff8c5));
@@ -46,8 +47,11 @@ tr[data-gotebanare-debug] > td:first-child {
  *   data-gotebanare-open on the row), then an empty td over the code column.
  * File badge: button.gotebanare-badge in the file header (eye or eye-closed icon).
  * Banner: .gotebanare-banner before the first file container with
- *   .gotebanare-banner-title and ul.gotebanare-banner-messages > li
- *   (data-level="error" | "warning" | "info").
+ *   .gotebanare-banner-title, .gotebanare-banner-loading (a spinner and
+ *   text, while the lines to hide are not known yet), and
+ *   ul.gotebanare-banner-messages > li (data-level="error" | "warning" |
+ *   "info"). data-loading-only marks a banner with nothing but the
+ *   indicator, which uses the accent colors instead of the attention ones.
  */
 
 tr[data-gotebanare-fold] > td {
@@ -114,4 +118,35 @@ tr[data-gotebanare-fold] > td {
 }
 .gotebanare-banner-messages > li[data-level="error"] {
   color: var(--gotebanare-danger-fg);
+}
+
+.gotebanare-banner[data-loading-only] {
+  border-color: var(--gotebanare-accent-border);
+  background-color: var(--gotebanare-accent-bg);
+}
+.gotebanare-banner-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  color: var(--gotebanare-fg-muted);
+}
+.gotebanare-spinner {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--gotebanare-accent-border);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: gotebanare-spin 0.8s linear infinite;
+}
+@keyframes gotebanare-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gotebanare-spinner {
+    animation: none;
+  }
 }

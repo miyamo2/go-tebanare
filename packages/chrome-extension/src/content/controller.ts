@@ -16,7 +16,7 @@ import { watchMutations, type Changes, type FrameApi, type ObserverCtor } from '
 import type { DiffUiVariant } from './dom/variant.js';
 import { Semaphore, type SourceFetcher } from './fetcher.js';
 import type { PullPage } from './page.js';
-import { removeBanner } from './ui/banner.js';
+import { removeBanner, renderBanner } from './ui/banner.js';
 
 /** At most this many files are analyzed at once (plan 6.4). */
 export const MAX_FILES_IN_FLIGHT = 4;
@@ -98,7 +98,8 @@ export class Controller {
     // Before the first run, the pipeline has not read headPreview yet. A
     // run without commits has no config to load.
     if (previewChanged && this.#run?.ctx) void this.#startRun(this.#run.ctx);
-    else if (enabledChanged) this.#run?.refresh();
+    else if (enabledChanged && this.#run) this.#run.refresh();
+    else if (enabledChanged && this.#unwatch) this.#renderLoading();
   }
 
   status(): PageStatus {
@@ -140,9 +141,19 @@ export class Controller {
     }
     const { doc, MutationObserver, frames } = this.#deps;
     this.#unwatch = watchMutations(doc.documentElement, MutationObserver, frames, (changes) => this.#onBatch(changes));
+    // The run takes over the indicator once it starts.
+    this.#renderLoading();
     const ctx = this.#resolve() ?? (await this.#fetchContext());
     if (this.#disposed) return;
     await this.#startRun(ctx);
+  }
+
+  // renderLoading shows the loading indicator before the first run, while
+  // the commits are looked up. With hiding off, it removes the banner.
+  #renderLoading(): void {
+    const { doc } = this.#deps;
+    const [anchor = null] = this.#deps.detectVariant(doc)?.fileContainers(doc) ?? [];
+    renderBanner(doc, [], anchor, this.#enabled);
   }
 
   #resolve(): PullRequestContext | null {

@@ -141,3 +141,36 @@ describe('renderBanner', () => {
     expect(document.body.innerHTML).toBe(before);
   });
 });
+
+describe('loading indicator', () => {
+  const banner = () => document.querySelector<HTMLElement>(`[${BANNER_ATTR}]`);
+  const loadingText = () => banner()?.querySelector('.gotebanare-banner-loading')?.textContent ?? null;
+
+  it('shows the indicator alone in a quiet banner', () => {
+    document.body.innerHTML = '<main></main>';
+    renderBanner(document, [], null, true);
+    expect(loadingText()).toBe('Checking which lines to hide…');
+    expect(banner()?.getAttribute('aria-busy')).toBe('true');
+    expect(banner()?.hasAttribute('data-loading-only')).toBe(true);
+    expect(banner()?.querySelector('ul')).toBeNull();
+  });
+
+  it('shows the indicator with the messages', () => {
+    document.body.innerHTML = '<main></main>';
+    renderBanner(document, [{ level: 'warning', text: 'w' }], null, true);
+    expect(loadingText()).toBe('Checking which lines to hide…');
+    expect(banner()?.hasAttribute('data-loading-only')).toBe(false);
+    expect([...banner()!.querySelectorAll('li')].map((li) => li.textContent)).toEqual(['w']);
+  });
+
+  it('drops the indicator when loading ends', () => {
+    document.body.innerHTML = '<main></main>';
+    const first = renderBanner(document, [], null, true);
+    expect(renderBanner(document, [], null, true)).toBe(first);
+    renderBanner(document, [{ level: 'info', text: 'i' }], null, false);
+    expect(loadingText()).toBeNull();
+    expect(banner()?.hasAttribute('aria-busy')).toBe(false);
+    renderBanner(document, [], null, false);
+    expect(banner()).toBeNull();
+  });
+});

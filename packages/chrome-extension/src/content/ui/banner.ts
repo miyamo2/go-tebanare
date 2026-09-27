@@ -1,6 +1,7 @@
 // The page banner sits above the first file of the diff and lists config
 // errors, fetch failures, and the other reasons the extension hides less
-// than usual, plus the head config preview (plan 6.7).
+// than usual, plus the head config preview (plan 6.7). While the lines to
+// hide are not known yet, it also shows a loading indicator.
 
 import type { Diagnostic } from '@go-tebanare/engine';
 import { t } from '../../shared/i18n.js';
@@ -88,7 +89,7 @@ export function noticeMessages(n: Notice): BannerMessage[] {
   }
 }
 
-function createBanner(doc: Document, messages: readonly BannerMessage[]): HTMLElement {
+function createBanner(doc: Document, messages: readonly BannerMessage[], loading: boolean): HTMLElement {
   const banner = doc.createElement('div');
   banner.className = 'gotebanare-banner';
   banner.setAttribute(BANNER_ATTR, '');
@@ -96,15 +97,30 @@ function createBanner(doc: Document, messages: readonly BannerMessage[]): HTMLEl
   const title = doc.createElement('div');
   title.className = 'gotebanare-banner-title';
   title.textContent = t('bannerTitle');
-  const list = doc.createElement('ul');
-  list.className = 'gotebanare-banner-messages';
-  for (const m of messages) {
-    const li = doc.createElement('li');
-    li.dataset['level'] = m.level;
-    li.textContent = m.text;
-    list.append(li);
+  banner.append(title);
+  if (loading) {
+    banner.setAttribute('aria-busy', 'true');
+    // Only the indicator: a quiet look instead of the attention color.
+    if (messages.length === 0) banner.dataset['loadingOnly'] = '';
+    const line = doc.createElement('div');
+    line.className = 'gotebanare-banner-loading';
+    const spinner = doc.createElement('span');
+    spinner.className = 'gotebanare-spinner';
+    spinner.setAttribute('aria-hidden', 'true');
+    line.append(spinner, t('bannerLoading'));
+    banner.append(line);
   }
-  banner.append(title, list);
+  if (messages.length > 0) {
+    const list = doc.createElement('ul');
+    list.className = 'gotebanare-banner-messages';
+    for (const m of messages) {
+      const li = doc.createElement('li');
+      li.dataset['level'] = m.level;
+      li.textContent = m.text;
+      list.append(li);
+    }
+    banner.append(list);
+  }
   return banner;
 }
 
@@ -126,17 +142,18 @@ export function removeBanner(root: ParentNode): void {
 /**
  * renderBanner shows messages in one banner placed right before anchor (the
  * first file container), or at the top of <main> or <body> when anchor is
- * null or no longer in doc (GitHub replaced it). Empty messages remove the
- * banner. A call that changes nothing leaves the DOM untouched, so it does
- * not wake a MutationObserver.
+ * null or no longer in doc (GitHub replaced it). With loading, the banner
+ * also shows the loading indicator. Empty messages without loading remove
+ * the banner. A call that changes nothing leaves the DOM untouched, so it
+ * does not wake a MutationObserver.
  */
-export function renderBanner(doc: Document, messages: readonly BannerMessage[], anchor: Element | null): HTMLElement | null {
+export function renderBanner(doc: Document, messages: readonly BannerMessage[], anchor: Element | null, loading = false): HTMLElement | null {
   const unique = dedupe(messages);
-  if (unique.length === 0) {
+  if (unique.length === 0 && !loading) {
     removeBanner(doc);
     return null;
   }
-  const banner = createBanner(doc, unique);
+  const banner = createBanner(doc, unique, loading);
   const existing = [...doc.querySelectorAll<HTMLElement>(`[${BANNER_ATTR}]`)];
   const at = anchor?.parentElement && doc.contains(anchor) ? anchor : null;
   const parent = at?.parentElement ?? doc.querySelector('main') ?? doc.body;
