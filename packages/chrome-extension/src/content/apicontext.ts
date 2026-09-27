@@ -1,8 +1,8 @@
-// Looks up a pull request's commits through GitHub's REST API, for
-// signed-out visitors: GitHub's pages name no commits for them, but the
-// API answers for public repositories without credentials. The API allows
-// 60 such requests an hour per IP address, so the lookup caches its
-// answers and stops asking for a while once GitHub refuses.
+// Looks up a pull request's commits through GitHub's REST API for
+// signed-out visitors. GitHub renders their pages without the commits, and
+// the API returns them for public repositories without credentials. GitHub
+// allows 60 such requests an hour per IP address, so ApiContextSource
+// caches answers and pauses for BACKOFF_MS after GitHub refuses one.
 
 import type { PullRequestContext } from './context.js';
 import type { FetchResult } from './fetcher.js';
@@ -11,11 +11,11 @@ import type { PullPage } from './page.js';
 /** The API request ApiContextSource makes. SessionFetcher.fetchApi provides it. */
 export type FetchApiFn = (url: string) => Promise<FetchResult>;
 
-/** A pull request's answer, found or not, is reused for this many milliseconds. */
+/** ApiContextSource reuses a pull request's answer, found or not, for this many milliseconds. */
 export const PULL_TTL_MS = 5 * 60_000;
-/** After GitHub refuses a request (403 or 429, the rate limit), no request is made for this many milliseconds. */
+/** After GitHub refuses a request (403 or 429, the rate limit), ApiContextSource sends none for this many milliseconds. */
 export const BACKOFF_MS = 15 * 60_000;
-/** At most this many pull requests and merge bases are cached; the oldest goes first. */
+/** ApiContextSource caches at most this many pull requests, and as many merge bases, dropping the oldest first. */
 export const MAX_CACHED = 64;
 
 const SHA = /^[0-9a-f]{40}$/;
@@ -37,10 +37,11 @@ export interface ApiContextSourceOptions {
  *
  * The merge base lies on the base branch, as the page's baseOid does
  * (context.ts), so the pull request cannot change the config it reads.
- * A comparison never changes, so merge bases stay cached; pull requests
- * are cached for PULL_TTL_MS, because a push moves the head. resolve never
- * rejects: a private repository (404), a refused or failed request, or a
- * malformed answer returns null.
+ * The merge base of two commits stays the same, so a cached one stays
+ * until MAX_CACHED newer ones push it out. A push moves the head, so a
+ * pull request's answer expires after PULL_TTL_MS. resolve never rejects.
+ * It returns null for a private repository (404), a refused or failed
+ * request, and a malformed answer.
  */
 export class ApiContextSource {
   readonly #fetch: FetchApiFn;
@@ -78,7 +79,7 @@ export class ApiContextSource {
         return isSha(sha) ? sha : null;
       });
       remember(this.#mergeBases, key, mergeBase);
-      // A failed request is asked again next time.
+      // Drop a failed lookup so the next call asks again.
       void mergeBase.then((sha) => sha ?? this.#mergeBases.delete(key));
     }
     const baseSha = await mergeBase;
@@ -89,7 +90,12 @@ export class ApiContextSource {
   /** get returns the parsed JSON of url, or undefined for a failed request, a refusal, or a body that does not parse. */
   async #get(url: string): Promise<unknown> {
     if (this.#now() < this.#blockedUntil) return undefined;
-    const res = await this.#fetch(url);
+    let res: FetchResult;
+    try {
+      res = await this.#fetch(url);
+    } catch {
+      return undefined;
+    }
     if (!res.ok) {
       if (res.status === 403 || res.status === 429) this.#blockedUntil = this.#now() + BACKOFF_MS;
       return undefined;

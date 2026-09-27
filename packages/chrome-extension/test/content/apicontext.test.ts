@@ -89,6 +89,20 @@ describe('ApiContextSource', () => {
     expect(await source.resolve(page)).toBeNull();
   });
 
+  it('returns null and asks again when the comparison request rejects', async () => {
+    let fail = true;
+    const fetch = vi.fn<FetchApiFn>(async (url) => {
+      if (url === COMPARE_URL && fail) throw new Error('boom');
+      return url === PULL_URL ? pull() : compare();
+    });
+    let t = 0;
+    const source = new ApiContextSource(fetch, { now: () => t });
+    expect(await source.resolve(page)).toBeNull();
+    fail = false;
+    t += PULL_TTL_MS;
+    expect(await source.resolve(page)).toEqual({ ...page, baseSha: MERGE, headSha: HEAD });
+  });
+
   it('keeps at most MAX_CACHED pull requests', async () => {
     const { fetch, source } = api();
     for (let n = 1; n <= MAX_CACHED + 1; n++) await source.resolve({ ...page, number: n });

@@ -37,9 +37,10 @@ pull request's "Files changed" page it:
   `https://api.github.com/repos/<owner>/<repo>/pulls/<number>` and
   `https://api.github.com/repos/<owner>/<repo>/compare/<base>...<head>`.
   These requests carry no cookies or token (`credentials: "omit"`), so they
-  work only for public repositories. The answers are kept in memory for a
-  few minutes so that moving between pages does not repeat them. Signed-in
-  users never trigger these requests.
+  work only for public repositories. The extension keeps the answers in
+  memory until the page reloads, and asks again about a pull request after
+  5 minutes, so moving between pages does not repeat the requests. A
+  signed-in user's pages never send these requests.
 - Hides nothing where the configuration or a file isn't accessible, or a
   fetch fails (no access, SSO required, network error, or a file over
   1 MiB).

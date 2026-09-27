@@ -135,8 +135,8 @@ if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage && typeof documen
         send,
         fetcher,
         contexts: defaultContextProvider,
-        // The REST API is only the fallback for signed-out visitors, whose
-        // pages name no commits; a signed-in page never reaches it.
+        // Only a signed-out page falls back to the REST API. GitHub renders
+        // it without the commits.
         fetchContext: async (p) =>
           (await fetchContext((url) => fetcher.fetchPage(url), href, p)) ?? (isSignedOut(document) ? api.resolve(p) : null),
         detectVariant: (doc) => detectVariant(doc),
