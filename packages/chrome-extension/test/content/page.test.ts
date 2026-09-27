@@ -1,5 +1,6 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
-import { isOwnerName, isRepoName, parsePullUrl } from '../../src/content/page.js';
+import { isOwnerName, isRepoName, isSignedOut, parsePullUrl } from '../../src/content/page.js';
 
 describe('parsePullUrl', () => {
   it.each([
@@ -57,5 +58,23 @@ describe('isOwnerName and isRepoName', () => {
     expect(['', '-octo', 'octo_org', 'oc.to', 'a'.repeat(40)].filter(isOwnerName)).toEqual([]);
     expect(['repo', 'my_repo.go', '.github', '-x', 'r'.repeat(100)].filter(isRepoName)).toHaveLength(5);
     expect(['', 're~po', 're po', 'a/b', 'r'.repeat(101)].filter(isRepoName)).toEqual([]);
+  });
+});
+
+describe('isSignedOut', () => {
+  const parse = (html: string) => new DOMParser().parseFromString(html, 'text/html');
+
+  it.each([
+    '<body class="logged-out env-production"></body>',
+    '<head><meta name="user-login" content=""></head><body></body>',
+  ])('is true for %s', (html) => {
+    expect(isSignedOut(parse(html))).toBe(true);
+  });
+
+  it.each([
+    '<head><meta name="user-login" content="octocat"></head><body class="logged-in"></body>',
+    '<body></body>',
+  ])('is false for %s', (html) => {
+    expect(isSignedOut(parse(html))).toBe(false);
   });
 });

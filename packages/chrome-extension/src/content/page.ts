@@ -50,3 +50,15 @@ export function parsePullUrl(url: string): PullPage | null {
   if (!isOwnerName(owner) || !isRepoName(repo) || !NUMBER.test(num)) return null;
   return { owner, repo, number: Number(num) };
 }
+
+/**
+ * isSignedOut reports whether doc is a github.com page for a signed-out
+ * visitor. GitHub gives the body the class "logged-out" and an empty
+ * user-login meta tag on those pages. A page with neither counts as signed
+ * in, so the banner never tells a signed-in user to sign in.
+ */
+export function isSignedOut(doc: Document): boolean {
+  if (doc.body?.classList.contains('logged-out')) return true;
+  const login = doc.querySelector<HTMLMetaElement>('meta[name="user-login"]');
+  return login !== null && login.content.trim() === '';
+}

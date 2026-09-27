@@ -34,6 +34,7 @@ export function fileHtml(name: string, ...replace: [string, string][]): string {
 
 /** buildPage shows the files on one pull request page and returns the containers with a diff table. */
 export function buildPage(...files: string[]): HTMLElement[] {
+  document.body.className = '';
   document.body.innerHTML =
     `<input type="hidden" name="comparison_start_oid" value="${BASE}">` +
     `<input type="hidden" name="comparison_end_oid" value="${HEAD}">` +

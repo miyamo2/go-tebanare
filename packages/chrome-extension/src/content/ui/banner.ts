@@ -26,7 +26,8 @@ export type Notice =
   | { kind: 'fetch-failed'; path: string; reason: FetchFailureReason }
   | { kind: 'source-mismatch'; path: string }
   | { kind: 'analysis-failed'; path: string; error: string }
-  | { kind: 'context-error' }
+  /** signedOut: the page shows GitHub's signed-out layout, so signing in may bring the commits back. */
+  | { kind: 'context-error'; signedOut?: boolean }
   | { kind: 'unsupported-ui' }
   | { kind: 'split-view' };
 
@@ -81,7 +82,7 @@ export function noticeMessages(n: Notice): BannerMessage[] {
     case 'analysis-failed':
       return one('warning', t('bannerAnalysisFailed', n.path, n.error));
     case 'context-error':
-      return one('error', t('bannerContextError'));
+      return one('error', t(n.signedOut ? 'bannerContextErrorSignedOut' : 'bannerContextError'));
     case 'unsupported-ui':
       return one('info', t('bannerUnsupportedUi'));
     case 'split-view':
