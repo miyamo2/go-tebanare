@@ -206,3 +206,4 @@ The [extension README](packages/chrome-extension/README.md) describes the end-to
 - [Presets](docs/presets.md): criteria, settings, and examples of each preset
 - [Design](docs/design.md): the layers and the engine boundary, plus how the engine reports failures
 - [Architecture decision records](docs/adr/README.md): TinyGo, base-branch configuration, session fetches, syntax-only matching, and diff UI variants
+- [Privacy policy](docs/privacy-policy.md): what data the extension accesses, uses, and stores
