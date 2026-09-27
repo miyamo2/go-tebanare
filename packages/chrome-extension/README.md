@@ -21,7 +21,7 @@ The tag workflow pushes as the GitHub App `go-tebanare-release`. It needs the va
 
 A push to `main` that leaves the version as it was tags nothing. To tag the version already on `main`, for the first release for example, run the tag workflow by hand from the Actions tab.
 
-If CI fails on the tag, fix the cause on `main`, delete the tag (and its release, if one exists), and run the tag workflow by hand again. A release run that failed after CI passed can be retried by running the release workflow by hand on the tag. A tag pushed by hand also starts the release workflow, which checks that the tag is on `main`, matches `package.json` and `manifest.json`, and is higher than every other release.
+If CI fails on the tag, no release exists yet: fix the cause on `main`, delete the tag, and run the tag workflow by hand again. A release run that failed after CI passed can be retried by running the release workflow by hand on the tag; it finishes a draft and leaves a published release alone. The repository uses immutable releases, so a published release keeps its tag and assets. To replace one, raise the version. A tag pushed by hand also starts the release workflow, which checks that the tag is on `main`, matches `package.json` and `manifest.json`, and is higher than every other release.
 
 The release workflow holds a commented-out `publish` job that uploads the zip with the Chrome Web Store API and submits it for review. It stays commented out until someone uploads the first zip by hand in the developer dashboard, which creates the store item. The comment above the job lists the settings it needs.
 

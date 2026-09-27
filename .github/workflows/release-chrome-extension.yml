@@ -9,7 +9,8 @@ on:
   push:
     tags: ["packages/chrome-extension/v*"]
   # To retry a failed release, run this workflow on the tag. The version job
-  # refuses a branch.
+  # refuses a branch. A published release is left as it is, since the
+  # repository may lock releases (immutable releases).
   workflow_dispatch:
 
 permissions:
@@ -109,9 +110,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # A retried run finds the release, possibly a draft left by a
-          # failed upload, and replaces its assets.
-          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+          # gh creates the release as a draft, uploads the assets, then
+          # publishes it, so an immutable release gets its assets before it
+          # locks. A retried run finds either a published release, which it
+          # leaves alone, or a draft left by a failed run, which it finishes.
+          if draft="$(gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft 2> /dev/null)"; then
+            if [ "$draft" != true ]; then
+              echo "::notice::$GITHUB_REF_NAME is already published"
+              exit 0
+            fi
             gh release upload "$GITHUB_REF_NAME" ./* --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false
             exit 0
