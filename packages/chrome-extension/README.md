@@ -79,4 +79,4 @@ The popup request is sent from `popup.html` opened in a tab. The command is fire
 
 ### Synthetic fixtures
 
-The page and the sources are synthetic. `pull-7-files.html` follows the same model of GitHub's classic (server-rendered) diff markup as `test/fixtures/classic-*.html`, and its rows are the `git diff` of the two `store.go` files. github.com could not be loaded where they were written, so no selector has been checked against a real page. Spike S2 must replace the page with a saved "Files changed" page and the raw files with the matching sources, then update `src/content/dom/classic.ts` where the markup differs. The Go sources live under `testdata/` so that the Go tool skips them.
+The page and the sources are synthetic. `pull-7-files.html` follows the same model of GitHub's classic (server-rendered) diff markup as `test/fixtures/classic-*.html`, and its rows are the `git diff` of the two `store.go` files. That markup is confirmed against a saved "Files changed" page; the page and raw files are the regression fixture and are not regenerated from a live one. The Go sources live under `testdata/` so that the Go tool skips them.

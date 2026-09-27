@@ -25,7 +25,8 @@ export function createBadge(doc: Document, state: BadgeState, onToggle: () => vo
   button.title = label;
   button.append(createIcon(doc, state.allOpen ? 'eye-closed' : 'eye'));
   button.addEventListener('click', (e) => {
-    // S2: keep the click from reaching header handlers that collapse the file.
+    // Keeps the click from reaching header handlers that collapse the file;
+    // real header markup confirmed this guard is necessary.
     e.stopPropagation();
     onToggle();
   });

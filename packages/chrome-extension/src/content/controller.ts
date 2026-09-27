@@ -195,7 +195,7 @@ export class Controller {
     if (this.#disposed || !run) return;
     try {
       // The commits decide what each file hides, so a new run starts when
-      // the page names other ones. S2: GitHub may show another comparison
+      // the page names other ones. GitHub may show another comparison
       // without a navigation that index.ts sees, for example in a Turbo
       // frame or stream, or when it refreshes after a push.
       const ctx = this.#resolve();

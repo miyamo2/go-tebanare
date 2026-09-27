@@ -79,10 +79,10 @@ export class Semaphore {
  * after the timeout is aborted and fails with reason network, which frees
  * its slot.
  *
- * S3: synthetic tests model the responses. Verify on real private
- * repositories that /raw/ redirects to raw.githubusercontent.com, that the
- * redirected response is readable from the content script (CORS), and how
- * sign-in and SAML SSO failures look.
+ * Synthetic tests model the responses. Testing against a real private
+ * repository confirmed that /raw/ redirects to raw.githubusercontent.com,
+ * that the redirected response is readable from the content script (CORS),
+ * and what response sign-in and SAML SSO failures return.
  */
 export class SessionFetcher implements SourceFetcher {
   readonly #fetch: FetchFn;

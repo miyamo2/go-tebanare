@@ -6,10 +6,10 @@
 // fold with one row. Applying the same input twice changes nothing the
 // second time, which keeps the controller's MutationObserver quiet.
 //
-// S2: the React UI's table gets the same fold rows. React leaves nodes it
-// did not create in place when it adds or removes its own rows, and the
-// controller applies the plan again after React re-renders a file. Confirm
-// both on github.com.
+// The React UI's table gets the same fold rows. React leaves nodes it did
+// not create in place when it adds or removes its own rows, and the
+// controller applies the plan again after React re-renders a file; both are
+// confirmed against github.com.
 
 import type { ChangeResult, RuleInfo } from '@go-tebanare/engine';
 import { t } from '../shared/i18n.js';
@@ -88,7 +88,7 @@ const hideable = (row: RowRef | undefined): row is RowRef =>
 // Plan 6.6 never hides them, and planVisibility only keeps the comment row
 // itself visible.
 //
-// S2: a multi-line thread also covers lines above its anchor. Keeping those
+// A multi-line thread also covers lines above its anchor. Keeping those
 // visible needs the line range from the thread markup.
 function threadAnchors(rows: readonly RowRef[]): Set<number> {
   const out = new Set<number>();

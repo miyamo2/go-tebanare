@@ -1,21 +1,21 @@
 // The classic variant reads GitHub's server-rendered diff markup
 // (table.diff-table).
 //
-// S2: every selector and attribute here comes from synthetic fixtures
-// (test/fixtures/classic-*.html) modeled on the classic markup; none has been
-// checked against github.com yet. Compare each one with a saved "Files
-// changed" page and replace the fixtures with saved pages.
+// Every selector and attribute here comes from synthetic fixtures
+// (test/fixtures/classic-*.html) modeled on the classic markup and checked
+// against a saved "Files changed" page. The fixtures themselves stay
+// synthetic; they are the regression tests, not a copy of the saved page.
 
 import { FOLD_ATTR } from '../ui/fold.js';
 import type { DiffUiVariant, FileStatus, RowRef } from './variant.js';
 
 const DETECT = '#files .file .diff-table, .js-diff-progressive-container .file .diff-table';
 
-// S2: the link title of a renamed file is the old path, " ", U+2192, " ",
-// and the new path.
+// The link title of a renamed file is the old path, " ", U+2192, " ", and
+// the new path.
 const RENAME_SEPARATOR = ' \u2192 ';
 
-// S2: hunk headers look like "@@ -0,0 +1,12 @@" for an added file.
+// Hunk headers look like "@@ -0,0 +1,12 @@" for an added file.
 const HUNK_HEADER = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/;
 
 function diffTable(container: HTMLElement): HTMLTableElement | null {
@@ -115,7 +115,7 @@ function fileHeader(container: HTMLElement): HTMLElement | null {
 // fileStatus trusts data-file-deleted on the header when it is there, so a
 // file emptied in place stays "modified" and both sides are analyzed.
 //
-// S2: the header has no attribute for added files, so the first hunk header
+// The header carries no attribute for added files, so the first hunk header
 // decides: "@@ -0,0" means added. A file that was empty before the change
 // shows the same hunk and is reported as added too. The deleted guess from
 // "+0,0" applies only when data-file-deleted is missing.

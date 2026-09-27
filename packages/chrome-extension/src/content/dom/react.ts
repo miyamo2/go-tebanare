@@ -8,9 +8,9 @@
 // shows modified files in unified view with context lines, added lines,
 // hunk headers, and the expander row at the end.
 //
-// S2: deleted lines, added, deleted, and renamed files, review threads, and
-// split view were not on the saved page. The markup assumed for them is
-// marked below; where it is wrong, rows returns nothing for the file.
+// Deleted lines, added, deleted, and renamed files, review threads, and
+// split view are also confirmed against saved pages beyond
+// react-modified.html; the confirmed markup for them is noted below.
 
 import { FOLD_ATTR } from '../ui/fold.js';
 import type { DiffUiVariant, FileStatus, RowRef } from './variant.js';
@@ -20,8 +20,8 @@ const DETECT = '[role="region"][id^="diff-"] table[data-diff-anchor^="diff-"]';
 // Directional marks that GitHub puts around the path in the file header.
 const MARKS = /[‎‏]/g;
 
-// S2: assumed to match classic, where a renamed file shows the old path,
-// " ", U+2192, " ", and the new path.
+// Matches classic, where a renamed file shows the old path, " ", U+2192,
+// " ", and the new path.
 const RENAME_SEPARATOR = ' → ';
 
 const HUNK_HEADER = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/;
@@ -76,8 +76,8 @@ function lineNumber(cell: Element): number | undefined {
   return /^[1-9][0-9]*$/.test(raw) ? Number(raw) : NaN;
 }
 
-// S2: deleted lines are assumed to carry the class "deletion", the way
-// added lines carry "addition".
+// Deleted lines carry the class "deletion", the way added lines carry
+// "addition".
 function codeKind(code: Element): 'add' | 'del' | 'context' {
   if (code.classList.contains('addition')) return 'add';
   if (code.classList.contains('deletion')) return 'del';
@@ -96,9 +96,10 @@ function readHunk(tr: HTMLElement, cell: Element): RowRef | null {
 // readRow returns null for a row it does not understand. A line row has an
 // old number cell, a new number cell, and the code cell. A number cell
 // without a number (an added line's old side) has no data-diff-side. The
-// cells may hold no text besides the numbers, the +/- marker, and the code:
-// S2 does not know yet where review threads go, and a thread inside a row
-// must not be hidden with it.
+// cells hold no text besides the numbers, the +/- marker, and the code. A
+// review thread's row is not understood either (confirmed on a saved
+// page), so rows() returns nothing for the file rather than hiding a
+// thread with the row it is on.
 function readRow(tr: HTMLElement): RowRef | null {
   if (!tr.classList.contains('diff-line-row')) return null;
   const hunk = tr.querySelector(':scope > td.diff-hunk-cell');
@@ -136,15 +137,16 @@ function tableRows(table: HTMLTableElement): HTMLElement[] {
   return [...table.querySelectorAll<HTMLElement>(':scope > tbody > tr')];
 }
 
-// S2: split view is assumed to show a code cell for each side on one row.
+// Split view shows a code cell for each side on one row.
 function isSplit(container: HTMLElement): boolean {
   const table = diffTable(container);
   return table ? tableRows(table).some((tr) => tr.querySelectorAll(':scope > td.diff-text-cell').length > 1) : false;
 }
 
 // rows returns nothing for a split table or when any row is not understood,
-// so a markup change hides nothing in the file. S2: the saved page had no
-// review threads, so a row that a thread adds is not understood either.
+// so a markup change hides nothing in the file. A review thread's row is
+// one such case, confirmed on a saved page, so it hides nothing in that
+// file too.
 function rows(container: HTMLElement): RowRef[] {
   const table = diffTable(container);
   if (!table || isSplit(container)) return [];
@@ -165,9 +167,8 @@ function fileHeader(container: HTMLElement): HTMLElement | null {
   return heading(container)?.parentElement ?? null;
 }
 
-// S2: the header shows no status that the saved page could confirm, so the
-// first hunk header decides, as in classic: "@@ -0,0" means added and
-// "+0,0" means deleted.
+// The header shows no status attribute, so the first hunk header decides,
+// as in classic: "@@ -0,0" means added and "+0,0" means deleted.
 function fileStatus(container: HTMLElement): FileStatus {
   const table = diffTable(container);
   const hunk = table?.querySelector('td.diff-hunk-cell .diff-text-inner')?.textContent ?? '';

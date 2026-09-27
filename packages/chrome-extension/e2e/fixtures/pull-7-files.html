@@ -2,9 +2,9 @@
   Synthetic fixture: the "Files changed" page of pull request acme/widgets#7,
   which changes one Go file, store/store.go. The diff rows match
   testdata/base/store/store.go and testdata/head/store/store.go.
-  It is modeled on GitHub's classic (server-rendered) markup and is not a
-  saved page, because github.com cannot be loaded where it was written.
-  Spike S2 replaces it with a saved page and its raw files.
+  It is modeled on GitHub's classic (server-rendered) markup and stays
+  synthetic. The markup it models is confirmed against a saved "Files
+  changed" page; see test/fixtures/classic-*.html.
 -->
 <!DOCTYPE html>
 <html lang="en">

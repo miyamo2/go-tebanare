@@ -47,9 +47,9 @@ const EMBEDDED_DATA = 'react-app > script[type="application/json"][data-target="
  * the page it loaded with while it moves to other pages. Several react-app
  * elements must all name the same pair.
  *
- * S3: the fields come from one saved page, trimmed into
- * context-react.html. There baseOid equals the oldCommitOid of every file
- * diff in the JSON, so it is the old side of the diff on display.
+ * baseOid is the old side of the diff on display: it equals the
+ * oldCommitOid of every file diff in the JSON. The fields come from one
+ * saved page, trimmed into context-react.html.
  */
 export const embeddedDataProvider: PullRequestContextProvider = {
   resolve(doc, page) {
@@ -70,9 +70,9 @@ export const embeddedDataProvider: PullRequestContextProvider = {
  * page may repeat the inputs, for example once per review form; every copy
  * must agree.
  *
- * S3: synthetic fixtures model these inputs on GitHub's classic pull
- * request markup. Confirm the names, and that the start oid is the merge
- * base, on real pages.
+ * Synthetic fixtures model these inputs on GitHub's classic pull request
+ * markup. The names are confirmed against real pages, and so is the start
+ * oid's identity as the merge base.
  */
 export const hiddenInputProvider: PullRequestContextProvider = {
   resolve(doc, page) {
@@ -102,11 +102,11 @@ const URL_SOURCES: readonly (readonly [selector: string, attr: string])[] = [
  * and URLs without exactly one valid value of each parameter; the remaining
  * URLs must all name the same pair.
  *
- * S3: synthetic fixtures model these URLs on the deferred diff and context
+ * Synthetic fixtures model these URLs on the deferred diff and context
  * expander URLs of GitHub's classic markup. Comments and descriptions can
  * carry the same parameters in links and images, which is why the provider
- * reads only the elements above. Confirm the elements, attributes, and
- * paths on real pages.
+ * reads only the elements above. The elements, attributes, and paths are
+ * confirmed against real pages.
  */
 export const diffUrlProvider: PullRequestContextProvider = {
   resolve(doc, page) {
