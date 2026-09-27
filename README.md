@@ -9,7 +9,7 @@
 [![Chrome MV3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?logo=googlechrome&logoColor=white)](packages/chrome-extension)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[Overview](#overview) • [Features](#features) • [Getting started](#getting-started) • [Configuration](#configuration) • [Usage](#usage) • [How it works](#how-it-works) • [Development](#development) • [Documentation](#documentation)
+[Overview](#overview) • [Screenshots](#screenshots) • [Features](#features) • [Getting started](#getting-started) • [Configuration](#configuration) • [Usage](#usage) • [How it works](#how-it-works) • [Development](#development) • [Documentation](#documentation)
 
 </div>
 
@@ -35,6 +35,32 @@ if err != nil {                                  // visible: it wraps the error
 	return fmt.Errorf("load config: %w", err)
 }
 ```
+
+## Screenshots
+
+<p align="center">
+  <img src=".assets/screenshots/1-overview-popup.png" width="800" alt="A pull request's Files changed tab with the extension popup open, reporting 6 files analyzed, 3 files with folds, and 10 lines hidden">
+  <br>
+  <sub>The popup reports what it hid for the tab, and lets you turn hiding off or preview the base branch's configuration.</sub>
+</p>
+
+<p align="center">
+  <img src=".assets/screenshots/2-getter-folds.png" width="800" alt="Two getter methods collapsed into fold rows in a diff of domain/task.go">
+  <br>
+  <sub>Matched getters collapse into a fold row that names the preset and the methods it matched.</sub>
+</p>
+
+<p align="center">
+  <img src=".assets/screenshots/3-expand-fold.png" width="800" alt="A fold row expanded back to its two hidden lines">
+  <br>
+  <sub>Click a fold row to show its lines again, and click it again to hide them.</sub>
+</p>
+
+<p align="center">
+  <img src=".assets/screenshots/4-noop-iferr-folds.png" width="800" alt="A noop method and an if err != nil block folded in the same pull request">
+  <br>
+  <sub>The <code>noop</code> and <code>iferr</code> presets fold alongside <code>getter</code> in the same pull request.</sub>
+</p>
 
 ## Features
 
