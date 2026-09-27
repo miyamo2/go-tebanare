@@ -1,0 +1,98 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this project is
+
+go-tebanare is a Chrome extension (Manifest V3) that hides reviewer-agreed Go code (getters, no-op methods, `if err != nil { return err }` blocks) in the "Files changed" tab of GitHub pull requests. A repository opts in with a `.gotebanare.yml` file listing presets. The matching engine is written in Go, compiled to WebAssembly with TinyGo, and shared between a Go package and a TypeScript wrapper.
+
+It is a polyglot monorepo: a Go module at the repository root plus a bun workspace (`packages/*`) for TypeScript.
+
+## Commands
+
+### Go
+
+- `make test` — `go test ./...`
+- `make vet` — `go vet ./...`
+- `make lint` — `golangci-lint run ./...` (config in `.golangci.yml`)
+- `make fmt-check` — checks `gofmt`, skipping `testdata/` (some fixtures hold intentional syntax errors)
+- Single test: `go test ./internal/analyzer/ -run TestName`
+- `make fuzz-smoke` — runs every `Fuzz*` test for `FUZZTIME` each (default 10s); set `FUZZTIME=30s make fuzz-smoke` for a longer run
+- `make fuzz-vectors` — dumps the Go fuzz cache into test vectors under `$TMPDIR/gotebanare-fuzz-vectors`
+- `make parity` — analyzes the Go standard library natively and through `engine.wasm` and compares results; `PARITY_FLAGS=-pairs` pairs declarations across files (needs `engine.wasm`, so run `make wasm` first)
+
+### WebAssembly engine
+
+- `make wasm` — TinyGo build of `packages/engine/wasm/engine.wasm`. Run this after any change to Go code under `internal/`, `cmd/gotebanare-wasm`, or the root package — nothing rebuilds it automatically.
+- `make wasm-check` — validates the built wasm module's exports (`packages/engine/scripts/check-wasm.mjs`)
+- `make wasm-wasip1` — builds the same exports with the standard Go toolchain (`GOOS=wasip1`) as a fallback check; does not produce the artifact the extension uses
+
+### TypeScript (run from the repository root; bun workspace)
+
+- `bun install`
+- `bun run typecheck`, `bun run lint`, `bun run test` — run that script in every package
+- `bun run --filter <package> <script>` — run one package's script, e.g. `bun run --filter @go-tebanare/chrome-extension build`
+- `bun run --filter @go-tebanare/chrome-extension e2e` — Playwright end-to-end tests (needs `dist/`, built from `engine.wasm`; run `make wasm` first). One-time setup: `bun run --cwd packages/chrome-extension playwright install chromium`. Without a display: `xvfb-run -a bun run --filter @go-tebanare/chrome-extension e2e`
+- `make fuzz-wasm` — replays the collected fuzz corpus through `engine.wasm` (`test/fuzz-replay.test.ts`)
+
+### Self-hosting the extension locally
+
+1. `make wasm`
+2. `bun install && bun run --filter @go-tebanare/chrome-extension build` → writes unpacked extension to `packages/chrome-extension/dist/`
+3. Load `dist/` via `chrome://extensions` → Developer mode → Load unpacked
+
+## Architecture
+
+Each layer uses only the layers below it:
+
+| Layer | Location | Role |
+|---|---|---|
+| Browser extension | `packages/chrome-extension` | GitHub adapter: reads the diff from the page (content script), fetches `.gotebanare.yml` and both versions of each file, folds lines. |
+| Engine | `packages/engine` (`@go-tebanare/engine`) | Loads `engine.wasm`, exposes a typed API. Runs in browsers, service workers, and Node. Knows nothing about GitHub. |
+| Wasm bridge | `cmd/gotebanare-wasm`, `internal/bridge` | Exports the Go facade to JavaScript. Built with TinyGo (see `docs/adr/0001-tinygo-wasm-engine.md`). |
+| Facade | package `tebanare` at the repository root (`tebanare.go`) | Public Go API: `Compile`, `Ruleset.AnalyzeChange`, `Presets`, `ConfigFileNames`. |
+| Core | `internal/...` | Configuration, presets, normalized text, analysis, line ranges. No I/O. |
+
+Key `internal/` packages: `config` (parses/validates `.gotebanare.yml`), `presets` (built-in `getter`/`noop`/`iferr` rules), `rule` (compiled rule set), `analyzer` (parses Go source, applies rules, computes line ranges to hide), `result` (JSON result types shared with TypeScript), `canon`/`lines` (normalized text and line handling), `bridge` (wasm export surface).
+
+### The wasm boundary
+
+`engine.wasm` imports nothing; its exports take/return `uint32` addresses into linear memory (alloc/write JSON in/call export/read `result_len()` bytes/free). `compile` returns a handle to a compiled ruleset; `analyze_change` takes that handle plus a JSON meta object and both sides' source bytes; `info` returns the API version, engine version, and configuration file names. Errors normally come back as JSON, not traps — see "Failure handling" below. Full details: `docs/design.md`.
+
+TinyGo cannot `recover` on wasm, so any panic traps and kills the instance. `@go-tebanare/engine` treats a trap as "hide nothing": `analyzeChange` resolves with an `engine-crashed` diagnostic, `compile` rejects with a `ConfigError` (for a YAML syntax panic, engine.wasm counts bytes read so it can report the line) or the trap's error otherwise. Because of this, code on the analysis path must not rely on `recover`: `go/parser` runs with `AllErrors`, and the analyzer checks bracket depth, `else if` chain length, and AST depth before recursing to avoid overflowing TinyGo's 8 MB stack.
+
+### Cross-boundary test contracts
+
+Several fixtures are the shared contract between the Go and TypeScript sides — changing them changes what both sides assert:
+
+- `testdata/analyze/*` — `AnalyzeChange` results checked natively in Go and replayed against `engine.wasm` from `packages/engine/test/contract.test.ts`.
+- `testdata/contract/*.json` — JSON snapshots of `info`, `presets`, `compile`, written by `internal/bridge` natively and compared against the wasm results.
+- `testdata/parity/config.yml` — drives `make parity`, comparing native vs. wasm analysis of the entire Go standard library.
+- `testvectors/fuzz/*.json` — fuzz seeds/corpora replayed through `engine.wasm`; a trap fails the test unless it's a YAML syntax error the native build also reports.
+- `packages/engine/test/stress.test.ts` / `bench.test.ts` — nesting-limit edge cases and performance budgets (200ms/5,000 lines, 1s/20,000 lines).
+
+When changing engine behavior, expect to update fixtures on both the Go and TypeScript sides, and rerun `make wasm` before TypeScript tests can see the change.
+
+### Configuration and presets semantics
+
+`.gotebanare.yml` (or `.gotebanare.yaml`) is read from the base branch of a PR, so a PR cannot alter its own rules (`docs/adr/0002-config-from-base-side.md`). Full semantics — validation rules, occupancy checks (a match is hidden only when its lines hold no other code), doc-comment handling, and old/new-version pairing for `getter`/`noop` — are documented in `docs/configuration.md` and `docs/presets.md`; read those before changing analyzer or config behavior, since the pairing/occupancy rules are easy to get subtly wrong from code alone.
+
+Compatibility is a hard constraint documented in `docs/configuration.md`: within configuration version 1, no change may widen what gets hidden. New behavior requires a new key/setting/preset that defaults to the old behavior, or a `version: 2`. Preset example fixtures are treated as golden tests for this reason.
+
+### TypeScript workspace
+
+Root `package.json` defines the bun workspace over `packages/*`; `bun.lock` pins resolved versions; a package depends on another via `workspace:*` (e.g. the extension depends on `@go-tebanare/engine`). Run workspace scripts from the repository root, not from inside a package directory, unless using `--filter`/`--cwd`.
+
+### Architecture decision records
+
+`docs/adr/` numbers each decision and its status; read the relevant one before revisiting a settled tradeoff:
+
+- 0001 — run the analyzer as a TinyGo WebAssembly module
+- 0002 — read configuration from the base side of a pull request
+- 0003 — fetch sources with the browser's GitHub session (pending spike S3)
+- 0004 — match on the syntax of the changed file only
+- 0005 — support GitHub diff views through isolated UI variants (pending spike S2)
+
+## CI
+
+`.github/workflows/ci.yml` runs five jobs on every push/PR to `main`: `go` (fmt-check, vet, lint, race tests, fuzz-smoke, uploads fuzz vectors), `wasm` (builds `engine.wasm` and `wasm-wasip1`, uploads `engine.wasm`), `fuzz-wasm` (replays fuzz vectors against the built wasm), `parity` (native vs. wasm on the Go stdlib, twice — once with `-pairs`), `ts` (typecheck/lint/test, builds and uploads the extension zip), `e2e` (Playwright against the built extension). Bumping `GO_VERSION` can break `TestCorpusSnapshot` — the comment in the workflow notes it needs `internal/presets/testdata/corpus_snapshot.json` regenerated with `-update`.
