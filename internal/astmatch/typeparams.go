@@ -6,6 +6,11 @@ import "go/ast"
 // MatchTypeParamsThen tries. A pattern with several Seq elements against a
 // long source list could otherwise take exponential time. Reaching the cap
 // reports no match.
+//
+// The cap applies to one call. A continuation that itself calls
+// MatchTypeParamsThen, or a caller that runs it once per candidate, gets a
+// fresh budget each time, so the total work of nested calls is the product
+// of their budgets.
 const maxAlignments = 4096
 
 // MatchTypeParams reports whether the source type parameter list src
@@ -16,7 +21,10 @@ func MatchTypeParams(pat, src *ast.FieldList, env *Env) bool {
 }
 
 // MatchTypeParamsThen matches type parameter lists and then runs a
-// continuation. A nil env behaves like an empty Env.
+// continuation. A nil env behaves like an empty Env, which has no source
+// type parameters: env.Bind then fails for every name, so a pattern with a
+// named element never matches. Pass NewEnv with the source type parameter
+// names to bind named elements.
 //
 // Both lists are expanded, so "[K, V any]" is two elements. Each pattern
 // field names one element:
@@ -27,7 +35,12 @@ func MatchTypeParams(pat, src *ast.FieldList, env *Env) bool {
 //     env.Bind(N, S) must succeed.
 //
 // A pattern element with a nil Type accepts any constraint. Otherwise its
-// Type must match the source constraint with MatchType.
+// Type must match the source constraint with MatchType. A Seq element must
+// have a nil Type: a Seq with a constraint makes the whole list match
+// nothing, rather than silently ignoring the constraint and matching
+// source parameters it does not allow.
+//
+// A list with a nil field or a nil field name matches nothing.
 //
 // For each alignment of pat against src, in order, all names are bound
 // first and the constraints are compared afterwards, so a constraint can
@@ -40,9 +53,19 @@ func MatchTypeParamsThen(pat, src *ast.FieldList, env *Env, then func() bool) bo
 	if env == nil {
 		env = &Env{}
 	}
+	pe, ok1 := expandTypeParams(pat)
+	se, ok2 := expandTypeParams(src)
+	if !ok1 || !ok2 {
+		return false
+	}
+	for _, p := range pe {
+		if p.name == SeqName && p.typ != nil {
+			return false
+		}
+	}
 	m := &tpMatch{
-		pat:    expandTypeParams(pat),
-		src:    expandTypeParams(src),
+		pat:    pe,
+		src:    se,
 		env:    env,
 		then:   then,
 		budget: maxAlignments,
@@ -76,7 +99,12 @@ type tpMatch struct {
 	seq      []bool // seq[i] reports whether pat[i:] contains a Seq
 }
 
-func expandTypeParams(fl *ast.FieldList) []tpElem {
+// expandTypeParams returns one element per type parameter name. ok is
+// false when fl has a nil field or a nil name.
+func expandTypeParams(fl *ast.FieldList) (_ []tpElem, ok bool) {
+	if !validFields(fl, false) {
+		return nil, false
+	}
 	var out []tpElem
 	for _, f := range fieldList(fl) {
 		if len(f.Names) == 0 {
@@ -87,7 +115,7 @@ func expandTypeParams(fl *ast.FieldList) []tpElem {
 			out = append(out, tpElem{name: n.Name, typ: f.Type})
 		}
 	}
-	return out
+	return out, true
 }
 
 func (m *tpMatch) align(i, j int) bool {

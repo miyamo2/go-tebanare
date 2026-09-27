@@ -2,6 +2,7 @@ package astmatch
 
 import (
 	"go/ast"
+	"go/token"
 	"testing"
 )
 
@@ -103,6 +104,14 @@ func TestMatchType(t *testing.T) {
 		{pat: "Map[_, int]", src: "Map[string, int]", want: true},
 		{pat: "Map[_, int]", src: "Map[string, bool]"},
 		{pat: "pkg.List[int]", src: "pkg.List[int]", want: true},
+		{pat: "pkg.List[SEQ]", src: "pkg.List", want: true},
+		{pat: "_[SEQ]", src: "List", want: true},
+		{pat: "_[SEQ]", src: "List[int]", want: true},
+		{pat: "_[SEQ]", src: "[]int"},
+		{pat: "_[SEQ]", src: "*List"},
+		{pat: "_[SEQ]", src: "map[string]int"},
+		{pat: "_[SEQ]", src: "(List)", want: true},
+		{pat: "_[SEQ]", src: "T", tparams: []string{"T"}},
 
 		// Variadic elements.
 		{pat: "...int", src: "...int", want: true},
@@ -139,5 +148,44 @@ func TestMatchTypeNil(t *testing.T) {
 	}
 	if MatchType(Seq(), ast.NewIdent("int"), nil) {
 		t.Error("Seq matches a single type")
+	}
+}
+
+// TestMatchTypeTypedNil checks that nil nodes hidden in interfaces or
+// malformed trees report no match instead of panicking. engine.wasm cannot
+// recover from a panic.
+func TestMatchTypeTypedNil(t *testing.T) {
+	intT := func() ast.Expr { return ast.NewIdent("int") }
+	nilFieldList := func() *ast.FieldList { return &ast.FieldList{List: []*ast.Field{nil}} }
+	tests := []struct {
+		name     string
+		pat, src ast.Expr
+	}{
+		{"nil ident source", intT(), (*ast.Ident)(nil)},
+		{"nil ident pattern", (*ast.Ident)(nil), intT()},
+		{"nil star source", &ast.StarExpr{X: intT()}, (*ast.StarExpr)(nil)},
+		{"nil star pattern", (*ast.StarExpr)(nil), &ast.StarExpr{X: intT()}},
+		{"nil paren", intT(), (*ast.ParenExpr)(nil)},
+		{"nil unary pattern", (*ast.UnaryExpr)(nil), &ast.UnaryExpr{Op: token.TILDE, X: intT()}},
+		{"nil selector name source", &ast.SelectorExpr{X: ast.NewIdent("p"), Sel: ast.NewIdent("T")}, &ast.SelectorExpr{X: ast.NewIdent("p")}},
+		{"nil selector name pattern", &ast.SelectorExpr{X: ast.NewIdent("p")}, &ast.SelectorExpr{X: ast.NewIdent("p"), Sel: ast.NewIdent("T")}},
+		{"nil selector qualifier", &ast.SelectorExpr{X: ast.NewIdent("p"), Sel: ast.NewIdent("T")}, &ast.SelectorExpr{X: (*ast.Ident)(nil), Sel: ast.NewIdent("T")}},
+		{"nil array length", &ast.ArrayType{Len: ast.NewIdent("N"), Elt: intT()}, &ast.ArrayType{Len: (*ast.BasicLit)(nil), Elt: intT()}},
+		{"nil struct field", &ast.StructType{Fields: &ast.FieldList{}}, &ast.StructType{Fields: nilFieldList()}},
+		{"nil struct field pattern", &ast.StructType{Fields: nilFieldList()}, &ast.StructType{Fields: nilFieldList()}},
+		{"nil struct field name", &ast.StructType{Fields: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{nil}, Type: intT()}}}}, &ast.StructType{Fields: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{nil}, Type: intT()}}}}},
+		{"nil interface method", &ast.InterfaceType{Methods: nilFieldList()}, &ast.InterfaceType{Methods: nilFieldList()}},
+		{"nil interface method name", &ast.InterfaceType{Methods: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{nil}, Type: &ast.FuncType{}}}}}, &ast.InterfaceType{Methods: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{nil}, Type: &ast.FuncType{}}}}}},
+		{"nil param", &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{{Type: Seq()}}}}, &ast.FuncType{Params: nilFieldList()}},
+		{"nil param pattern", &ast.FuncType{Params: nilFieldList()}, &ast.FuncType{Params: &ast.FieldList{}}},
+		{"nil param type", &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{{}}}}, &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{{}}}}},
+		{"nil index", &ast.IndexExpr{X: ast.NewIdent("List"), Index: Seq()}, (*ast.IndexExpr)(nil)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if MatchType(tt.pat, tt.src, nil) {
+				t.Error("matched")
+			}
+		})
 	}
 }

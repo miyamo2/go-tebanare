@@ -71,6 +71,9 @@ func TestMatchTypeParams(t *testing.T) {
 		{"forward reference", []string{"S ~[]TP_E", "E any"}, "func f[X ~[]Y, Y any]()", true, map[string]string{"S": "X", "E": "Y"}},
 		{"forward reference to a type", []string{"S ~[]TP_E", "E any"}, "func f[X ~[]W, Y any]()", false, nil},
 		{"same name twice", []string{"T", "T"}, "func f[A, B any]()", false, nil},
+		{"seq constraint", []string{"SEQ comparable"}, "func f[A any, B any]()", false, nil},
+		{"seq constraint met", []string{"SEQ comparable"}, "func f[A comparable]()", false, nil},
+		{"seq constraint empty", []string{"SEQ comparable"}, "func f()", false, nil},
 		{"last", []string{"SEQ", "T comparable"}, "func f[A any, B comparable]()", true, map[string]string{"T": "B"}},
 	}
 	for _, tt := range tests {
@@ -128,5 +131,41 @@ func TestMatchTypeParamsBudget(t *testing.T) {
 	}
 	if calls != maxAlignments {
 		t.Errorf("continuation ran %d times, want %d", calls, maxAlignments)
+	}
+}
+
+func TestMatchTypeParamsNil(t *testing.T) {
+	src, names := typeParams(t, "func f[T any]()")
+	tests := []struct {
+		name     string
+		pat, src *ast.FieldList
+	}{
+		{"nil source field", patParams(t, "SEQ"), &ast.FieldList{List: []*ast.Field{nil}}},
+		{"nil pattern field", &ast.FieldList{List: []*ast.Field{nil}}, src},
+		{"nil source name", patParams(t, "T"), &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{nil}, Type: ast.NewIdent("any")}}}},
+		{"nil pattern name", &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{nil}}}}, src},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			env := NewEnv(names)
+			if MatchTypeParams(tt.pat, tt.src, env) {
+				t.Error("matched")
+			}
+			if env.Snapshot() != 0 {
+				t.Error("failed match left bindings")
+			}
+		})
+	}
+}
+
+// TestMatchTypeParamsNilEnv documents that a nil env has no source type
+// parameters, so a named pattern element never binds.
+func TestMatchTypeParamsNilEnv(t *testing.T) {
+	src, _ := typeParams(t, "func f[E any]()")
+	if MatchTypeParams(patParams(t, "T any"), src, nil) {
+		t.Error("named element matched with a nil env")
+	}
+	if !MatchTypeParams(patParams(t, "_ any"), src, nil) {
+		t.Error("blank element failed with a nil env")
 	}
 }

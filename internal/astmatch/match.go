@@ -27,10 +27,17 @@ import (
 //     field names and tags must be equal as written.
 //   - Instance type arguments are matched with MatchExprs. A pattern
 //     instance also matches a source type without type arguments when its
-//     arguments match an empty list, as in "List[...]".
+//     arguments match an empty list, as in "List[...]", but only when that
+//     source type is a type name (an identifier that is not a type
+//     parameter, or a qualified identifier), so "_[...]" does not match
+//     "[]int" or "*List".
 //   - "~T" and "A | B" match the same operator with matching operands.
 //
-// Every other expression kind matches nothing.
+// Every other expression kind matches nothing, and so does a malformed tree:
+// a nil node stored in an interface (such as (*ast.Ident)(nil)), a
+// selector without a name, or a nil field or field name in a list. Such
+// trees report false instead of panicking, since engine.wasm cannot
+// recover from a panic.
 func MatchType(pat, src ast.Expr, env *Env) bool {
 	if env == nil {
 		env = &Env{}
@@ -46,7 +53,8 @@ func MatchType(pat, src ast.Expr, env *Env) bool {
 // elements, including a variadic one. Every other pattern element matches
 // exactly one source element with MatchType, so Any never matches a
 // variadic element and "...T" matches only a variadic one. A nil list and
-// an empty list both have no elements.
+// an empty list both have no elements. A list with a nil field, a nil
+// field name, or a field without a type matches nothing.
 func MatchFields(pat, src *ast.FieldList, env *Env) bool {
 	if env == nil {
 		env = &Env{}
@@ -66,6 +74,9 @@ func MatchExprs(pat, src []ast.Expr, env *Env) bool {
 }
 
 func matchFields(pat, src *ast.FieldList, env *Env) bool {
+	if !validFields(pat, true) || !validFields(src, true) {
+		return false
+	}
 	return matchExprs(expandFields(pat), expandFields(src), env)
 }
 
@@ -75,7 +86,9 @@ func matchExprs(pat, src []ast.Expr, env *Env) bool {
 
 func matchType(pat, src ast.Expr, env *Env) bool {
 	pat, src = unparen(pat), unparen(src)
-	if pat == nil || src == nil {
+	if isNil(pat) || isNil(src) {
+		// A typed nil such as (*ast.Ident)(nil) matches nothing, not even
+		// another nil.
 		return pat == nil && src == nil
 	}
 	switch p := pat.(type) {
@@ -88,7 +101,10 @@ func matchType(pat, src ast.Expr, env *Env) bool {
 		}
 		px, ok1 := p.X.(*ast.Ident)
 		sx, ok2 := s.X.(*ast.Ident)
-		return ok1 && ok2 && p.Sel.Name == s.Sel.Name && env.sameQualifier(px.Name, sx.Name)
+		if !ok1 || !ok2 || px == nil || sx == nil || p.Sel == nil || s.Sel == nil {
+			return false
+		}
+		return p.Sel.Name == s.Sel.Name && env.sameQualifier(px.Name, sx.Name)
 	case *ast.StarExpr:
 		s, ok := src.(*ast.StarExpr)
 		return ok && matchType(p.X, s.X, env)
@@ -118,6 +134,10 @@ func matchType(pat, src ast.Expr, env *Env) bool {
 	case *ast.IndexExpr, *ast.IndexListExpr:
 		pb, pi := splitIndex(pat)
 		sb, si := splitIndex(src)
+		if len(si) == 0 && !isTypeName(sb, env) {
+			// Only a type name can omit its type arguments.
+			return false
+		}
 		return matchType(pb, sb, env) && matchExprs(pi, si, env)
 	case *ast.UnaryExpr:
 		s, ok := src.(*ast.UnaryExpr)
@@ -161,7 +181,7 @@ func matchIdent(p *ast.Ident, src ast.Expr, env *Env) bool {
 // matchLen compares array lengths. A nil length is a slice.
 func matchLen(p, s ast.Expr) bool {
 	switch {
-	case p == nil || s == nil:
+	case isNil(p) || isNil(s):
 		return p == nil && s == nil
 	case IsAny(p):
 		return true
@@ -180,6 +200,9 @@ func exprText(e ast.Expr) (string, bool) {
 }
 
 func matchInterface(p, s *ast.InterfaceType, env *Env) bool {
+	if !validFields(p.Methods, true) || !validFields(s.Methods, true) {
+		return false
+	}
 	pl, sl := fieldList(p.Methods), fieldList(s.Methods)
 	if len(pl) != len(sl) {
 		return false
@@ -199,6 +222,9 @@ type structField struct {
 }
 
 func matchStruct(p, s *ast.StructType, env *Env) bool {
+	if !validFields(p.Fields, true) || !validFields(s.Fields, true) {
+		return false
+	}
 	pl, sl := structFields(p), structFields(s)
 	if len(pl) != len(sl) {
 		return false
@@ -249,6 +275,77 @@ func sameNames(a, b []*ast.Ident) bool {
 
 func isEmptyInterface(it *ast.InterfaceType) bool {
 	return len(fieldList(it.Methods)) == 0
+}
+
+// isTypeName reports whether e, without parentheses, is an identifier
+// that is not a source type parameter or a qualified identifier: the only
+// source types that can be generic and appear without type arguments.
+func isTypeName(e ast.Expr, env *Env) bool {
+	switch x := unparen(e).(type) {
+	case *ast.Ident:
+		return x != nil && !env.IsTypeParam(x.Name)
+	case *ast.SelectorExpr:
+		return x != nil
+	}
+	return false
+}
+
+// validFields reports whether every field of fl and every field name is
+// non-nil. When needType is true, every field must also have a type.
+func validFields(fl *ast.FieldList, needType bool) bool {
+	for _, f := range fieldList(fl) {
+		if f == nil || (needType && f.Type == nil) {
+			return false
+		}
+		for _, n := range f.Names {
+			if n == nil {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// isNil reports whether e is nil or a nil pointer of a node type that
+// matchType or matchLen dereferences.
+func isNil(e ast.Expr) bool {
+	switch x := e.(type) {
+	case nil:
+		return true
+	case *ast.Ident:
+		return x == nil
+	case *ast.SelectorExpr:
+		return x == nil
+	case *ast.StarExpr:
+		return x == nil
+	case *ast.ArrayType:
+		return x == nil
+	case *ast.MapType:
+		return x == nil
+	case *ast.ChanType:
+		return x == nil
+	case *ast.FuncType:
+		return x == nil
+	case *ast.InterfaceType:
+		return x == nil
+	case *ast.StructType:
+		return x == nil
+	case *ast.IndexExpr:
+		return x == nil
+	case *ast.IndexListExpr:
+		return x == nil
+	case *ast.UnaryExpr:
+		return x == nil
+	case *ast.BinaryExpr:
+		return x == nil
+	case *ast.Ellipsis:
+		return x == nil
+	case *ast.ParenExpr:
+		return x == nil
+	case *ast.BasicLit:
+		return x == nil
+	}
+	return false
 }
 
 // splitIndex splits an instance into its base type and type arguments. Any
