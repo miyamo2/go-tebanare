@@ -87,14 +87,19 @@ describe.skipIf(!haveWasm)('engine', () => {
     expect(res.new).toHaveLength(1);
   });
 
-  // With TinyGo's precise GC, this config trapped inside yaml.v3 when it
-  // was the first call on a new instance (see docs/adr/0001).
-  it('rejects a config without a trap as the first call on a new instance', async () => {
+  // With TinyGo's precise GC, the first config trapped inside yaml.v3 when
+  // it was the first call on a new instance; with the conservative GC, the
+  // other two did (see docs/adr/0001).
+  it.each([
+    '!!!!000aaaa: 0\n--- 0',
+    '0:\n - -\n\n - -\n',
+    '0: &a [00,*a]',
+  ])('rejects %j without a trap as the first call on a new instance', async (yaml) => {
     const reasons: RecreateReason[] = [];
     engine = await loadEngine({ onRecreate: (r) => reasons.push(r) });
     await engine.compile('{').catch(() => undefined);
     expect(reasons).toEqual(['crash']);
-    const err = await engine.compile('!!!!000aaaa: 0\n--- 0').catch((e: unknown) => e);
+    const err = await engine.compile(yaml).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ConfigError);
     expect((err as ConfigError).diagnostics[0]?.code).toBe('config-invalid');
     expect(reasons).toEqual(['crash']);

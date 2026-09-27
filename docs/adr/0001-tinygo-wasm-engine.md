@@ -21,7 +21,7 @@ All three returned the same results.
 ## Decision
 
 Build `cmd/gotebanare-wasm` with TinyGo 0.42 for a custom target that
-inherits `wasm-unknown`, with the conservative GC, no scheduler, and an 8 MB
+inherits `wasm-unknown`, with the leaking GC, no scheduler, and an 8 MB
 stack (`build/tinygo/engine.json`). Export the API with `//go:wasmexport`
 and pass bytes through linear memory. The tests use the standard Go
 toolchain. CI runs the same corpus through both builds and
@@ -48,11 +48,21 @@ requires identical results.
 - The build first used the precise GC. With it, compiling
   `!!!!000aaaa: 0\n--- 0` as the first call on a new instance trapped in
   yaml.v3's `panic("read handler must be set")`, although the parser sets
-  that handler before it reads. The precise GC most likely freed memory
-  the parser still used; we did not identify which object. Builds with the
-  conservative or the leaking GC reject the same input without a trap.
+  that handler before it reads. The build then used the conservative GC,
+  which rejected that input without a trap. With the conservative GC,
+  compiling `0:\n - -\n\n - -\n` or `0: &a [00,*a]` as the first call on
+  a new instance trapped instead; the native build rejects both with a
+  diagnostic. Both GCs most likely freed memory that was still in use; we
+  did not identify which object, and a build with an extra import or with
+  debug information no longer trapped.
+- The build therefore uses the leaking GC, which never frees memory and is
+  the default for `wasm-unknown`. `@go-tebanare/engine` already replaces an
+  instance once its memory passes `maxMemoryBytes` (256 MB by default) or
+  after `maxCallsPerInstance` calls (1,000), so an instance holds at most
+  that limit plus what one call allocates. Analyzing a 20,000-line file grows memory by about
+  33 MB and runs faster than with the conservative GC.
 - The standard Go toolchain can build the same exports for `GOOS=wasip1`
   with `-buildmode=c-shared`; CI keeps that build compiling as a fallback.
-- Measured on this repository: the engine is 0.84 MB (0.36 MB gzip), a
+- Measured on this repository: the engine is 0.66 MB (0.29 MB gzip), a
   5,000-line file takes about 40 ms, and all 3,866 non-test files of the Go
   1.26.8 standard library give the same results as the native build.
