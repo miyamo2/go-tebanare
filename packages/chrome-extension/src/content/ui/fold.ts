@@ -117,9 +117,9 @@ export function foldSummary(fold: FoldView, open: boolean): string {
  * button calls onToggle. The button fills a cell over the two line number
  * columns, and a cell with the fold summary covers the rest; a row
  * narrower than three columns gets one cell and no summary. The button's
- * label says what a click does. Its tooltip adds the rules, which screen
- * readers get as its description, so they skip the summary, which repeats
- * them. A click on the summary toggles the fold too.
+ * label says what a click does, and its tooltip adds the rules. Screen
+ * readers read the rules from the button's description, so the summary
+ * carries aria-hidden. A click on the summary toggles the fold too.
  */
 export function createFoldRow(doc: Document, fold: FoldView, open: boolean, onToggle: () => void): HTMLTableRowElement {
   const tr = doc.createElement('tr');

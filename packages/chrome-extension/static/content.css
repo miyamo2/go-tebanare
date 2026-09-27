@@ -77,8 +77,9 @@ tr[data-gotebanare-fold] > td {
 }
 
 /*
- * The summary sits on one line and ends in an ellipsis when it is too long.
- * It is positioned absolutely so a long summary never widens the table.
+ * The summary stays on one line and ends in an ellipsis when it does not
+ * fit. Absolute positioning keeps its text out of the column width, so a
+ * long summary leaves the table width alone.
  */
 .gotebanare-fold-code {
   position: relative;
