@@ -118,9 +118,9 @@ Root `package.json` defines the bun workspace over `packages/*`; `bun.lock` pins
 
 - 0001 — run the analyzer as a TinyGo WebAssembly module
 - 0002 — read configuration from the base side of a pull request
-- 0003 — fetch sources with the browser's GitHub session (pending spike S3)
+- 0003 — fetch sources with the browser's GitHub session
 - 0004 — match on the syntax of the changed file only
-- 0005 — support GitHub diff views through isolated UI variants (pending spike S2)
+- 0005 — support GitHub diff views through isolated UI variants
 
 ## CI
 

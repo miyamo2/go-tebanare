@@ -9,6 +9,6 @@ add a new record that supersedes the old one and link the two.
 |---|---|
 | [0001 Run the analyzer as a TinyGo WebAssembly module](0001-tinygo-wasm-engine.md) | Accepted |
 | [0002 Read the configuration from the base side of a pull request](0002-config-from-base-side.md) | Accepted |
-| [0003 Fetch sources with the browser's GitHub session](0003-fetch-with-session.md) | Accepted, pending spike S3 |
+| [0003 Fetch sources with the browser's GitHub session](0003-fetch-with-session.md) | Accepted |
 | [0004 Match on the syntax of the changed file only](0004-syntax-only-matching.md) | Accepted |
-| [0005 Support GitHub diff views through isolated UI variants](0005-diff-ui-variants.md) | Accepted, pending spike S2 |
+| [0005 Support GitHub diff views through isolated UI variants](0005-diff-ui-variants.md) | Accepted |

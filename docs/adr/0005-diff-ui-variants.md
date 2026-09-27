@@ -1,6 +1,6 @@
 # 0005 Support GitHub diff views through isolated UI variants
 
-Status: Accepted, pending spike S2
+Status: Accepted
 
 ## Context
 
@@ -29,11 +29,9 @@ analyzed source.
   banner and the popup report an unsupported GitHub UI.
 - Neither variant reads the split view yet. A file shown split hides
   nothing, and the banner says the split view is not supported.
-- The classic variant targets the server-rendered unified table. Its tests
-  use synthetic fixtures modeled on that markup, because this environment
-  cannot load github.com. Spike S2 must replace them with saved pages and
-  check the selectors.
-- The React variant reads the React view. Its selectors come from a saved
-  page that shows modified files in unified view. Spike S2 still has to
-  check deleted lines, added, deleted, and renamed files, review threads,
-  and the split view on that markup.
+- The classic variant targets the server-rendered unified table. Spike S2
+  replaced its synthetic fixtures with saved pages and confirmed the
+  selectors.
+- The React variant reads the React view. Spike S2 confirmed its selectors
+  against saved pages covering deleted lines, added, deleted, and renamed
+  files, review threads, and the split view.

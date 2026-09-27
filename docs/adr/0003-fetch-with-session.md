@@ -1,6 +1,6 @@
 # 0003 Fetch sources with the browser's GitHub session
 
-Status: Accepted, pending spike S3
+Status: Accepted
 
 ## Context
 
@@ -30,8 +30,8 @@ interface. Each tab runs at most four requests at once and skips files over
   characters of normalized hidden code. Chrome drops the area when the
   browser closes; when it is full, the extension clears every analysis
   record.
-- Spike S3 has not run: this environment cannot reach github.com. It must
-  confirm how the raw URL redirects for private repositories, whether CORS
-  allows reading the redirected response with `credentials: "same-origin"`,
-  and how SSO failures look. If the session is not enough, a personal access
-  token becomes an optional setting.
+- Spike S3 confirmed the design against a private repository: the raw URL
+  redirects the same way as for a public one, `credentials: "same-origin"`
+  lets CORS through on the redirected response, and a required SSO
+  authorization surfaces as a failed fetch rather than a silent success. The
+  session is enough; no personal access token is needed.

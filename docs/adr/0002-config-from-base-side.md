@@ -17,8 +17,8 @@ commit. The React page's embedded data was checked on a saved page. When
 GitHub's React app reaches "Files changed" without a page load, the page
 keeps the embedded data of the page it loaded with, so the extension
 fetches the "Files changed" URL and reads the embedded data of the copy the
-server returns. The classic page's hidden inputs and diff URLs still need
-spike S3 (ADR 0003) to confirm that they name the merge base.
+server returns. Spike S3 (ADR 0003) confirmed that the classic page's hidden
+inputs and diff URLs name the merge base.
 
 It requests `.gotebanare.yml` and `.gotebanare.yaml` at once and uses the
 first that exists in that order. When both exist, the page banner warns
