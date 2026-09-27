@@ -2,7 +2,7 @@
 
 ![go-tebanare-logo](.assets/go-tebanare-with-caption.png)
 
-"Tebanare" means "off one's hands" in Japanese. This tool takes more of the Go code review off yours.
+"Tebanare" means "off one's hands" in Japanese. This tool takes more of the Go code review off your hands.
 
 [![CI](https://github.com/miyamo2/go-tebanare/actions/workflows/ci.yml/badge.svg)](https://github.com/miyamo2/go-tebanare/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/miyamo2/go-tebanare.svg)](https://pkg.go.dev/github.com/miyamo2/go-tebanare)
