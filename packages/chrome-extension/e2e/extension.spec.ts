@@ -29,8 +29,9 @@ test('folds the getter and the if err block, and the fold rows and the file badg
   const folds = page.locator('tr[data-gotebanare-fold]');
   await expect(folds).toHaveCount(2);
   const [getter, iferr] = [folds.nth(0), folds.nth(1)];
-  // Fold rows carry no text; the button's tooltip names the rule.
-  await expect(getter).toHaveText('');
+  // Fold rows summarize the rule on one line; the button's tooltip names it too.
+  await expect(getter).toHaveText(/^4 lines hidden by gotebanare: getter/);
+  await expect(iferr).toHaveText(/^3 lines hidden by gotebanare: iferr/);
   const showGetter = getter.getByRole('button', { name: 'Show 4 lines hidden by gotebanare' });
   await expect(showGetter).toHaveAttribute('title', /\ngetter/);
   await expect(iferr.getByRole('button', { name: 'Show 3 lines hidden by gotebanare' })).toHaveAttribute('title', /\niferr/);

@@ -28,7 +28,12 @@ describe('applyFile', () => {
     const folds = foldRows(container);
     expect(folds.map((f) => f.nextElementSibling)).toEqual(plan.folds.map((f) => rows[f.first]?.el));
     expect(folds.map((f) => [...f.querySelectorAll('td')].map((td) => td.colSpan))).toEqual([[2, 1], [2, 1], [2, 1], [2, 1]]);
-    expect(folds.map((f) => f.textContent)).toEqual(['', '', '', '']);
+    expect(folds.map((f) => f.textContent)).toEqual([
+      '1 line hidden by gotebanare: fields (owner string)',
+      '4 lines hidden by gotebanare: getters (func (*Store) Owner)',
+      '7 lines hidden by gotebanare: put (func (*Store) Put)',
+      '2 lines hidden by gotebanare: put (func (*Store) Put)',
+    ]);
     expect(labels(container)).toEqual([
       'Show 1 line hidden by gotebanare',
       'Show 4 lines hidden by gotebanare',
