@@ -28,7 +28,7 @@ jobs:
       version: ${{ steps.check.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      - name: Check the tag against package.json
+      - name: Check the tag against package.json and manifest.json
         id: check
         run: |
           if [ "$GITHUB_REF_TYPE" != tag ] || [ "${GITHUB_REF_NAME#"$TAG_PREFIX"}" = "$GITHUB_REF_NAME" ]; then
@@ -39,6 +39,12 @@ jobs:
           want="$(jq -r .version packages/chrome-extension/package.json)"
           if [ "$version" != "$want" ]; then
             echo "::error::tag $GITHUB_REF_NAME does not match packages/chrome-extension/package.json version $want"
+            exit 1
+          fi
+          # tag-chrome-extension.yml commits it before tagging.
+          manifest="$(jq -r .version packages/chrome-extension/manifest.json)"
+          if [ "$manifest" != "$version" ]; then
+            echo "::error::packages/chrome-extension/manifest.json has version $manifest, want $version"
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"

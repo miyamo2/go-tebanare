@@ -8,6 +8,7 @@ import {
   compareVersions,
   esbuildTarget,
   releaseVersionErrors,
+  withVersion,
 } from '../../scripts/build-lib.mjs';
 
 const pkgRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -123,6 +124,19 @@ describe('compareVersions', () => {
     ['1.2.3.4', '1.2.3', 1],
   ])('compares %s with %s', (a, b, sign) => {
     expect(Math.sign(compareVersions(a, b))).toBe(sign);
+  });
+});
+
+describe('withVersion', () => {
+  it('sets version and leaves manifest_version and the layout alone', () => {
+    const manifest = readFileSync(join(pkgRoot, 'manifest.json'), 'utf8');
+    const got = withVersion(manifest, '9.8.7');
+    expect(JSON.parse(got)).toEqual({ ...JSON.parse(manifest), version: '9.8.7' });
+    expect(got.split('\n')).toHaveLength(manifest.split('\n').length);
+  });
+
+  it('throws without a version member', () => {
+    expect(() => withVersion('{"manifest_version": 3}', '1.0.0')).toThrow('no "version" member');
   });
 });
 

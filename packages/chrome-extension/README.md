@@ -13,10 +13,10 @@ To try it, turn on Developer mode in `chrome://extensions` and load `dist/` with
 
 Merge a change to `main` that raises `version` in `package.json`, for example to `0.2.0`. The Chrome Web Store needs a plain version, higher than the last upload.
 
-1. `.github/workflows/tag-chrome-extension.yml` checks the version with `scripts/release-version.mjs`, tags the commit `packages/chrome-extension/v0.2.0`, and starts the release workflow on that tag. A push that leaves the version as it was tags nothing.
+1. `.github/workflows/tag-chrome-extension.yml` checks the version with `scripts/release-version.mjs`, sets the same version in `manifest.json` with `scripts/sync-manifest-version.mjs` and commits it to `main`, tags that commit `packages/chrome-extension/v0.2.0`, and starts the release workflow on that tag. A push that leaves the version as it was tags nothing. Leave `manifest.json` alone in the pull request; `build.mjs` writes the `package.json` version into `dist/manifest.json` in any case.
 2. `.github/workflows/release-chrome-extension.yml` runs the whole of CI and publishes the tested `dist.zip` as `go-tebanare-chrome-extension-v0.2.0.zip`, with `SHA256SUMS`, on the GitHub release of the tag. Upload that zip in the Chrome Web Store developer dashboard.
 
-Pushing a tag `packages/chrome-extension/vX.Y.Z` by hand starts the release workflow too; X.Y.Z must equal the version in `package.json` at that commit.
+Pushing a tag `packages/chrome-extension/vX.Y.Z` by hand starts the release workflow too; X.Y.Z must equal the version in both `package.json` and `manifest.json` at that commit.
 
 The release workflow also holds a `publish` job that uploads the zip with the Chrome Web Store API and submits it for review. It stays commented out until the first release creates the store item; the comment above it lists the settings it needs.
 

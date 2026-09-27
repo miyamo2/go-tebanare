@@ -114,3 +114,17 @@ export function compareVersions(a, b) {
   }
   return 0;
 }
+
+/**
+ * withVersion returns the JSON text with its first "version" member set to
+ * version, keeping the rest of the text as it is. "manifest_version" does
+ * not match.
+ * @param {string} text
+ * @param {string} version
+ * @returns {string}
+ */
+export function withVersion(text, version) {
+  const re = /("version"\s*:\s*)"[^"]*"/;
+  if (!re.test(text)) throw new Error('no "version" member');
+  return text.replace(re, (_, key) => `${key}${JSON.stringify(version)}`);
+}
