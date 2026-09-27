@@ -9,6 +9,15 @@ The Chrome extension (Manifest V3) that folds reviewer-agreed Go code in the "Fi
 
 To try it, turn on Developer mode in `chrome://extensions` and load `dist/` with "Load unpacked".
 
+## Release
+
+1. Set `version` in `package.json` to the new version, for example `0.2.0`. The Chrome Web Store needs a plain version, higher than the last upload.
+2. Push the tag `v0.2.0` from the commit on `main`.
+
+`.github/workflows/release.yml` checks that the tag matches `package.json`, runs the whole of CI, and publishes the tested `dist.zip` as `go-tebanare-chrome-extension-v0.2.0.zip`, with `SHA256SUMS`, on the GitHub release `v0.2.0`. Upload that zip in the Chrome Web Store developer dashboard.
+
+The workflow also holds a `publish` job that uploads the zip with the Chrome Web Store API and submits it for review. It stays commented out until the first release creates the store item; the comment above it lists the settings it needs.
+
 ## Tests
 
 | Command | Runs |

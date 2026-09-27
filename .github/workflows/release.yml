@@ -1,0 +1,155 @@
+name: release
+
+# Pushing a tag vX.Y.Z publishes the Chrome Web Store package as an asset of
+# the GitHub release vX.Y.Z. X.Y.Z must equal the version in
+# packages/chrome-extension/package.json, which build.mjs writes into the
+# manifest. The Chrome Web Store needs a plain version, so a tag with a
+# suffix such as v0.2.0-rc.1 fails the check.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+# Two pushes of the same tag must not race each other to the release.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the tag against package.json
+        id: check
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          want="$(jq -r .version packages/chrome-extension/package.json)"
+          if [ "$GITHUB_REF_NAME" != "v$want" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match packages/chrome-extension/package.json version $want; tag v$want instead"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  # The release ships the dist.zip that this CI run built and tested.
+  ci:
+    needs: version
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: [version, ci]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: chrome-extension
+          path: ${{ runner.temp }}/chrome-extension
+      - name: Check the package
+        working-directory: ${{ runner.temp }}/chrome-extension
+        run: |
+          got="$(unzip -p dist.zip manifest.json | jq -r .version)"
+          if [ "$got" != "$VERSION" ]; then
+            echo "::error::dist.zip has manifest version $got, want $VERSION"
+            exit 1
+          fi
+          # make wasm embeds `git describe --tags`, which is the tag here.
+          if ! unzip -p dist.zip engine.wasm | grep -aqF "$GITHUB_REF_NAME"; then
+            echo "::error::engine.wasm in dist.zip does not carry the engine version $GITHUB_REF_NAME"
+            exit 1
+          fi
+      - name: Name the assets
+        working-directory: ${{ runner.temp }}/chrome-extension
+        run: |
+          mkdir assets
+          asset="go-tebanare-chrome-extension-$GITHUB_REF_NAME.zip"
+          cp dist.zip "assets/$asset"
+          (cd assets && sha256sum "$asset" > SHA256SUMS)
+          cat assets/SHA256SUMS
+      - name: Create the GitHub release
+        working-directory: ${{ runner.temp }}/chrome-extension/assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" ./* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: ${{ runner.temp }}/chrome-extension/assets
+          if-no-files-found: error
+
+  # Uploads the package to the Chrome Web Store and submits it for review;
+  # the store publishes it once the review passes.
+  #
+  # Disabled until the first release: the store creates the item from a
+  # zip uploaded by hand in the developer dashboard, together with the store
+  # listing and the privacy practices, and the API can only update an item
+  # that exists. After that, uncomment this job and set up:
+  #
+  # - the environment "chrome-web-store" in the repository settings
+  #   (optionally with required reviewers, to approve each submission);
+  # - its variables CWS_PUBLISHER_ID (the publisher ID shown in the developer
+  #   dashboard) and CWS_EXTENSION_ID (the item ID);
+  # - its secrets CWS_CLIENT_ID, CWS_CLIENT_SECRET, and CWS_REFRESH_TOKEN: an
+  #   OAuth client of a Google Cloud project with the Chrome Web Store API
+  #   enabled, and a refresh token for the publisher account with the scope
+  #   https://www.googleapis.com/auth/chromewebstore.
+  #
+  # The job calls the Chrome Web Store API v2 (v1.1 is deprecated). Check the
+  # requests against https://developer.chrome.com/docs/webstore/using-api
+  # before enabling it.
+  #
+  # publish:
+  #   needs: release
+  #   runs-on: ubuntu-latest
+  #   environment: chrome-web-store
+  #   steps:
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: release-assets
+  #         path: ${{ runner.temp }}/assets
+  #     - name: Upload to the Chrome Web Store and submit for review
+  #       env:
+  #         CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+  #         CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+  #         CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+  #         CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
+  #         CWS_EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
+  #         PACKAGE: ${{ runner.temp }}/assets/go-tebanare-chrome-extension-${{ github.ref_name }}.zip
+  #       run: |
+  #         set -euo pipefail
+  #         token="$(curl -fsS https://oauth2.googleapis.com/token \
+  #           --data-urlencode "client_id=$CWS_CLIENT_ID" \
+  #           --data-urlencode "client_secret=$CWS_CLIENT_SECRET" \
+  #           --data-urlencode "refresh_token=$CWS_REFRESH_TOKEN" \
+  #           --data-urlencode "grant_type=refresh_token" | jq -r .access_token)"
+  #         echo "::add-mask::$token"
+  #         item="publishers/$CWS_PUBLISHER_ID/items/$CWS_EXTENSION_ID"
+  #         api() { curl -fsS -H "Authorization: Bearer $token" "$@"; }
+  #
+  #         state="$(api -X POST -T "$PACKAGE" \
+  #           "https://chromewebstore.googleapis.com/upload/v2/$item:upload" | tee /dev/stderr | jq -r .uploadState)"
+  #         # A large package finishes uploading asynchronously.
+  #         for _ in $(seq 30); do
+  #           [ "$state" = IN_PROGRESS ] || break
+  #           sleep 10
+  #           state="$(api "https://chromewebstore.googleapis.com/v2/$item:fetchStatus" | tee /dev/stderr | jq -r .lastAsyncUploadState)"
+  #         done
+  #         if [ "$state" != SUCCEEDED ]; then
+  #           echo "::error::upload ended in state $state"
+  #           exit 1
+  #         fi
+  #
+  #         api -X POST -H "Content-Type: application/json" -d '{}' \
+  #           "https://chromewebstore.googleapis.com/v2/$item:publish" | tee /dev/stderr | jq -e '.state' > /dev/null
