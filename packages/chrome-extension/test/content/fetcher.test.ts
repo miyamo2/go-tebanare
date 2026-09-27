@@ -279,3 +279,25 @@ describe('SessionFetcher.fetchPage', () => {
     expect(await fetcher.fetchPage(PAGE_URL)).toEqual({ ok: false, reason: 'unauthorized', status: 200 });
   });
 });
+
+describe('SessionFetcher.fetchApi', () => {
+  const API_URL = 'https://api.github.com/repos/octo/repo/pulls/12';
+
+  it('GETs the resource without credentials', async () => {
+    const { fetch, fetcher } = fetcherFor(respond('{}', 200, API_URL));
+    expect(await fetcher.fetchApi(API_URL)).toEqual({ ok: true, text: '{}' });
+    expect(fetch).toHaveBeenCalledWith(API_URL, expect.objectContaining({ credentials: 'omit' }));
+  });
+
+  it('reports the status of a refusal', async () => {
+    const { fetcher } = fetcherFor(respond('API rate limit exceeded', 403, API_URL));
+    expect(await fetcher.fetchApi(API_URL)).toEqual({ ok: false, reason: 'unauthorized', status: 403 });
+  });
+
+  it('answers not-found for a URL off api.github.com without a request', async () => {
+    const { fetch, fetcher } = fetcherFor(respond(''));
+    expect(await fetcher.fetchApi('https://github.com/octo/repo/pull/12')).toEqual({ ok: false, reason: 'not-found' });
+    expect(await fetcher.fetchApi('not a url')).toEqual({ ok: false, reason: 'not-found' });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+});

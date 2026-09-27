@@ -10,12 +10,13 @@ import {
   type TabStateMessage,
 } from '../shared/messages.js';
 import { loadOptions } from '../shared/settings.js';
+import { ApiContextSource } from './apicontext.js';
 import { defaultContextProvider, fetchContext } from './context.js';
 import { Controller } from './controller.js';
 import { inactiveStatus } from './controller/status.js';
 import { detectVariant } from './dom/variant.js';
 import { SessionFetcher } from './fetcher.js';
-import { parsePullUrl, type PullPage } from './page.js';
+import { isSignedOut, parsePullUrl, type PullPage } from './page.js';
 
 /** The controller calls the entry point makes. Controller implements them. */
 export interface PageController {
@@ -118,6 +119,8 @@ export function startContent(env: ContentEnv): ContentScript {
 if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage && typeof document !== 'undefined') {
   // One fetcher for the page, so its limit of 4 requests covers every controller.
   const fetcher = new SessionFetcher();
+  // One API source for the page, so its cache and backoff outlive navigations.
+  const api = new ApiContextSource((url) => fetcher.fetchApi(url));
   startContent({
     location,
     window,
@@ -132,7 +135,10 @@ if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage && typeof documen
         send,
         fetcher,
         contexts: defaultContextProvider,
-        fetchContext: (p) => fetchContext((url) => fetcher.fetchPage(url), href, p),
+        // Only a signed-out page falls back to the REST API. GitHub renders
+        // it without the commits.
+        fetchContext: async (p) =>
+          (await fetchContext((url) => fetcher.fetchPage(url), href, p)) ?? (isSignedOut(document) ? api.resolve(p) : null),
         detectVariant: (doc) => detectVariant(doc),
         loadOptions: () => loadOptions(),
         frames: window,
