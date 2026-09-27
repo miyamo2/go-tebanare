@@ -14,6 +14,8 @@ env:
   # Bumping this fails TestCorpusSnapshot until
   # internal/presets/testdata/corpus_snapshot.json is rewritten with -update.
   GO_VERSION: "1.26.8"
+  TINYGO_VERSION: "0.42.0"
+  NODE_VERSION: "22"
 
 jobs:
   go:
@@ -29,3 +31,46 @@ jobs:
           version: v2.5.0
       - run: go test -race ./...
       - run: make fuzz-smoke FUZZTIME=10s
+
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Install TinyGo
+        run: |
+          wget -q "https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VERSION}/tinygo_${TINYGO_VERSION}_amd64.deb"
+          sudo dpkg -i "tinygo_${TINYGO_VERSION}_amd64.deb"
+          tinygo version
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: make wasm wasm-check
+      - run: make wasm-wasip1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: engine-wasm
+          path: packages/engine/wasm/engine.wasm
+          if-no-files-found: error
+
+  ts:
+    needs: wasm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: engine-wasm
+          path: packages/engine/wasm
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run lint
+      - run: bun run test
