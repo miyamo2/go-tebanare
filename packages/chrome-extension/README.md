@@ -84,7 +84,7 @@ The page and the sources are synthetic. `pull-7-files.html` follows the same mod
 
 ## Live end-to-end tests
 
-`e2e-live/` runs the built extension on a real pull request, signed in to github.com: the "Files changed" tab of [miyamo2/go-tebanare-sample#1](https://github.com/miyamo2/go-tebanare-sample/pull/1/changes), a reference pull request kept open for this. It checks the page status, the fold rows, and which rows are hidden or visible in each file, so it catches changes of GitHub's React diff markup that the synthetic fixtures cannot.
+`e2e-live/` runs the built extension on a real pull request, signed in to github.com: the "Files changed" tab of [miyamo2/go-tebanare-sample#1](https://github.com/miyamo2/go-tebanare-sample/pull/1/changes), a pull request that stays open as the fixture for these tests. It checks the page status, the fold rows, and which rows are hidden or visible in each file, so it catches changes to GitHub's React diff markup that the synthetic fixtures cannot.
 
 | Variable | Meaning |
 |---|---|
@@ -94,9 +94,12 @@ The page and the sources are synthetic. `pull-7-files.html` follows the same mod
 
 To run them locally:
 
-1. Copy `.env.e2e-live.example` to `.env.e2e-live` and fill it in. Both `.env.e2e-live` and `e2e-live/.auth/` are ignored by git.
-2. Run `make e2e-live` at the repository root. It runs `make wasm` when `engine.wasm` is missing, then `scripts/e2e-live.sh`, which reads `.env.e2e-live` and runs Playwright with `playwright.live.config.ts`. Pass Playwright flags with `E2E_LIVE_FLAGS`, for example `make e2e-live E2E_LIVE_FLAGS=--headed`, or run `bun run --cwd packages/chrome-extension e2e:live --headed`.
+1. Copy `.env.e2e-live.example` to `.env.e2e-live` and fill it in. Git ignores both `.env.e2e-live` and `e2e-live/.auth/`.
+2. Run `make e2e-live` at the repository root.
+3. To watch the browser, run `make e2e-live E2E_LIVE_FLAGS=--headed` instead.
 
-`e2e-live/global-setup.ts` builds `dist/` and signs in once in a separate browser, then each test copies the session cookies into its own profile. A saved session that GitHub still accepts is reused, so repeated local runs do not sign in again. GitHub asks an account without two-factor authentication to verify a new device with an e-mailed code: with `--headed`, enter the code in the browser within 5 minutes; without it, the setup stops and says so.
+`make e2e-live` builds `engine.wasm` if it is missing, then runs `scripts/e2e-live.sh`. The script fills in the variables the environment leaves unset from `.env.e2e-live` and starts Playwright with `playwright.live.config.ts`. `bun run --cwd packages/chrome-extension e2e:live` runs the same script and passes its arguments to Playwright.
 
-On CI, `.github/workflows/e2e-live.yml` runs the tests on pull requests to `main` from this repository, on pushes to `main`, daily, and by hand, with the repository secrets of the same names. Pull requests from forks and Dependabot get no secrets and skip it. A CI runner is a new device on every run, so an account without two-factor authentication may be stopped by device verification there; turning on authenticator-app two-factor authentication for the account and adding `E2E_GH_TOTP_SECRET` avoids that. The workflow uploads no traces or screenshots, since they would carry the session.
+`e2e-live/global-setup.ts` builds `dist/` and signs in once in a separate browser, then each test copies the session cookies into its own profile. A saved session that GitHub still accepts is reused, so repeated local runs do not sign in again. When the account has no two-factor authentication, GitHub e-mails a code to verify a new device. With `--headed`, you have 5 minutes to enter it in the browser. Without `--headed`, global setup stops with an error.
+
+On CI, `.github/workflows/e2e-live.yml` runs the tests on pull requests to `main` from this repository, on pushes to `main`, daily, and by hand, with the repository secrets of the same names. Pull requests from forks and Dependabot get no secrets and skip it. GitHub keeps one pending run of the workflow, so a newer run cancels a pending one. A CI runner is a new device on every run, so if GitHub asks the account to verify the device, the run fails. To avoid that, turn on authenticator-app two-factor authentication for the account and add `E2E_GH_TOTP_SECRET`. The workflow uploads no traces or screenshots, since they would carry the session cookies and the account name.

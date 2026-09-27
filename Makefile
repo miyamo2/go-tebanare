@@ -98,7 +98,8 @@ parity: $(ENGINE_WASM)
 
 .PHONY: e2e-live
 
-# Runs the extension on real pull requests on github.com, signed in as
+# Runs the extension on the sample pull request miyamo2/go-tebanare-sample#1
+# on github.com, signed in as
 # E2E_GH_USERNAME (see packages/chrome-extension/.env.e2e-live.example).
 # E2E_LIVE_FLAGS=--headed shows the browser.
 e2e-live: $(ENGINE_WASM)

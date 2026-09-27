@@ -1,10 +1,11 @@
 name: e2e-live
 
-# Runs the built extension on real pull requests on github.com
-# (packages/chrome-extension/e2e-live), signed in as the account in the
-# secrets E2E_GH_USERNAME and E2E_GH_PASSWORD (and E2E_GH_TOTP_SECRET when
-# the account uses an authenticator app). GitHub changes its diff markup
-# without notice, so this also runs daily, not only on changes.
+# Runs the built extension on the sample pull request
+# miyamo2/go-tebanare-sample#1 on github.com (packages/chrome-extension/e2e-live),
+# signed in as the account in the secrets E2E_GH_USERNAME and
+# E2E_GH_PASSWORD (and E2E_GH_TOTP_SECRET when the account uses an
+# authenticator app). GitHub changes its diff markup without notice, so the
+# workflow also runs on a daily schedule.
 
 on:
   pull_request:
@@ -18,7 +19,8 @@ on:
 permissions:
   contents: read
 
-# One sign-in at a time for the account.
+# One sign-in at a time for the account. GitHub keeps one pending run per
+# group, so a newer run cancels a pending one.
 concurrency:
   group: e2e-live
   cancel-in-progress: false
@@ -55,8 +57,8 @@ jobs:
       - run: make wasm
       - run: bun install --frozen-lockfile
       - run: bun run --cwd packages/chrome-extension playwright install --with-deps chromium
-      # No traces, screenshots, or the session file are uploaded: they
-      # would carry the account's session cookies or name.
+      # This job uploads no traces, screenshots, or session file: they would
+      # carry the account's session cookies or name.
       - name: Run the live end-to-end tests
         env:
           E2E_GH_USERNAME: ${{ secrets.E2E_GH_USERNAME }}

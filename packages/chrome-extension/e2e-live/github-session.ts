@@ -39,7 +39,7 @@ function credentials(): Credentials {
   return totpSecret ? { username, password, totpSecret } : { username, password };
 }
 
-/** signedInLogin returns the login GitHub's page names in its user-login meta tag, or "" for a signed-out page. */
+/** signedInLogin returns the content of the page's user-login meta tag: the signed-in login, or "" when signed out. */
 async function signedInLogin(page: Page): Promise<string> {
   const login = await page.locator('meta[name="user-login"]').first().getAttribute('content', { timeout: 5_000 }).catch(() => null);
   return login?.trim() ?? '';
@@ -121,7 +121,7 @@ async function signIn(context: BrowserContext, creds: Credentials, headed: boole
   await page.goto('https://github.com/');
   const login = await signedInLogin(page);
   if (login.toLowerCase() !== creds.username.toLowerCase()) {
-    throw new Error(`the sign-in stopped at ${new URL(page.url()).pathname}: GitHub does not show E2E_GH_USERNAME as signed in`);
+    throw new Error(`The sign-in stopped at ${new URL(page.url()).pathname}: GitHub does not show E2E_GH_USERNAME as signed in`);
   }
   await page.close();
 }
@@ -129,7 +129,7 @@ async function signIn(context: BrowserContext, creds: Credentials, headed: boole
 /**
  * ensureSession writes a signed-in storage state to authStatePath. A saved
  * state that GitHub still accepts for the same account is kept, so local
- * runs do not sign in, and trigger device checks, every time.
+ * runs do not sign in again, and do not trigger a device check, on every run.
  */
 export async function ensureSession(headed: boolean): Promise<void> {
   const creds = credentials();

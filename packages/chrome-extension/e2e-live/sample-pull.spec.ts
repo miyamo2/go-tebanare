@@ -1,14 +1,15 @@
 // Runs the built extension on a real pull request: the "Files changed" tab
-// of miyamo2/go-tebanare-sample#1, a reference pull request kept open for
-// this purpose. Its base commit enables the getter, noop, and iferr
-// presets, and each changed file pairs a match with a contrast that stays
-// visible. The expected rows come from the pull request's two commits, so
-// a failure means either the extension or GitHub's markup changed.
+// of miyamo2/go-tebanare-sample#1, a pull request that stays open as the
+// fixture for these tests. Its base commit enables the getter, noop, and
+// iferr presets. Three of its files pair a match with similar code that
+// stays visible, and handler/task_handler.go has only code that stays
+// visible. The expected rows come from the pull request's two commits, so a
+// failure points to a change in the extension, in GitHub's markup, or in the
+// sample pull request.
 
 import { createHash } from 'node:crypto';
-import type { Locator, Page, Worker } from '@playwright/test';
-import type { PageStatus } from '../src/shared/messages.js';
-import { expect, pageStatus, test as base } from '../e2e/harness.js';
+import type { Locator, Page } from '@playwright/test';
+import { expect, pageStatus, tabIdOf, test as base } from '../e2e/harness.js';
 import { sessionCookies } from './github-session.js';
 
 const REPO = 'miyamo2/go-tebanare-sample';
@@ -24,7 +25,7 @@ const test = base.extend({
 
 /**
  * fileRegion returns the React view's container of path, the region whose
- * id is "diff-" and the SHA-256 of the path.
+ * id is "diff-" followed by the hex SHA-256 of path.
  */
 function fileRegion(page: Page, path: string): Locator {
   return page.locator(`[role="region"][id="diff-${createHash('sha256').update(path).digest('hex')}"]`);
@@ -35,28 +36,11 @@ function newRow(file: Locator, line: number): Locator {
   return file.locator(`tr.diff-line-row:has(> td:nth-child(2)[data-line-number="${line}"])`);
 }
 
-/** tabIdOf returns the id of the tab whose content script shows the sample pull request. */
-async function tabIdOf(worker: Worker): Promise<number> {
-  const id = await worker.evaluate(
-    async ([repo, pr]) => {
-      for (const tab of await chrome.tabs.query({})) {
-        if (tab.id === undefined) continue;
-        const status = (await chrome.tabs.sendMessage(tab.id, { type: 'status' }).catch(() => null)) as PageStatus | null;
-        if (status?.repo?.toLowerCase() === repo.toLowerCase() && status.pr === pr) return tab.id;
-      }
-      return null;
-    },
-    [REPO, PULL_NUMBER] as const,
-  );
-  if (id === null) throw new Error(`no tab shows ${PULL_URL}`);
-  return id;
-}
-
 interface FileExpectation {
   path: string;
   /** New line numbers of the rows the extension hides. */
   hidden: number[];
-  /** New line numbers of rows that must stay visible, including the contrasts. */
+  /** New line numbers of rows that must stay visible, including the similar code that does not match. */
   visible: number[];
   /** The number of fold rows in the file. */
   folds: number;
@@ -107,10 +91,10 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator('meta[name="user-login"]')).not.toHaveAttribute('content', '');
 });
 
-test('folds the getter, noop, and iferr matches of the sample pull request and keeps the contrasts visible', async ({ page, serviceWorker }) => {
+test('folds the getter, noop, and iferr matches of the sample pull request and keeps similar code visible', async ({ page, serviceWorker }) => {
   // The page status explains a failure better than a missing fold row.
   await expect(async () => {
-    const status = await pageStatus(serviceWorker, await tabIdOf(serviceWorker));
+    const status = await pageStatus(serviceWorker, await tabIdOf(serviceWorker, REPO, PULL_NUMBER));
     expect(status, JSON.stringify(status)).toMatchObject({ state: 'ready', enabled: true, filesWithFolds: 3, linesHidden: HIDDEN_LINES });
   }).toPass({ timeout: 60_000 });
   await expect(page.locator('[data-gotebanare-banner]')).toHaveCount(0);
@@ -140,7 +124,7 @@ test('folds the getter, noop, and iferr matches of the sample pull request and k
   await expect(usecase.locator('tr[data-gotebanare-fold]')).toHaveText(/^3 lines hidden by gotebanare: iferr/);
   await expect(newRow(fileRegion(page, 'handler/task_handler.go'), 48)).toHaveText(/http\.Error\(w, err\.Error\(\), http\.StatusNotFound\)/);
 
-  // The fold row shows the Priority getter and hides it again.
+  // Clicking the fold row's buttons shows the Priority getter, then hides it again.
   const priority = task.locator('tr[data-gotebanare-fold]').last();
   await priority.getByRole('button', { name: 'Show 2 lines hidden by gotebanare' }).click();
   await expect(newRow(task, 77)).toBeVisible();

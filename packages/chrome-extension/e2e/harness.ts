@@ -147,23 +147,25 @@ export function newRows(page: Page, lines: readonly number[]): Locator[] {
 }
 
 /**
- * tabIdOf returns the id of the tab that shows PULL_URL. The extension has
- * no "tabs" permission, so tab URLs are not visible; the service worker
- * asks each tab's content script for its status instead.
+ * tabIdOf returns the id of the tab that shows pull request pr of repo,
+ * PULL_URL by default. The extension has no "tabs" permission, so tab URLs
+ * are not visible; the service worker asks each tab's content script for
+ * its status instead. GitHub matches owner and repository names without
+ * regard to case, and so does tabIdOf.
  */
-export async function tabIdOf(worker: Worker): Promise<number> {
+export async function tabIdOf(worker: Worker, repo = REPO, pr = PULL_NUMBER): Promise<number> {
   const id = await worker.evaluate(
     async ([repo, pr]) => {
       for (const tab of await chrome.tabs.query({})) {
         if (tab.id === undefined) continue;
         const status = (await chrome.tabs.sendMessage(tab.id, { type: 'status' }).catch(() => null)) as PageStatus | null;
-        if (status?.repo === repo && status.pr === pr) return tab.id;
+        if (status?.repo?.toLowerCase() === repo.toLowerCase() && status.pr === pr) return tab.id;
       }
       return null;
     },
-    [REPO, PULL_NUMBER] as const,
+    [repo, pr] as const,
   );
-  if (id === null) throw new Error(`no tab shows ${PULL_URL}`);
+  if (id === null) throw new Error(`no tab shows pull request ${pr} of ${repo}`);
   return id;
 }
 
