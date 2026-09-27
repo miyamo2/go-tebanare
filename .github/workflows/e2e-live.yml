@@ -2,7 +2,7 @@ name: e2e-live
 
 # Runs the built extension on the sample pull request
 # miyamo2/go-tebanare-sample#1 on github.com (packages/chrome-extension/e2e-live),
-# signed in as the account in the secrets E2E_GH_USERNAME and
+# signed in as the account in the secrets E2E_GH_USER and
 # E2E_GH_PASSWORD (and E2E_GH_TOTP_SECRET when the account uses an
 # authenticator app). GitHub changes its diff markup without notice, so the
 # workflow also runs on a daily schedule.
@@ -61,7 +61,7 @@ jobs:
       # carry the account's session cookies or name.
       - name: Run the live end-to-end tests
         env:
-          E2E_GH_USERNAME: ${{ secrets.E2E_GH_USERNAME }}
+          E2E_GH_USER: ${{ secrets.E2E_GH_USER }}
           E2E_GH_PASSWORD: ${{ secrets.E2E_GH_PASSWORD }}
           E2E_GH_TOTP_SECRET: ${{ secrets.E2E_GH_TOTP_SECRET }}
           E2E_GH_AUTH_STATE: ${{ runner.temp }}/e2e-live/github.json

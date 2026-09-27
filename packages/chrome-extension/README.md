@@ -88,7 +88,7 @@ The page and the sources are synthetic. `pull-7-files.html` follows the same mod
 
 | Variable | Meaning |
 |---|---|
-| `E2E_GH_USERNAME`, `E2E_GH_PASSWORD` | the account the tests sign in with (required) |
+| `E2E_GH_USER`, `E2E_GH_PASSWORD` | the account the tests sign in with (required) |
 | `E2E_GH_TOTP_SECRET` | the base32 secret of the account's authenticator app, when it uses two-factor authentication |
 | `E2E_GH_AUTH_STATE` | where the signed-in session is kept; `e2e-live/.auth/github.json` by default |
 

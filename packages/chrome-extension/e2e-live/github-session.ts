@@ -1,4 +1,4 @@
-// Signs in to github.com with the account in E2E_GH_USERNAME and
+// Signs in to github.com with the account in E2E_GH_USER and
 // E2E_GH_PASSWORD, and keeps the session as a Playwright storage state, so
 // the live tests can open pull requests as a signed-in reader.
 
@@ -27,11 +27,11 @@ interface Credentials {
 }
 
 function credentials(): Credentials {
-  const username = process.env['E2E_GH_USERNAME'] ?? '';
+  const username = process.env['E2E_GH_USER'] ?? '';
   const password = process.env['E2E_GH_PASSWORD'] ?? '';
   if (username === '' || password === '') {
     throw new Error(
-      'The live end-to-end tests sign in to github.com: set E2E_GH_USERNAME and E2E_GH_PASSWORD, ' +
+      'The live end-to-end tests sign in to github.com: set E2E_GH_USER and E2E_GH_PASSWORD, ' +
         'for example in packages/chrome-extension/.env.e2e-live (see .env.e2e-live.example).',
     );
   }
@@ -90,7 +90,7 @@ async function signIn(context: BrowserContext, creds: Credentials, headed: boole
 
   if (path === '/session' || path === '/login') {
     const flash = (await page.locator('.flash-error, #js-flash-container .flash').first().textContent({ timeout: 2_000 }).catch(() => null))?.trim();
-    throw new Error(`GitHub rejected the sign-in of E2E_GH_USERNAME${flash ? `: ${flash}` : ''}`);
+    throw new Error(`GitHub rejected the sign-in of E2E_GH_USER${flash ? `: ${flash}` : ''}`);
   }
   if (path.startsWith('/sessions/two-factor')) {
     if (!creds.totpSecret) {
@@ -121,7 +121,7 @@ async function signIn(context: BrowserContext, creds: Credentials, headed: boole
   await page.goto('https://github.com/');
   const login = await signedInLogin(page);
   if (login.toLowerCase() !== creds.username.toLowerCase()) {
-    throw new Error(`The sign-in stopped at ${new URL(page.url()).pathname}: GitHub does not show E2E_GH_USERNAME as signed in`);
+    throw new Error(`The sign-in stopped at ${new URL(page.url()).pathname}: GitHub does not show E2E_GH_USER as signed in`);
   }
   await page.close();
 }
