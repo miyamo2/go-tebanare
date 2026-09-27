@@ -50,23 +50,31 @@ jobs:
           fetch-depth: 0
           # git push below runs with the App's token.
           token: ${{ steps.app.outputs.token }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - name: Find the version to release
-        id: version
+      # Runs before setup-node so a push that left the version unchanged (e.g.
+      # a dependency bump in package.json) skips the rest of the job without
+      # paying for a Node.js setup.
+      - name: Check whether the pushed version changed
+        id: diff
+        if: github.event_name == 'push'
         env:
           BEFORE: ${{ github.event.before }}
         run: |
           pkg=packages/chrome-extension/package.json
-          if [ "$GITHUB_EVENT_NAME" = push ]; then
-            pushed="$(git show "$GITHUB_SHA:$pkg" | jq -r .version)"
-            before="$( { git show "$BEFORE:$pkg" 2> /dev/null || true; } | jq -r .version)"
-            if [ "$pushed" = "$before" ]; then
-              echo "::notice::the push left the version at $pushed; nothing to release"
-              exit 0
-            fi
+          pushed="$(git show "$GITHUB_SHA:$pkg" | jq -r .version)"
+          before="$( { git show "$BEFORE:$pkg" 2> /dev/null || true; } | jq -r .version)"
+          if [ "$pushed" = "$before" ]; then
+            echo "::notice::the push left the version at $pushed; nothing to release"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
+      - uses: actions/setup-node@v4
+        if: steps.diff.outputs.changed != 'false'
+        with:
+          node-version: "22"
+      - name: Find the version to release
+        id: version
+        if: steps.diff.outputs.changed != 'false'
+        run: |
+          pkg=packages/chrome-extension/package.json
           version="$(jq -r .version "$pkg")"
           tag="$TAG_PREFIX$version"
           if git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null; then
