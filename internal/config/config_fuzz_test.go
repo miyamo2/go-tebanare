@@ -20,6 +20,8 @@ func fuzzCompileSeeds(tb testing.TB) []string {
 		"version: 1\nfiles: {exclude: [vendor/**]}\npresets: [getter: {max_depth: 2}, noop: {include_functions: true}, iferr: {names: [a, '*Err'], init: fold-body}]",
 		"a: &a [*a, *a]\nversion: *a\npresets: *a",
 		"version: 1\npresets: [iferr: {names: &n [&x a, *x]}, noop: {paths: *n}]\n---\n",
+		// Compile stops at the second document, before the syntax error.
+		"version: 1\n---\nversion: 1\n---\n{\n",
 		"version: 1\npresets: [",
 		"version: 1\n\tpresets: []\n",
 		"version: 1\npresets: [" + strings.Repeat("[", 1001) + strings.Repeat("]", 1001) + "]",

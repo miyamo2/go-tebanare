@@ -35,6 +35,19 @@ fuzz-smoke:
 		done; \
 	done
 
+FUZZ_VECTORS ?= $(or $(TMPDIR),/tmp)/gotebanare-fuzz-vectors
+
+.PHONY: fuzz-vectors fuzz-wasm
+
+# Writes the corpus that fuzz-smoke collected in GOCACHE as test vectors.
+fuzz-vectors:
+	$(GO) run ./internal/tools/fuzzcorpus -cache "$$($(GO) env GOCACHE)/fuzz" -o $(FUZZ_VECTORS)
+
+# Replays the corpus that fuzz-smoke collected through engine.wasm (plan 8).
+fuzz-wasm: fuzz-vectors $(ENGINE_WASM)
+	GOTEBANARE_FUZZ_VECTORS=$(FUZZ_VECTORS) \
+		bun run --cwd packages/engine vitest run test/fuzz-replay.test.ts
+
 .PHONY: wasm wasm-check wasm-wasip1
 
 wasm:
