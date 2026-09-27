@@ -48,19 +48,18 @@ requires identical results.
 - The build first used the precise GC. With it, compiling
   `!!!!000aaaa: 0\n--- 0` as the first call on a new instance trapped in
   yaml.v3's `panic("read handler must be set")`, although the parser sets
-  that handler before it reads. The build then used the conservative GC,
-  which rejected that input without a trap. With the conservative GC,
-  compiling `0:\n - -\n\n - -\n` or `0: &a [00,*a]` as the first call on
-  a new instance trapped instead; the native build rejects both with a
-  diagnostic. Both GCs most likely freed memory that was still in use; we
-  did not identify which object, and a build with an extra import or with
-  debug information no longer trapped.
-- The build therefore uses the leaking GC, which never frees memory and is
-  the default for `wasm-unknown`. `@go-tebanare/engine` already replaces an
-  instance once its memory passes `maxMemoryBytes` (256 MB by default) or
-  after `maxCallsPerInstance` calls (1,000), so an instance holds at most
-  that limit plus what one call allocates. Analyzing a 20,000-line file grows memory by about
-  33 MB and runs faster than with the conservative GC.
+  that handler before it reads. A build with the conservative GC rejected
+  that input without a trap, but trapped on `0:\n - -\n\n - -\n` and
+  `0: &a [00,*a]` as the first call on a new instance. The native build
+  rejects both with a diagnostic. We suspect that both GCs freed memory
+  still in use, but did not find the object. Conservative-GC builds with
+  one more import or with debug information did not trap on them.
+- The build uses the leaking GC, the default for `wasm-unknown`. It never
+  frees memory. `@go-tebanare/engine` replaces an instance once its memory
+  passes `maxMemoryBytes` (256 MB by default) or after
+  `maxCallsPerInstance` calls (1,000), so an instance holds at most that
+  limit plus what one call allocates. A 20,000-line file grows memory by
+  about 33 MB and takes 172 ms, against 288 ms with the conservative GC.
 - The standard Go toolchain can build the same exports for `GOOS=wasip1`
   with `-buildmode=c-shared`; CI keeps that build compiling as a fallback.
 - Measured on this repository: the engine is 0.66 MB (0.29 MB gzip), a
