@@ -1,0 +1,62 @@
+name: tag-chrome-extension
+
+# A push to main that changes the version in
+# packages/chrome-extension/package.json tags the commit
+# packages/chrome-extension/vX.Y.Z and starts release-chrome-extension.yml
+# on that tag.
+on:
+  push:
+    branches: [main]
+    paths: [packages/chrome-extension/package.json]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tag-chrome-extension
+  cancel-in-progress: false
+
+env:
+  TAG_PREFIX: packages/chrome-extension/v
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    permissions:
+      # to push the tag
+      contents: write
+      # to start the release workflow
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Find the version to release
+        id: version
+        run: |
+          version="$(jq -r .version packages/chrome-extension/package.json)"
+          tag="$TAG_PREFIX$version"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null; then
+            echo "::notice::$tag exists; the version did not change, so there is nothing to release"
+            exit 0
+          fi
+          previous="$(git ls-remote --tags --refs origin "refs/tags/$TAG_PREFIX*" \
+            | sed "s|.*refs/tags/$TAG_PREFIX||" | { grep -E '^[0-9]+(\.[0-9]+)*$' || true; } | sort -V | tail -n 1)"
+          # Refuses a version with a suffix, or one not higher than the last release.
+          node packages/chrome-extension/scripts/release-version.mjs ${previous:+--previous "$previous"}
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      # A tag pushed with GITHUB_TOKEN starts no workflow, so this job starts
+      # the release itself. A tag pushed by hand starts the release through
+      # its push trigger.
+      - name: Tag the commit and start the release
+        if: steps.version.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "chrome-extension ${TAG#"$TAG_PREFIX"}" "$GITHUB_SHA"
+          git push origin "refs/tags/$TAG"
+          gh workflow run release-chrome-extension.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG"
