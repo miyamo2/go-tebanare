@@ -2,7 +2,7 @@
 
 # go-tebanare
 
-Hide the Go code your team agreed not to review in GitHub pull request diffs.
+"Tebanare" in Japanese means "off one's hands." This tool takes Go code reviews more off your hands.
 
 [![CI](https://github.com/miyamo2/go-tebanare/actions/workflows/ci.yml/badge.svg)](https://github.com/miyamo2/go-tebanare/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/miyamo2/go-tebanare.svg)](https://pkg.go.dev/github.com/miyamo2/go-tebanare)
@@ -18,7 +18,7 @@ Hide the Go code your team agreed not to review in GitHub pull request diffs.
 
 ## Overview
 
-Reviewers skim getters, empty marker methods, and `if err != nil { return err }` blocks. *Tebanare* (手離れ) means hands-off. go-tebanare hides this code in the **Files changed** tab of a pull request.
+Reviewers skim getters, empty marker methods, and `if err != nil { return err }` blocks. go-tebanare hides this code in the **Files changed** tab of a pull request.
 
 Your team lists the presets to apply in a `.gotebanare.yml` file in the repository. The engine parses each changed Go file with the standard `go/parser`, compiled to WebAssembly with TinyGo, and hides the code that the presets match:
 
