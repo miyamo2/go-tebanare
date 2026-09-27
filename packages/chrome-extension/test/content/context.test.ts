@@ -7,6 +7,7 @@ import {
   defaultContextProvider,
   diffUrlProvider,
   embeddedDataProvider,
+  fetchContext,
   firstOf,
   hiddenInputProvider,
   type PullRequestContextProvider,
@@ -290,5 +291,31 @@ describe('firstOf', () => {
     expect(firstOf(none, fixed, hiddenInputProvider).resolve(doc, page)).toEqual({ ...page, baseSha: OTHER, headSha: OTHER });
     expect(firstOf(none, none).resolve(doc, page)).toBeNull();
     expect(firstOf().resolve(doc, page)).toBeNull();
+  });
+});
+
+describe('fetchContext', () => {
+  const html = (name: string) => readFileSync(join(fixtureDir, name), 'utf8');
+  const URL_ = 'https://github.com/octo/repo/pull/12/changes';
+
+  it('finds no context in a page the React app reached without a load', () => {
+    expect(defaultContextProvider.resolve(load('context-react-stale.html'), page)).toBeNull();
+  });
+
+  it("reads the context from the server's copy of the page", async () => {
+    const fetchPage = vi.fn(async () => ({ ok: true as const, text: html('context-react.html') }));
+    expect(await fetchContext(fetchPage, URL_, page)).toEqual(want);
+    expect(fetchPage).toHaveBeenCalledWith(URL_);
+  });
+
+  it('returns null for a failed request, a page without a context, and a rejection', async () => {
+    expect(await fetchContext(async () => ({ ok: false, reason: 'network' }), URL_, page)).toBeNull();
+    expect(await fetchContext(async () => ({ ok: true, text: html('context-react-stale.html') }), URL_, page)).toBeNull();
+    expect(await fetchContext(() => Promise.reject(new Error('boom')), URL_, page)).toBeNull();
+  });
+
+  it('checks the context against the page', async () => {
+    const other: PullPage = { ...page, number: 13 };
+    expect(await fetchContext(async () => ({ ok: true, text: html('context-react.html') }), URL_, other)).toBeNull();
   });
 });

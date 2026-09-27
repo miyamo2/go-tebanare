@@ -25,6 +25,8 @@ export interface RunDeps {
   detectVariant(doc: Document): DiffUiVariant | null;
   debug: boolean;
   enabled: () => boolean;
+  /** Reports whether the loading indicator shows, given whether the run is loading (see LoadingDelay). */
+  loadingShown(loading: boolean): boolean;
 }
 
 /** The fields of PageStatus that a run knows. */
@@ -72,9 +74,15 @@ export class Run {
     this.#renderBanner();
   }
 
+  /** render shows the banner again, for example after the loading delay passed. */
+  render(): void {
+    this.#renderBanner();
+  }
+
   /** refresh shows every file again after hiding was turned on or off. */
   refresh(): void {
     this.#scanner?.refresh();
+    this.#renderBanner();
   }
 
   /** stop drops pending work and removes what the run added to the files. The next run or the controller replaces the banner. */
@@ -124,8 +132,11 @@ export class Run {
     if (this.#stopped) return;
     const { doc } = this.#deps;
     const messages = this.#report.messages();
-    const variant = messages.length > 0 ? this.#deps.detectVariant(doc) : null;
+    // The indicator stays until every file shown has its result.
+    // loadingShown returns false while hiding is off.
+    const loading = this.#deps.loadingShown(this.#state === 'loading' || (this.#scanner?.busy() ?? false));
+    const variant = messages.length > 0 || loading ? this.#deps.detectVariant(doc) : null;
     const [anchor = null] = variant ? variant.fileContainers(doc) : [];
-    renderBanner(doc, messages, anchor);
+    renderBanner(doc, messages, anchor, loading);
   }
 }

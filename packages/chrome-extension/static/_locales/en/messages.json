@@ -45,6 +45,7 @@
   },
   "debugRowTitleNoRules": { "message": "Hidden" },
   "bannerTitle": { "message": "gotebanare" },
+  "bannerLoading": { "message": "Checking which lines to hide…" },
   "bannerConfigError": {
     "message": "$path$ has errors, so nothing is hidden.",
     "placeholders": { "path": { "content": "$1" } }

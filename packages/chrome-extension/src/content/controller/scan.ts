@@ -51,6 +51,8 @@ export class FileScanner {
   #seen = new WeakMap<HTMLElement, Seen>();
   // Containers the scanner showed a file in, with the key of that file.
   readonly #touched = new Map<HTMLElement, string>();
+  // Visits waiting for their file's analysis.
+  readonly #pending = new Set<Seen>();
 
   constructor(c: ScanContext) {
     this.#c = c;
@@ -62,6 +64,11 @@ export class FileScanner {
     for (const container of this.#c.variant.fileContainers(this.#c.doc)) {
       if (!changes || touches(changes, container)) this.#visit(container);
     }
+  }
+
+  /** busy reports whether a file on the page still waits for its analysis. */
+  busy(): boolean {
+    return this.#pending.size > 0;
   }
 
   /** refresh shows every file again after enabled changed. Turning hiding off clears every file at once. */
@@ -106,13 +113,18 @@ export class FileScanner {
     const last = this.#seen.get(container);
     if (last && last.key === seen.key && sameElements(last.rows, rows)) return;
     this.#seen.set(container, seen);
+    this.#pending.add(seen);
     void this.#analysis(file).then((analysis) => {
-      if (this.#stopped || this.#seen.get(container) !== seen) return;
+      this.#pending.delete(seen);
+      if (this.#stopped) return;
+      // A dropped visit can be the last one the banner waits for.
+      if (this.#seen.get(container) !== seen) return this.#c.changed();
       try {
         this.#show(container, file, rows, analysis);
       } catch (e) {
         console.warn(`go-tebanare: ${path}: ${errorText(e)}`);
         clearFile(container);
+        this.#c.changed();
       }
     });
   }

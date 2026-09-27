@@ -11,12 +11,13 @@ import { clearFile } from './apply.js';
 import type { PullRequestContext, PullRequestContextProvider } from './context.js';
 import type { SendFn } from './controller/file.js';
 import { Run } from './controller/run.js';
+import { LOADING_DELAY_MS, LOADING_MIN_MS, LoadingDelay } from './controller/loading.js';
 import { inactiveStatus } from './controller/status.js';
 import { watchMutations, type Changes, type FrameApi, type ObserverCtor } from './controller/watch.js';
 import type { DiffUiVariant } from './dom/variant.js';
 import { Semaphore, type SourceFetcher } from './fetcher.js';
 import type { PullPage } from './page.js';
-import { removeBanner } from './ui/banner.js';
+import { removeBanner, renderBanner } from './ui/banner.js';
 
 /** At most this many files are analyzed at once (plan 6.4). */
 export const MAX_FILES_IN_FLIGHT = 4;
@@ -27,12 +28,22 @@ export interface ControllerDeps {
   send: SendFn;
   fetcher: SourceFetcher;
   contexts: PullRequestContextProvider;
+  /**
+   * Resolves the context from the server's copy of the page when contexts
+   * finds none in the DOM. It never rejects. Without it, such a page hides
+   * nothing.
+   */
+  fetchContext?: (page: PullPage) => Promise<PullRequestContext | null>;
   detectVariant(doc: Document): DiffUiVariant | null;
   loadOptions(): Promise<Options>;
   frames: FrameApi;
   MutationObserver: ObserverCtor;
   /** Defaults to MAX_FILES_IN_FLIGHT. */
   maxFilesInFlight?: number;
+  /** Defaults to LOADING_DELAY_MS. */
+  loadingDelayMs?: number;
+  /** Defaults to LOADING_MIN_MS. */
+  loadingMinMs?: number;
 }
 
 /** clearPage removes every row mark, fold row, badge, and banner of the extension from doc. */
@@ -50,6 +61,7 @@ export class Controller {
   readonly #repo: string;
   readonly #prKey: string;
   readonly #limit: Semaphore;
+  readonly #loading: LoadingDelay;
 
   #disposed = false;
   // The state before the first run, and after the controller stops.
@@ -59,6 +71,9 @@ export class Controller {
   #tabStateSeen = false;
   #options: Options = sanitizeOptions(undefined);
   #run: Run | null = null;
+  // The context that fetchContext found. #resolve uses it while the DOM
+  // names no commits.
+  #fetched: PullRequestContext | null = null;
   #unwatch: (() => void) | null = null;
 
   constructor(page: PullPage, deps: ControllerDeps) {
@@ -67,6 +82,11 @@ export class Controller {
     this.#repo = `${page.owner}/${page.repo}`;
     this.#prKey = pullRequestKey(this.#repo, page.number);
     this.#limit = new Semaphore(deps.maxFilesInFlight ?? MAX_FILES_IN_FLIGHT);
+    this.#loading = new LoadingDelay(deps.loadingDelayMs ?? LOADING_DELAY_MS, deps.loadingMinMs ?? LOADING_MIN_MS, () => {
+      if (this.#disposed) return;
+      if (this.#run) this.#run.render();
+      else if (this.#unwatch) this.#renderLoading();
+    });
   }
 
   /** start runs the pipeline up to the first scan of the files. It never rejects. */
@@ -89,7 +109,8 @@ export class Controller {
     // Before the first run, the pipeline has not read headPreview yet. A
     // run without commits has no config to load.
     if (previewChanged && this.#run?.ctx) void this.#startRun(this.#run.ctx);
-    else if (enabledChanged) this.#run?.refresh();
+    else if (enabledChanged && this.#run) this.#run.refresh();
+    else if (enabledChanged && this.#unwatch) this.#renderLoading();
   }
 
   status(): PageStatus {
@@ -131,11 +152,42 @@ export class Controller {
     }
     const { doc, MutationObserver, frames } = this.#deps;
     this.#unwatch = watchMutations(doc.documentElement, MutationObserver, frames, (changes) => this.#onBatch(changes));
-    await this.#startRun(this.#resolve());
+    // The run takes over the indicator once it starts.
+    this.#renderLoading();
+    const ctx = this.#resolve() ?? (await this.#fetchContext());
+    if (this.#disposed) return;
+    await this.#startRun(ctx);
+  }
+
+  // renderLoading shows the loading indicator before the first run, while
+  // the commits are looked up. With hiding off, it removes the banner.
+  #renderLoading(): void {
+    const { doc } = this.#deps;
+    const [anchor = null] = this.#deps.detectVariant(doc)?.fileContainers(doc) ?? [];
+    renderBanner(doc, [], anchor, this.#loadingShown(true));
+  }
+
+  // loadingShown reports whether the indicator shows. The reader turns
+  // hiding off on purpose, so turning it off removes the indicator at once,
+  // before the minimum passes.
+  #loadingShown(loading: boolean): boolean {
+    if (this.#enabled) return this.#loading.visible(loading);
+    this.#loading.stop();
+    return false;
   }
 
   #resolve(): PullRequestContext | null {
-    return this.#deps.contexts.resolve(this.#deps.doc, this.#page);
+    return this.#deps.contexts.resolve(this.#deps.doc, this.#page) ?? this.#fetched;
+  }
+
+  // fetchContext asks the server for the commits once, at the start. DOM
+  // batches that arrive meanwhile find no run and are dropped; the run
+  // scans the whole page when it starts.
+  async #fetchContext(): Promise<PullRequestContext | null> {
+    const fetch = this.#deps.fetchContext;
+    if (!fetch) return null;
+    this.#fetched = await fetch(this.#page);
+    return this.#resolve();
   }
 
   #onBatch(changes: Changes): void {
@@ -168,6 +220,7 @@ export class Controller {
         detectVariant: (doc) => this.#deps.detectVariant(doc),
         debug: this.#options.debug,
         enabled: () => this.#enabled,
+        loadingShown: (loading) => this.#loadingShown(loading),
       },
       ctx,
       this.#headPreview ? 'head' : 'base',
@@ -189,6 +242,7 @@ export class Controller {
   }
 
   #stop(): void {
+    this.#loading.stop();
     this.#unwatch?.();
     this.#unwatch = null;
     this.#run?.stop();

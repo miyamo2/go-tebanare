@@ -10,7 +10,7 @@ import {
   type TabStateMessage,
 } from '../shared/messages.js';
 import { loadOptions } from '../shared/settings.js';
-import { defaultContextProvider } from './context.js';
+import { defaultContextProvider, fetchContext } from './context.js';
 import { Controller } from './controller.js';
 import { inactiveStatus } from './controller/status.js';
 import { detectVariant } from './dom/variant.js';
@@ -124,16 +124,20 @@ if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage && typeof documen
     document,
     navigation: (window as { navigation?: EventTarget }).navigation,
     onMessage: chrome.runtime.onMessage,
-    createController: (page) =>
-      new Controller(page, {
+    createController: (page) => {
+      // A navigation disposes the controller, so href stays this page's URL.
+      const href = location.href;
+      return new Controller(page, {
         doc: document,
         send,
         fetcher,
         contexts: defaultContextProvider,
+        fetchContext: (p) => fetchContext((url) => fetcher.fetchPage(url), href, p),
         detectVariant: (doc) => detectVariant(doc),
         loadOptions: () => loadOptions(),
         frames: window,
         MutationObserver,
-      }),
+      });
+    },
   });
 }

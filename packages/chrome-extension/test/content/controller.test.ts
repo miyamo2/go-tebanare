@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PullRequestContext } from '../../src/content/context.js';
+import type { PullPage } from '../../src/content/page.js';
 import { FakeChrome, installChrome } from '../fakes/chrome.js';
-import { BASE, CONFIG, PR_KEY, addedMarks, bannerTexts, buildPage, fileHtml, harness, hiddenRows, hide } from './controller-setup.js';
+import { BASE, CONFIG, HEAD, PAGE, PR_KEY, addedMarks, bannerTexts, buildPage, fileHtml, harness, hiddenRows, hide } from './controller-setup.js';
 
 let restore = () => {};
 beforeEach(() => {
@@ -95,6 +97,61 @@ describe('pipeline', () => {
     expect(h.fetcher.calls).toEqual([]);
   });
 
+  it("reads the commits from the server's copy of a page that does not name them", async () => {
+    const [store] = buildPage(modified());
+    for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
+    const fetchContext = vi.fn(async (p: PullPage) => ({ ...p, baseSha: BASE, headSha: HEAD }));
+    const h = harness({ deps: { fetchContext } });
+    h.bg.ranges.set('store/store.go', getter);
+    await h.controller.start();
+    await h.settle();
+    expect(fetchContext).toHaveBeenCalledWith(PAGE);
+    expect(hiddenRows(store!)).toEqual(['+26', '+27', '+28', '+29']);
+    expect(h.controller.status()).toMatchObject({ state: 'ready', linesHidden: 4 });
+    // Later DOM changes still name no commits; the run keeps the fetched ones.
+    const types = h.bg.types().length;
+    document.body.append(document.createElement('div'));
+    await h.settle();
+    expect(fetchContext).toHaveBeenCalledTimes(1);
+    expect(h.bg.types()).toHaveLength(types);
+    expect(hiddenRows(store!)).toEqual(['+26', '+27', '+28', '+29']);
+  });
+
+  it('hides nothing when the server copy does not name the commits either', async () => {
+    buildPage(modified());
+    for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
+    const h = harness({ deps: { fetchContext: async () => null } });
+    await h.controller.start();
+    await h.settle();
+    expect(h.controller.status()).toMatchObject({ state: 'error', messages: ['Could not read the pull request commits from this page, so nothing is hidden.'] });
+    expect(h.fetcher.calls).toEqual([]);
+  });
+
+  it('starts no run when disposed while the page is fetched', async () => {
+    buildPage(modified());
+    for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
+    let answer: (ctx: null) => void = () => {};
+    const h = harness({ deps: { fetchContext: () => new Promise((resolve) => (answer = resolve)) } });
+    const started = h.controller.start();
+    await h.settle();
+    h.controller.dispose();
+    answer(null);
+    await started;
+    await h.settle();
+    expect(bannerTexts()).toEqual([]);
+    expect(addedMarks()).toBe(0);
+  });
+
+  it('does not fetch the page when the DOM names the commits', async () => {
+    buildPage(modified());
+    const fetchContext = vi.fn(async () => null);
+    const h = harness({ deps: { fetchContext } });
+    await h.controller.start();
+    await h.settle();
+    expect(fetchContext).not.toHaveBeenCalled();
+    expect(h.controller.status()).toMatchObject({ state: 'ready' });
+  });
+
   it('answers loading until the config is compiled', async () => {
     buildPage(modified());
     const h = harness();
@@ -105,5 +162,137 @@ describe('pipeline', () => {
     h.fetcher.release();
     await h.settle();
     expect(h.controller.status().state).toBe('ready');
+  });
+});
+
+describe('loading indicator', () => {
+  const loading = () => document.querySelector('[data-gotebanare-banner] .gotebanare-banner-loading') !== null;
+  // Both times are 0 here; 'loading delay' below and loading.test.ts cover the timing.
+  const now = { loadingDelayMs: 0, loadingMinMs: 0 };
+
+  it('shows while the commits are fetched and until every file has its result', async () => {
+    const [store] = buildPage(modified());
+    for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
+    let answer: (ctx: PullRequestContext) => void = () => {};
+    const h = harness({ deps: { ...now, fetchContext: () => new Promise((resolve) => (answer = resolve)) } });
+    h.bg.ranges.set('store/store.go', getter);
+    h.fetcher.hold((p) => p === 'store/store.go');
+    const started = h.controller.start();
+    await h.settle();
+    expect(loading()).toBe(true);
+    answer({ ...PAGE, baseSha: BASE, headSha: HEAD });
+    await started;
+    await h.settle();
+    // The config is compiled, but store.go waits for its sources.
+    expect(h.controller.status().state).toBe('ready');
+    expect(loading()).toBe(true);
+    h.fetcher.release();
+    await h.settle();
+    expect(hiddenRows(store!)).toEqual(['+26', '+27', '+28', '+29']);
+    expect(loading()).toBe(false);
+    expect(document.querySelector('[data-gotebanare-banner]')).toBeNull();
+  });
+
+  it('keeps the messages when loading ends in an error', async () => {
+    buildPage(modified());
+    for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
+    const h = harness({ deps: { ...now, fetchContext: async () => null } });
+    await h.controller.start();
+    await h.settle();
+    expect(loading()).toBe(false);
+    expect(bannerTexts()).toEqual(['Could not read the pull request commits from this page, so nothing is hidden.']);
+  });
+
+  it('never shows in an excluded repository', async () => {
+    buildPage(modified());
+    const h = harness({ options: { excludedRepos: ['octo-org/*'] }, deps: now });
+    await h.controller.start();
+    await h.settle();
+    expect(addedMarks()).toBe(0);
+  });
+
+  it('hides at once while hiding is off, and waits the delay again when it comes back on', async () => {
+    buildPage(modified());
+    const h = harness({ deps: now });
+    h.fetcher.hold((p) => p === 'store/store.go');
+    await h.controller.start();
+    await h.settle();
+    expect(loading()).toBe(true);
+    h.controller.setTabState({ type: 'tab-state', enabled: false, headPreview: false });
+    expect(loading()).toBe(false);
+    h.controller.setTabState({ type: 'tab-state', enabled: true, headPreview: false });
+    expect(loading()).toBe(false);
+    await h.settle();
+    expect(loading()).toBe(true);
+    h.fetcher.release();
+    await h.settle();
+    expect(loading()).toBe(false);
+  });
+});
+
+describe('loading delay', () => {
+  const banner = () => document.querySelector('[data-gotebanare-banner]');
+  const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  it('never shows the indicator when the lines are known within the delay', async () => {
+    const [store] = buildPage(modified());
+    const h = harness();
+    h.bg.ranges.set('store/store.go', getter);
+    const seen: boolean[] = [];
+    const observer = new MutationObserver(() => seen.push(banner() !== null));
+    observer.observe(document.body, { childList: true, subtree: true });
+    await h.controller.start();
+    await h.settle();
+    observer.disconnect();
+    expect(hiddenRows(store!)).toHaveLength(4);
+    expect(seen).not.toContain(true);
+    expect(banner()).toBeNull();
+  });
+
+  it('shows the indicator once loading lasts the delay, across the context fetch and the run, for at least the minimum', async () => {
+    const [store] = buildPage(modified());
+    for (const input of document.querySelectorAll('input[type=hidden]')) input.remove();
+    let answer: (ctx: PullRequestContext) => void = () => {};
+    const h = harness({ deps: { loadingDelayMs: 200, loadingMinMs: 200, fetchContext: () => new Promise((resolve) => (answer = resolve)) } });
+    h.bg.ranges.set('store/store.go', getter);
+    h.fetcher.hold((p) => p === 'store/store.go');
+    const started = h.controller.start();
+    await wait(20);
+    answer({ ...PAGE, baseSha: BASE, headSha: HEAD });
+    await started;
+    await h.settle();
+    // About 20 ms have passed, less than the 200 ms delay.
+    expect(banner()).toBeNull();
+    await wait(250);
+    expect(banner()?.querySelector('.gotebanare-banner-loading')).not.toBeNull();
+    h.fetcher.release();
+    await h.settle();
+    // The indicator appeared about 50 ms ago, so it stays for the minimum although the folds are in.
+    expect(hiddenRows(store!)).toHaveLength(4);
+    expect(banner()?.querySelector('.gotebanare-banner-loading')).not.toBeNull();
+    await wait(250);
+    expect(banner()).toBeNull();
+  });
+
+  it('removes the indicator at once when hiding is turned off within the minimum', async () => {
+    buildPage(modified());
+    const h = harness({ deps: { loadingDelayMs: 0, loadingMinMs: 10_000 } });
+    h.fetcher.hold((p) => p === 'store/store.go');
+    await h.controller.start();
+    await h.settle();
+    expect(banner()).not.toBeNull();
+    h.controller.setTabState({ type: 'tab-state', enabled: false, headPreview: false });
+    expect(banner()).toBeNull();
+    h.controller.dispose();
+  });
+
+  it('cancels the timer on dispose', async () => {
+    buildPage(modified());
+    const h = harness({ deps: { loadingDelayMs: 20 } });
+    h.fetcher.hold((p) => p === 'store/store.go');
+    await h.controller.start();
+    h.controller.dispose();
+    await wait(40);
+    expect(banner()).toBeNull();
   });
 });
