@@ -1,9 +1,10 @@
 // Fold rows stand in for runs of hidden diff rows (plan 6.7). describeFold
 // turns a run into a FoldView, and createFoldRow draws it the way GitHub
 // draws the rows that expand hidden context: a row in the hunk color whose
-// line number columns hold an icon button, with no text. The button shows
-// the run, and the same row then hides it again. Its tooltip names the
-// rules behind the fold.
+// line number columns hold an icon button. Like GitHub's "@@ ... @@" hunk
+// header, the code column holds a one-line summary of why the run is
+// hidden. The button shows the run, and the same row then hides it again.
+// Its tooltip names the rules behind the fold in full.
 
 import type { ChangeResult, Hit, RuleInfo } from '@go-tebanare/engine';
 import { countLines, t } from '../../shared/i18n.js';
@@ -95,12 +96,30 @@ function ruleLines(rules: readonly FoldRule[]): string[] {
   return lines;
 }
 
+// ruleSummary describes the rules on one line: each id with the nodes it
+// matched in parentheses.
+function ruleSummary(rules: readonly FoldRule[]): string {
+  return rules
+    .filter((rule) => rule.id !== '')
+    .map((rule) => (rule.labels.length > 0 ? `${rule.id} (${rule.labels.join(', ')})` : rule.id))
+    .join('; ');
+}
+
+/** foldSummary is the one-line text of a fold row, such as "4 lines hidden by gotebanare: getter (func (*Store) Owner)". */
+export function foldSummary(fold: FoldView, open: boolean): string {
+  const lead = t(open ? 'foldSummaryOpen' : 'foldSummaryClosed', countLines(fold.lines));
+  const rules = ruleSummary(fold.rules);
+  return rules ? `${lead}: ${rules}` : lead;
+}
+
 /**
  * createFoldRow builds a detached fold row for fold, open or closed, whose
  * button calls onToggle. The button fills a cell over the two line number
- * columns, and an empty cell covers the rest; a row narrower than three
- * columns gets one cell. The button's label says what a click does. Its
- * tooltip adds the rules, which screen readers get as its description.
+ * columns, and a cell with the fold summary covers the rest; a row
+ * narrower than three columns gets one cell and no summary. The button's
+ * label says what a click does. Its tooltip adds the rules, which screen
+ * readers get as its description, so they skip the summary, which repeats
+ * them. A click on the summary toggles the fold too.
  */
 export function createFoldRow(doc: Document, fold: FoldView, open: boolean, onToggle: () => void): HTMLTableRowElement {
   const tr = doc.createElement('tr');
@@ -126,7 +145,15 @@ export function createFoldRow(doc: Document, fold: FoldView, open: boolean, onTo
   tr.append(td);
   if (gutter) {
     const code = doc.createElement('td');
+    code.className = 'gotebanare-fold-code';
     code.colSpan = width - GUTTER_COLUMNS;
+    const summary = doc.createElement('span');
+    summary.className = 'gotebanare-fold-summary';
+    summary.setAttribute('aria-hidden', 'true');
+    summary.title = button.title;
+    summary.textContent = foldSummary(fold, open);
+    summary.addEventListener('click', onToggle);
+    code.append(summary);
     tr.append(code);
   }
   return tr;

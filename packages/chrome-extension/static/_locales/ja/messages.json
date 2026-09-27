@@ -15,6 +15,14 @@
     "message": "$lines$をもう一度隠す",
     "placeholders": { "lines": { "content": "$1" } }
   },
+  "foldSummaryClosed": {
+    "message": "gotebanare が $lines$を非表示",
+    "placeholders": { "lines": { "content": "$1" } }
+  },
+  "foldSummaryOpen": {
+    "message": "gotebanare が隠した $lines$を表示中",
+    "placeholders": { "lines": { "content": "$1" } }
+  },
   "fileShowTitle": {
     "message": "このファイルで gotebanare が隠した $lines$をすべて表示",
     "placeholders": { "lines": { "content": "$1" } }

@@ -39,11 +39,13 @@ tr[data-gotebanare-debug] > td:first-child {
 /*
  * Fold rows, file badge, and banner (ui/fold.ts, ui/badge.ts,
  * ui/banner.ts). The fold rows and the badge copy the look of GitHub's own
- * diff controls: the hunk color, octicons, and icon buttons without text.
+ * diff controls: the hunk color, octicons, icon buttons without text, and
+ * a one-line summary in the code column like GitHub's "@@ ... @@" header.
  *
  * Fold row: tr[data-gotebanare-fold] > td.gotebanare-fold-gutter[colspan=2]
  *   > button.gotebanare-fold-toggle (unfold icon, or fold icon with
- *   data-gotebanare-open on the row), then an empty td over the code column.
+ *   data-gotebanare-open on the row), then td.gotebanare-fold-code over the
+ *   code column > span.gotebanare-fold-summary.
  * File badge: button.gotebanare-badge in the file header (eye or eye-closed icon).
  * Banner: .gotebanare-banner before the first file container with
  *   .gotebanare-banner-title and ul.gotebanare-banner-messages > li
@@ -72,6 +74,26 @@ tr[data-gotebanare-fold] > td {
 .gotebanare-badge:focus-visible {
   outline: 2px solid var(--gotebanare-accent-fg);
   outline-offset: -2px;
+}
+
+/*
+ * The summary sits on one line and ends in an ellipsis when it is too long.
+ * It is positioned absolutely so a long summary never widens the table.
+ */
+.gotebanare-fold-code {
+  position: relative;
+}
+.gotebanare-fold-summary {
+  position: absolute;
+  inset: 0 0 0 10px;
+  overflow: hidden;
+  color: var(--gotebanare-fg-muted);
+  font-family: var(--fontStack-monospace, ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace);
+  font-size: 12px;
+  line-height: 24px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
 }
 
 /* The button fills the line number columns, where GitHub puts its expand buttons. */

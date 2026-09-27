@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ChangeResult, Hit } from '@go-tebanare/engine';
-import { FOLD_ATTR, OPEN_ATTR, createFoldRow, describeFold, type FoldRow, type FoldView } from '../../src/content/ui/fold.js';
+import { FOLD_ATTR, OPEN_ATTR, createFoldRow, foldSummary, describeFold, type FoldRow, type FoldView } from '../../src/content/ui/fold.js';
 import { FakeChrome, installChrome } from '../fakes/chrome.js';
 import { formatMessage, localeMessages, type LocaleEntry } from '../fakes/locale.js';
 
@@ -25,7 +25,7 @@ const fold: FoldView = {
 const button = (tr: HTMLElement) => tr.querySelector('button') as HTMLButtonElement;
 
 describe('createFoldRow', () => {
-  it('draws a closed fold as an unfold button without text', () => {
+  it('draws a closed fold as an unfold button and a one-line summary', () => {
     useLocale('en');
     const tr = createFoldRow(document, fold, false, () => {});
     expect(tr.getAttribute(FOLD_ATTR)).toBe('27:-31:37');
@@ -34,7 +34,15 @@ describe('createFoldRow', () => {
     expect(cells.map((c) => c.colSpan)).toEqual([2, 1]);
     expect(cells[0]?.className).toBe('gotebanare-fold-gutter');
     expect(cells[0]?.contains(button(tr))).toBe(true);
-    expect(tr.textContent).toBe('');
+    expect(cells[1]?.className).toBe('gotebanare-fold-code');
+    const summary = cells[1]?.querySelector('.gotebanare-fold-summary');
+    expect(tr.textContent).toBe(summary?.textContent);
+    expect(summary?.textContent).toBe(
+      '24 lines hidden by gotebanare: gomock (func (*MockUserRepo) Get, func (*MockUserRepo) Put); stringer',
+    );
+    // Screen readers get the same text from the button.
+    expect(summary?.getAttribute('aria-hidden')).toBe('true');
+    expect(summary?.getAttribute('title')).toBe(button(tr).title);
     expect(button(tr).getAttribute('aria-label')).toBe('Show 24 lines hidden by gotebanare');
     expect(button(tr).getAttribute('aria-expanded')).toBe('false');
     expect(button(tr).querySelector('svg')?.getAttribute('class')).toBe('octicon octicon-unfold');
@@ -48,6 +56,13 @@ describe('createFoldRow', () => {
     expect(button(tr).getAttribute('aria-label')).toBe('Hide 1 line again');
     expect(button(tr).getAttribute('aria-expanded')).toBe('true');
     expect(button(tr).querySelector('svg')?.getAttribute('class')).toBe('octicon octicon-fold');
+    expect(tr.textContent).toBe('Showing 1 line hidden by gotebanare: gomock (func (*MockUserRepo) Get, func (*MockUserRepo) Put); stringer');
+  });
+
+  it('summarizes a fold without rules by its line count', () => {
+    useLocale('en');
+    expect(foldSummary({ ...fold, rules: [{ id: '', labels: [] }] }, false)).toBe('24 lines hidden by gotebanare');
+    expect(foldSummary({ ...fold, rules: [] }, true)).toBe('Showing 24 lines hidden by gotebanare');
   });
 
   it('names the rules and the matched nodes in the tooltip', () => {
@@ -79,15 +94,19 @@ describe('createFoldRow', () => {
     expect(button(createFoldRow(document, fold, true, () => {})).getAttribute('aria-label')).toBe(
       formatMessage(ja['foldhidetitle'] as LocaleEntry, [lines]),
     );
+    expect(foldSummary({ ...fold, rules: [] }, false)).toBe(formatMessage(ja['foldsummaryclosed'] as LocaleEntry, [lines]));
+    expect(foldSummary({ ...fold, rules: [] }, true)).toBe(formatMessage(ja['foldsummaryopen'] as LocaleEntry, [lines]));
   });
 
-  it('calls onToggle from its button', () => {
+  it('calls onToggle from its button and its summary', () => {
     const onToggle = vi.fn();
     const tr = createFoldRow(document, fold, false, onToggle);
     tr.querySelector('td')?.click();
     expect(onToggle).not.toHaveBeenCalled();
     button(tr).click();
     expect(onToggle).toHaveBeenCalledOnce();
+    (tr.querySelector('.gotebanare-fold-summary') as HTMLElement).click();
+    expect(onToggle).toHaveBeenCalledTimes(2);
     expect(button(tr).type).toBe('button');
   });
 
@@ -96,6 +115,7 @@ describe('createFoldRow', () => {
     expect(spans(5)).toEqual([2, 3]);
     expect(spans(2)).toEqual([2]);
     expect(spans(0)).toEqual([1]);
+    expect(createFoldRow(document, { ...fold, colSpan: 2 }, false, () => {}).textContent).toBe('');
   });
 });
 
