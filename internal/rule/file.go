@@ -3,7 +3,10 @@ package rule
 import (
 	"go/ast"
 	"go/token"
+	"path"
 	"sort"
+	"strconv"
+	"strings"
 )
 
 // File is the per-file context shared by all matchers during one analysis.
@@ -13,6 +16,9 @@ type File struct {
 	Fset *token.FileSet
 	AST  *ast.File
 	Src  []byte
+	// Canon returns the normalized text of a node. It reports false when
+	// the node is too large to normalize. The analyzer sets it.
+	Canon func(n ast.Node) (string, bool)
 
 	methods map[string]map[string]bool
 }
@@ -26,6 +32,14 @@ func (f *File) Line(pos token.Pos) int {
 // Offset returns the byte offset of pos in Src.
 func (f *File) Offset(pos token.Pos) int {
 	return f.Fset.PositionFor(pos, false).Offset
+}
+
+// Text returns the normalized text of n. See File.Canon.
+func (f *File) Text(n ast.Node) (string, bool) {
+	if f.Canon == nil {
+		return "", false
+	}
+	return f.Canon(n)
 }
 
 // MethodsOf returns the names of the methods declared in this file whose
@@ -104,6 +118,32 @@ func RecvBase(fd *ast.FuncDecl) (name string, pointer bool, ok bool) {
 	return id.Name, pointer, true
 }
 
+// RecvTypeParams returns the type parameter names declared by fd's
+// receiver, such as [K V] for "(c *Cache[K, V])".
+func RecvTypeParams(fd *ast.FuncDecl) []*ast.Ident {
+	if fd.Recv == nil || len(fd.Recv.List) != 1 {
+		return nil
+	}
+	t := StripParens(fd.Recv.List[0].Type)
+	if st, isStar := t.(*ast.StarExpr); isStar {
+		t = StripParens(st.X)
+	}
+	var idx []ast.Expr
+	switch x := t.(type) {
+	case *ast.IndexExpr:
+		idx = []ast.Expr{x.Index}
+	case *ast.IndexListExpr:
+		idx = x.Indices
+	}
+	var ids []*ast.Ident
+	for _, e := range idx {
+		if id, ok := StripParens(e).(*ast.Ident); ok {
+			ids = append(ids, id)
+		}
+	}
+	return ids
+}
+
 // StripParens removes any number of enclosing parentheses.
 func StripParens(e ast.Expr) ast.Expr {
 	for {
@@ -113,4 +153,59 @@ func StripParens(e ast.Expr) ast.Expr {
 		}
 		e = p.X
 	}
+}
+
+// ImportAliases maps each named import of f (other than "_" and ".") to a
+// guess of the package name, taken from the import path. The guess is for
+// diagnostics only and must never decide what is hidden.
+func ImportAliases(f *ast.File) map[string]string {
+	var m map[string]string
+	for _, is := range f.Imports {
+		if is.Name == nil || is.Name.Name == "_" || is.Name.Name == "." {
+			continue
+		}
+		p, err := strconv.Unquote(is.Path.Value)
+		if err != nil {
+			continue
+		}
+		if m == nil {
+			m = map[string]string{}
+		}
+		m[is.Name.Name] = GuessPackageName(p)
+	}
+	return m
+}
+
+// GuessPackageName guesses the package name of an import path:
+// "math/rand/v2" gives "rand", "gopkg.in/yaml.v3" gives "yaml", and
+// "github.com/x/go-foo" gives "foo".
+func GuessPackageName(importPath string) string {
+	elem := path.Base(importPath)
+	if isMajorVersion(elem) {
+		if dir := path.Dir(importPath); dir != "." && dir != "/" {
+			elem = path.Base(dir)
+		}
+	}
+	if i := strings.LastIndex(elem, ".v"); i > 0 && isDigits(elem[i+2:]) {
+		elem = elem[:i]
+	}
+	elem = strings.TrimPrefix(elem, "go-")
+	elem = strings.TrimSuffix(elem, "-go")
+	return strings.ReplaceAll(elem, "-", "")
+}
+
+func isMajorVersion(s string) bool {
+	return len(s) >= 2 && s[0] == 'v' && isDigits(s[1:])
+}
+
+func isDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		if s[i] < '0' || s[i] > '9' {
+			return false
+		}
+	}
+	return true
 }

@@ -124,3 +124,42 @@ func KindOf(n ast.Node) string {
 	}
 	return ""
 }
+
+// StmtKinds lists the statement kinds a stmt rule may name in `kind`.
+var StmtKinds = []string{
+	"AssignStmt", "BlockStmt", "BranchStmt", "CaseClause", "CommClause",
+	"DeclStmt", "DeferStmt", "EmptyStmt", "ExprStmt", "ForStmt", "GoStmt",
+	"IfStmt", "IncDecStmt", "LabeledStmt", "RangeStmt", "ReturnStmt",
+	"SelectStmt", "SendStmt", "SwitchStmt", "TypeSwitchStmt",
+}
+
+// ExprKinds lists the expression kinds an expr rule may name in `kind`.
+var ExprKinds = []string{
+	"ArrayType", "BasicLit", "BinaryExpr", "CallExpr", "ChanType",
+	"CompositeLit", "Ellipsis", "FuncLit", "FuncType", "Ident", "IndexExpr",
+	"IndexListExpr", "InterfaceType", "KeyValueExpr", "MapType", "ParenExpr",
+	"SelectorExpr", "SliceExpr", "StarExpr", "StructType", "TypeAssertExpr",
+	"UnaryExpr",
+}
+
+// DefaultStmtKinds is the stmt kind filter used when `kind` is omitted:
+// every statement except BlockStmt and EmptyStmt.
+var DefaultStmtKinds = without(StmtKinds, "BlockStmt", "EmptyStmt")
+
+// DefaultExprKinds is the expr kind filter used when `kind` is omitted:
+// every expression except Ident and BasicLit.
+var DefaultExprKinds = without(ExprKinds, "Ident", "BasicLit")
+
+func without(list []string, drop ...string) []string {
+	var out []string
+outer:
+	for _, s := range list {
+		for _, d := range drop {
+			if s == d {
+				continue outer
+			}
+		}
+		out = append(out, s)
+	}
+	return out
+}

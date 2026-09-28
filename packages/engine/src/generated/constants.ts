@@ -5,6 +5,13 @@
 /**
  * Diagnostic codes. The messages are not part of the compatibility
  * contract; the codes are.
+ */
+export const CodeAliasNotResolved = "alias-not-resolved";
+
+// From result/result.go
+/**
+ * Diagnostic codes. The messages are not part of the compatibility
+ * contract; the codes are.
  * CodeConfigIgnored marks a configuration file that is ignored because
  * a file earlier in the lookup order exists.
  */
@@ -52,7 +59,28 @@ export const CodeMatchChanged = "match-changed";
  * Diagnostic codes. The messages are not part of the compatibility
  * contract; the codes are.
  */
+export const CodeNodeTooLarge = "node-too-large";
+
+// From result/result.go
+/**
+ * Diagnostic codes. The messages are not part of the compatibility
+ * contract; the codes are.
+ */
 export const CodeSkipped = "skipped";
+
+// From result/result.go
+/**
+ * Diagnostic codes. The messages are not part of the compatibility
+ * contract; the codes are.
+ */
+export const CodeStatementNotSimple = "statement-not-simple";
+
+// From result/result.go
+/**
+ * Diagnostic codes. The messages are not part of the compatibility
+ * contract; the codes are.
+ */
+export const CodeUnanchoredRegexp = "unanchored-regexp";
 
 // From configfile.go
 /**
@@ -81,4 +109,4 @@ export const SideOld = "old";
 export type SkipReason = "" | "not-target" | "parse-error" | "too-deep" | "too-large";
 
 // From result/result.go
-export type Target = "func" | "stmt";
+export type Target = "expr" | "func" | "stmt";
