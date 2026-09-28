@@ -50,7 +50,7 @@ func TestParseErrors(t *testing.T) {
 		{"func /abc", "1:6: regexp not terminated"},
 		{"func /a(/", "1:6: error parsing regexp: missing closing ): `a(`"},
 		{"func (*/*H/) M", "1:8: error parsing regexp: missing argument to repetition operator: `*`"},
-		{"func /" + strings.Repeat("(", 201) + "/", `1:6: the expression has 201 "(" characters, more than the limit of 200`},
+		{"func /" + strings.Repeat("(", 201) + "/", `1:6: the expression nests too deeply (estimated depth 1210, more than the limit of 600)`},
 		// go/parser reports more than ten errors here only with AllErrors.
 		{"func F([f(a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nn)]int)", "1:12: missing ',' before newline in argument list"},
 		{"func Get$", "1:9: illegal character U+0024 '$'"},
