@@ -125,7 +125,7 @@ Root `package.json` defines the bun workspace over `packages/*`; `bun.lock` pins
 
 ## CI
 
-`.github/workflows/ci.yml` runs seven jobs on every PR to `main` or a `develop/*` branch:
+`.github/workflows/ci.yml` runs seven jobs on every PR to `main` or a `develop/**` branch:
 
 - `go` — fmt-check, vet, lint of both Go modules, race tests (`-short`; `TestCorpusSnapshot` runs separately without `-race`), constants-check, schema-check, `wasm-wasip1`
 - `fuzz` — fuzz-smoke, uploads fuzz vectors
