@@ -34,17 +34,17 @@ jobs:
         with:
           version: v2.5.0
           working-directory: dev
-      # -short skips TestCorpusSnapshot, which walks GOROOT/src on one
-      # goroutine: the race detector finds nothing there and makes it take
-      # most of the job. The next step runs it without -race.
+      # -short skips TestCorpusSnapshot. It parses GOROOT/src on one
+      # goroutine, and -race makes it take 21s instead of 2s. The next step
+      # runs it without -race.
       - run: go test -race -short ./...
       - run: go test -run '^TestCorpusSnapshot$' ./internal/presets
       - run: make schema-check
-      # Here rather than in the wasm job, which the parity, ts, and e2e jobs
-      # wait for.
+      # The parity, ts, and e2e jobs wait for the wasm job, so this build
+      # runs here.
       - run: make wasm-wasip1
 
-  # Separate from the go job so that the fuzzers run while the tests do.
+  # The fuzzers run in their own job, alongside the go job.
   fuzz:
     runs-on: ubuntu-latest
     steps:
@@ -74,8 +74,8 @@ jobs:
           sudo dpkg -i "tinygo_${TINYGO_VERSION}_amd64.deb"
           tinygo version
           echo "TINYGO_CACHE=$(tinygo env GOCACHE)" >> "$GITHUB_ENV"
-      # TinyGo keeps the libraries and packages it compiled here, keyed by
-      # their contents, so a stale entry is never used.
+      # TinyGo names each entry in its build cache by a hash of the entry's
+      # inputs, so an old cache cannot serve a changed package.
       - name: Restore the TinyGo build cache
         uses: actions/cache@v4
         with:
@@ -199,8 +199,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Find the Playwright version
         run: echo "PLAYWRIGHT_VERSION=$(jq -r '.devDependencies["@playwright/test"]' packages/chrome-extension/package.json)" >> "$GITHUB_ENV"
-      # The browsers only; install --with-deps still installs the system
-      # packages they need.
+      # This caches the browsers. The install step below still installs
+      # their system packages.
       - name: Restore the Playwright browsers
         uses: actions/cache@v4
         with:
