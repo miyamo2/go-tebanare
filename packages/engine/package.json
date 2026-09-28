@@ -4,6 +4,7 @@
   "description": "Loads the go-tebanare wasm engine and exposes a typed API for browsers and Node.",
   "license": "MIT",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

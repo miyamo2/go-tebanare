@@ -1,20 +1,16 @@
 // Data types exchanged with the wasm engine. They mirror the JSON that the Go
 // packages internal/result, internal/presets, and the root package tebanare
 // produce. Change both sides together; the contract test
-// compares them against the Go golden files.
+// compares them against the Go golden files. The constants and string types
+// come from generated/constants.ts, which dev/tsconstgen writes from the Go
+// declarations.
+
+import type { SideNew, SideOld, Severity, SkipReason as GoSkipReason, Target } from './generated/constants.js';
+
+export type { Severity, Target };
 
 /** Why a file was not analyzed. "engine-error" exists only on the TS side. */
-export type SkipReason =
-  | ''
-  | 'not-target'
-  | 'too-large'
-  | 'too-deep'
-  | 'parse-error'
-  | 'engine-error';
-
-export type Target = 'func' | 'stmt';
-
-export type Severity = 'error' | 'warning' | 'info';
+export type SkipReason = GoSkipReason | 'engine-error';
 
 /** One rule match that produced (part of) a hidden range. */
 export interface Hit {
@@ -38,7 +34,7 @@ export interface Diagnostic {
   code: string;
   message: string;
   field?: string;
-  side?: 'old' | 'new';
+  side?: typeof SideOld | typeof SideNew;
   ruleId?: string;
   line?: number;
   column?: number;

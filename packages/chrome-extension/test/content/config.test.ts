@@ -1,8 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { CODE_CONFIG_IGNORED, CONFIG_FILE_NAMES, isConfigPath, loadConfig } from '../../src/content/config.js';
+import { isConfigPath, loadConfig } from '../../src/content/config.js';
 import type { PullRequestContext } from '../../src/content/context.js';
 import type { FetchResult, SourceFetcher } from '../../src/content/fetcher.js';
 
@@ -92,21 +89,5 @@ describe('isConfigPath', () => {
     ['.GOTEBANARE.YML', false],
   ])('%s => %s', (path, want) => {
     expect(isConfigPath(path)).toBe(want);
-  });
-});
-
-describe('Go mirror', () => {
-  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
-  const goSource = readFileSync(join(repoRoot, 'configfile.go'), 'utf8');
-  const resultSource = readFileSync(join(repoRoot, 'internal', 'result', 'result.go'), 'utf8');
-
-  it('CONFIG_FILE_NAMES matches tebanare.ConfigFileNames', () => {
-    const list = /var ConfigFileNames = \[\]string\{([^}]*)\}/.exec(goSource)?.[1] ?? '';
-    expect([...list.matchAll(/"([^"]*)"/g)].map((m) => m[1])).toEqual(CONFIG_FILE_NAMES);
-  });
-
-  it('CODE_CONFIG_IGNORED and the warning text match tebanare.SelectConfigFile', () => {
-    expect(resultSource).toContain(`CodeConfigIgnored = "${CODE_CONFIG_IGNORED}"`);
-    expect(goSource).toContain('"%s is ignored because %s exists"');
   });
 });
