@@ -1,9 +1,10 @@
 name: ci
 
 on:
-  # Pull requests stacked on other pull requests run CI once they target main.
+  # Pull requests stacked on other pull requests run CI once they target main
+  # or a develop/* branch.
   pull_request:
-    branches: [main]
+    branches: [main, "develop/*"]
   # release-chrome-extension.yml runs all of CI on the tag before it creates
   # the release.
   workflow_call:
