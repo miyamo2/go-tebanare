@@ -8,7 +8,7 @@ FUZZTIME ?= 10s
 # short run: FuzzCompile stops executing inputs after a few seconds.
 FUZZMINIMIZETIME ?= 1s
 
-.PHONY: all test vet lint fmt-check fuzz-smoke schema schema-check
+.PHONY: all test vet lint fmt-check fuzz-smoke schema schema-check constants constants-check
 
 all: vet test
 
@@ -30,9 +30,24 @@ schema:
 	cd $(DEV_MODULE) && $(GO) test ./schemagen -run '^TestSchemaUpToDate$$' -update
 
 # Checks that the schema is up to date and agrees with the configuration
-# validation.
+# validation. It runs every test in the dev module, so it also compares
+# the TypeScript constants with the Go declarations.
 schema-check:
 	cd $(DEV_MODULE) && $(GO) vet ./... && $(GO) test ./...
+
+# Regenerates packages/engine/src/generated/constants.ts from the Go
+# constants in internal/result and tebanare.ConfigFileNames.
+constants:
+	cd $(DEV_MODULE) && $(GO) test ./tsconstgen -run '^TestConstantsUpToDate$$' -update
+
+GENERATED_TS := packages/engine/src/generated
+
+# Regenerates the TypeScript constants and fails when the result differs
+# from the committed files or when a generated file is untracked.
+constants-check: constants
+	@git diff --exit-code -- $(GENERATED_TS) || { echo "$(GENERATED_TS) is out of date: run make constants and commit the result"; exit 1; }
+	@untracked=$$(git ls-files --others --exclude-standard -- $(GENERATED_TS)); \
+	if [ -n "$$untracked" ]; then echo "not committed:"; echo "$$untracked"; exit 1; fi
 
 # Files under testdata are skipped: some hold syntax errors on purpose.
 fmt-check:

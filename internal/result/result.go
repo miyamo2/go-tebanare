@@ -3,6 +3,9 @@
 //
 // The JSON field names are part of the contract with the TypeScript engine
 // package. Change them only together with packages/engine/src/types.ts.
+// dev/tsconstgen copies the exported constants and string types into
+// packages/engine/src/generated/constants.ts; run make constants after
+// changing them.
 package result
 
 import (

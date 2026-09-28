@@ -1,4 +1,5 @@
 import { WasmInstance, yamlDone } from './abi.js';
+import { CodeConfigSyntax } from './generated/constants.js';
 import {
   ConfigError,
   EngineError,
@@ -186,7 +187,7 @@ export class EngineImpl implements Engine {
       });
     } catch (e) {
       if (!(e instanceof YamlTrap)) throw e;
-      const d: Diagnostic = { severity: 'error', code: 'config-syntax', message: yamlSyntaxMessage, line: e.line };
+      const d: Diagnostic = { severity: 'error', code: CodeConfigSyntax, message: yamlSyntaxMessage, line: e.line };
       throw new ConfigError(`${e.line}: ${yamlSyntaxMessage}`, [d]);
     }
     if (res.error) throw new ConfigError(res.error, res.diagnostics);
