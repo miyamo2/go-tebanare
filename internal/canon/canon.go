@@ -1,6 +1,6 @@
 // Package canon builds the normalized text of Go syntax nodes. The
 // analyzer uses it in the keys that pair declarations and in the labels of
-// matches.
+// matches. Stmt and expr rules run their regular expressions on this text.
 //
 // The normalized text of a node is its go/printer output without position
 // information and without comments, with every run of ASCII whitespace
