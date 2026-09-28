@@ -127,13 +127,13 @@ func TestNewErrors(t *testing.T) {
 			want:     []string{"not_regex[0]: error parsing regexp: invalid character class range: `z-a`"},
 		},
 		{
-			name:     "too many groups",
+			name:     "too deeply nested",
 			target:   result.TargetExpr,
 			regex:    []string{strings.Repeat("(", 1001) + "a" + strings.Repeat(")", 1001)},
-			notRegex: []string{strings.Repeat(`\(`, 201)},
+			notRegex: []string{strings.Repeat("(", 201)},
 			want: []string{
-				`regex[0]: the expression has 1001 "(" characters, more than the limit of 200`,
-				`not_regex[0]: the expression has 201 "(" characters, more than the limit of 200`,
+				`regex[0]: the expression nests too deeply (estimated depth 6010, more than the limit of 600)`,
+				`not_regex[0]: the expression nests too deeply (estimated depth 1210, more than the limit of 600)`,
 			},
 		},
 		{
