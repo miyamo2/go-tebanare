@@ -17,8 +17,8 @@ type Options struct {
 	// of prefix operators, type constructors, and labels that the parser
 	// handles by recursion.
 	MaxASTDepth int
-	// MaxNodeSize is the largest node, in source bytes, that is
-	// normalized. A stmt hit on a larger node is labeled with its kind.
+	// MaxNodeSize is the largest node, in source bytes, whose normalized
+	// text stmt and expr rules see.
 	MaxNodeSize int
 }
 

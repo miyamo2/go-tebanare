@@ -34,8 +34,8 @@ func (r *T) M(a []int) (b int) {
 }
 `
 
-// candidates returns "stmt Kind: text" for every node that stmt rules
-// consider.
+// candidates returns "stmt|expr Kind: text" for every node that stmt or
+// expr rules consider, leaving out identifiers.
 func candidates(t *testing.T, src string) []string {
 	t.Helper()
 	fset := token.NewFileSet()
@@ -45,8 +45,14 @@ func candidates(t *testing.T, src string) []string {
 	}
 	var got []string
 	walk(file, func(n ast.Node, sc scope, bodyBlock bool) bool {
-		if isStmtCandidate(n, sc, bodyBlock) {
+		if _, ok := n.(*ast.Ident); ok {
+			return true
+		}
+		switch {
+		case isStmtCandidate(n, sc, bodyBlock):
 			got = append(got, fmt.Sprintf("stmt %s: %s", rule.KindOf(n), canon.Normalize(n)))
+		case isExprCandidate(n, sc):
+			got = append(got, fmt.Sprintf("expr %s: %s", rule.KindOf(n), canon.Normalize(n)))
 		}
 		return true
 	})
@@ -56,11 +62,23 @@ func candidates(t *testing.T, src string) []string {
 func TestWalkScope(t *testing.T) {
 	got := candidates(t, walkSrc)
 	want := []string{
+		"expr CompositeLit: []T{{F: nil}}",
+		"expr ArrayType: []T",
+		"expr CompositeLit: {F: nil}",
+		"expr KeyValueExpr: F: nil",
+		"expr FuncLit: func(x []int) int { return len(x) }",
 		"stmt ReturnStmt: return len(x)",
+		"expr CallExpr: len(x)",
+		"expr BinaryExpr: 1 << 2",
+		"expr BasicLit: 1",
+		"expr BasicLit: 2",
 		"stmt DeclStmt: var m map[string]int",
+		"expr MapType: map[string]int",
 		"stmt DeclStmt: type local struct{ G []byte }",
 		"stmt AssignStmt: f := func(y []int) { }",
+		"expr FuncLit: func(y []int) { }",
 		"stmt ReturnStmt: return len(m)",
+		"expr CallExpr: len(m)",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("candidates:\n%s\nwant:\n%s", join(got), join(want))

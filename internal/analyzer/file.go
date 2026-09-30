@@ -15,8 +15,8 @@ type FileResult struct {
 	// other fields are empty except Diagnostics, which explains the skip.
 	Skipped result.SkipReason
 	// Ranges holds the lines to hide when the file is used on its own:
-	// the stmt matches and the func matches whose key is not duplicated,
-	// merged.
+	// the stmt and expr matches and the func matches whose key is not
+	// duplicated, merged.
 	Ranges []result.Range
 	// Funcs holds the func rule matches that passed the occupancy check,
 	// in source order, including the ones whose key is duplicated.
@@ -76,7 +76,7 @@ type fileAnalysis struct {
 	// skip is set when the file was not analyzed; diags then holds one
 	// skipped diagnostic.
 	skip *skip
-	// nodes holds the accepted stmt spans.
+	// nodes holds the accepted stmt and expr spans.
 	nodes []span
 	// funcs holds the func matches, including the ones that failed the
 	// occupancy check.

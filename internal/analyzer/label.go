@@ -46,7 +46,7 @@ func funcLabel(fd *ast.FuncDecl) string {
 	return b.String()
 }
 
-// nodeLabel returns the label of a stmt hit: the normalized text
+// nodeLabel returns the label of a stmt or expr hit: the normalized text
 // of the node, cut to 60 runes followed by "..." when it is longer.
 func nodeLabel(text string) string {
 	if utf8.RuneCountInString(text) <= maxLabelRunes {
