@@ -15,12 +15,13 @@ import (
 type enabledPresets map[string]int
 
 // presets decodes the `presets` list. It returns the rules of the valid
-// entries in list order.
-func (c *compiler) presets(e entry) []*rule.Rule {
+// entries in list order and every known preset the list names, valid or
+// not, so rule ids can be checked against them.
+func (c *compiler) presets(e entry) ([]*rule.Rule, enabledPresets) {
 	enabled := enabledPresets{}
 	items, ok := c.sequence(e.value, e.field)
 	if !ok {
-		return nil
+		return nil, enabled
 	}
 	var rules []*rule.Rule
 	for i, raw := range items {
@@ -28,7 +29,7 @@ func (c *compiler) presets(e entry) []*rule.Rule {
 			rules = append(rules, r)
 		}
 	}
-	return rules
+	return rules, enabled
 }
 
 // preset decodes one entry of `presets`: a name, or a mapping with one

@@ -3,7 +3,8 @@
 //
 // Each preset has a settings struct with defaults (see Settings and
 // Decode), criteria written for people, examples, and a Compile function
-// that turns validated settings into a rule.Rule.
+// that turns validated settings into a rule.Rule. The analyzer runs preset
+// rules the same way as user rules.
 //
 // A change to a preset never makes it hide more code. A broader rule ships
 // as a new preset, or as a new setting whose default keeps the current

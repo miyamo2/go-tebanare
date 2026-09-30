@@ -99,6 +99,21 @@ func nestedCycle(n int) (src string, column int) {
 	return strings.TrimSuffix(b.String(), ", ") + strings.Repeat("]", n), column
 }
 
+// aliasBomb returns a valid config of n rules. Each rule's stmt.regex is
+// an alias to one list that holds a regex and n-1 aliases to it, so the
+// rules expand to n*n regexps. Without the alias limit, n=600 (23 KB)
+// takes a minute and 10 GB to compile.
+func aliasBomb(n int) string {
+	var b strings.Builder
+	b.WriteString("version: 1\nrules:\n  - id: r0\n    stmt:\n      regex: &R [&x '^(foo|bar)\\w+\\.Baz\\(" +
+		strings.Repeat(`(foo|bar)\w+\.Baz\(`, 10) + "$'")
+	b.WriteString(strings.Repeat(", *x", n-1) + "]\n")
+	for i := 1; i < n; i++ {
+		fmt.Fprintf(&b, "  - {id: r%d, stmt: {regex: *R}}\n", i)
+	}
+	return b.String()
+}
+
 func TestCheckAliasesQuadratic(t *testing.T) {
 	list := func(item string, n int) string { return strings.TrimSuffix(strings.Repeat(item+", ", n), ", ") }
 	cycle, column := nestedCycle(2400)
@@ -108,6 +123,8 @@ func TestCheckAliasesQuadratic(t *testing.T) {
 		want  string
 		limit time.Duration
 	}{
+		// The 310th copy of the 211-byte regex passes the limit.
+		{"valid config", aliasBomb(600), "5:1472: " + tooMuch, 10 * time.Second},
 		// Each *r copies 300 invalid globs; the 70th copy passes the limit.
 		{"config with errors in the copies", "version: 1\np: &p 'a['\nf: &f [" + list("*p", 300) +
 			"]\nr: &r {iferr: {names: *f}}\npresets: [" + list("*r", 300) + "]\n", "5:287: " + tooMuch, 10 * time.Second},

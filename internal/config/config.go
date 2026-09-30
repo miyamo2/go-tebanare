@@ -14,7 +14,7 @@ import (
 const supportedVersion = 1
 
 // topKeys lists the top-level keys of a config.
-var topKeys = []string{"version", "files", "presets"}
+var topKeys = []string{"version", "files", "presets", "rules"}
 
 // Error is an invalid configuration.
 type Error struct {
@@ -24,7 +24,8 @@ type Error struct {
 }
 
 // Error returns the diagnostics formatted with Diagnostic.Format(""), one
-// per line.
+// per line. A message can span more lines, such as the caret lines of a
+// pattern error.
 func (e *Error) Error() string {
 	if len(e.Diagnostics) == 0 {
 		return "invalid configuration"
@@ -37,11 +38,12 @@ func (e *Error) Error() string {
 }
 
 // Compile validates the configuration in src and compiles it into a
-// rule.Set. The set holds the rules of the presets in `presets` order.
+// rule.Set. The set holds the enabled user rules in file order, followed
+// by the rules of the presets in `presets` order.
 //
 // When src is invalid, Compile returns a nil set and an *Error. The
-// returned diagnostics are warnings; Compile returns them whether src is
-// valid or not.
+// returned diagnostics are warnings, such as regular expressions that are
+// not anchored; Compile returns them whether src is valid or not.
 //
 // yaml.v3 reports YAML syntax errors by panicking and recovering inside
 // its parser. In a build where recover does not work, such as TinyGo for
@@ -72,9 +74,15 @@ func (c *compiler) compile(src []byte) *rule.Set {
 	if fe, ok := es.get("files"); ok {
 		set.Include, set.Exclude = c.files(fe)
 	}
+	var presetRules []*rule.Rule
+	enabled := enabledPresets{}
 	if pe, ok := es.get("presets"); ok {
-		set.Rules = c.presets(pe)
+		presetRules, enabled = c.presets(pe)
 	}
+	if re, ok := es.get("rules"); ok {
+		set.Rules = c.rules(re, enabled)
+	}
+	set.Rules = append(set.Rules, presetRules...)
 	return set
 }
 
