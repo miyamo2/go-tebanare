@@ -1,0 +1,15 @@
+version: 1
+rules:
+  - id: return-inc
+    stmt:
+      kind: ReturnStmt
+      regex: '^return x \+ 1$'
+  - id: debug-log
+    expr:
+      kind: CallExpr
+      regex: '^log\.Debug\('
+  - id: legacy-case
+    expr:
+      kind: CompositeLit
+      regex: '^\{name: "legacy",'
+      hide: self

@@ -1,0 +1,44 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 3,
+      "end": 4,
+      "hits": [
+        {
+          "ruleId": "closer",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Conn) Close"
+        }
+      ]
+    },
+    {
+      "start": 7,
+      "end": 7,
+      "hits": [
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) Name",
+          "preset": "getter"
+        }
+      ]
+    },
+    {
+      "start": 10,
+      "end": 10,
+      "hits": [
+        {
+          "ruleId": "stringer",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) String"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

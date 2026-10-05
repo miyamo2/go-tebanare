@@ -1,0 +1,10 @@
+version: 1
+presets:
+  - getter:
+      include_doc: false
+rules:
+  - id: stringer
+    func: "func (_) String() string"
+    include_doc: false
+  - id: closer
+    func: "func (_) Close() error"
