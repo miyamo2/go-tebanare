@@ -16,6 +16,7 @@ var update = flag.Bool("update", false, "rewrite testvectors/fuzz/config.json")
 // fuzzCompileSeeds returns the seed inputs of FuzzCompile.
 func fuzzCompileSeeds(tb testing.TB) []string {
 	return []string{
+		string(readFile(tb, "testdata/example.yml")),
 		string(readFile(tb, "testdata/minimal.yml")),
 		"version: 1\nfiles: {exclude: [vendor/**]}\npresets: [getter: {max_depth: 2}, noop: {include_functions: true}, iferr: {names: [a, '*Err'], init: fold-body}]",
 		"a: &a [*a, *a]\nversion: *a\npresets: *a",
@@ -25,6 +26,9 @@ func fuzzCompileSeeds(tb testing.TB) []string {
 		"version: 1\npresets: [",
 		"version: 1\n\tpresets: []\n",
 		"version: 1\npresets: [" + strings.Repeat("[", 1001) + strings.Repeat("]", 1001) + "]",
+		"version: 1\npresets: [iferr: {names: [a]}]\nrules: [{id: a, expr: {regex: x, hide: statement}}]",
+		"version: 1\nrules: [{id: a, stmt: {regex: &r [&x '^a', *x]}}, {id: b, stmt: {regex: *r}}]\n---\n",
+		"version: 1\nrules: [{id: a, stmt: {regex: '" + strings.Repeat("(", 1001) + "a" + strings.Repeat(")", 1001) + "'}}]",
 	}
 }
 

@@ -3,10 +3,8 @@ package analyzer
 import (
 	"bytes"
 	"flag"
-	"go/ast"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/miyamo2/go-tebanare/internal/fuzzvec"
@@ -39,14 +37,17 @@ func checkRanges(t *testing.T, what string, rs []result.Range, lines int) {
 }
 
 // fuzzSet exercises every kind of span: func rules with and without doc
-// comments, a stmt rule, and a matcher with an explicit span.
+// comments, stmt rules with leading comments, both expr hide modes, and a
+// matcher with an explicit span.
 func fuzzSet(tb testing.TB) *rule.Set {
-	noDoc := funcsWhere("new", func(fd *ast.FuncDecl) bool { return fd.Recv == nil && strings.HasPrefix(fd.Name.Name, "New") })
+	noDoc := funcRule(tb, "new", "func New*")
 	noDoc.IncludeDoc = false
 	return ruleSet(
-		funcsWhere("methods", func(fd *ast.FuncDecl) bool { _, _, ok := rule.RecvBase(fd); return ok }),
+		funcRule(tb, "methods", "func (_) *"),
 		noDoc,
-		stmtsMatching(tb, "stmts", "", `^(return|defer|x|if err)`),
+		withLeadingComments(stmtRule(tb, "stmts", "", `^(return|defer|x|if err)`)),
+		exprRule(tb, "calls", "", `^(log|fmt)\.`),
+		hideStatement(withLeadingComments(exprRule(tb, "debug", "CallExpr", `Debug|Print`))),
 		&rule.Rule{ID: "fold", Target: result.TargetStmt, Node: foldBody{}},
 	)
 }
@@ -57,7 +58,7 @@ var update = flag.Bool("update", false, "rewrite testvectors/fuzz/analyze.json")
 func fuzzAnalyzeSeeds() [][]byte {
 	var seeds [][]byte
 	for _, s := range []string{
-		occupancyExample, walkSrc, getterOld, occupancySrc,
+		occupancyExample, walkSrc, explainSrc, getterOld, occupancySrc,
 		string(genSource(60, 3)),
 		"package p\n\n//line gen.y:100\nfunc (T) M() {\n\tlog.Debug(\"x\")\n}\n",
 		"\xef\xbb\xbfpackage p\r\n\r\nvar s = `a\r\nb` + x\r\nfunc F() { return }\r\n",
@@ -112,6 +113,18 @@ func FuzzAnalyze(f *testing.F) {
 		added := AnalyzeChange(set, Side{Path: "x.go"}, Side{"x.go", src}, opt)
 		if !reflect.DeepEqual(added.New, file.Ranges) || len(added.Old) != 0 {
 			t.Fatalf("added file: new %v, want %v", added.New, file.Ranges)
+		}
+
+		for _, line := range []int{1, n / 2, n} {
+			nodes, err := Explain(set, "x.go", src, line, opt)
+			if (err != nil) != (file.Skipped != "") {
+				t.Fatalf("Explain error %v with skip %q", err, file.Skipped)
+			}
+			for _, node := range nodes {
+				if node.Line != line || node.EndLine < line || node.EndLine > n || node.Rules == nil {
+					t.Fatalf("line %d: node %+v", line, node)
+				}
+			}
 		}
 	})
 }

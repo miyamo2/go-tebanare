@@ -6,9 +6,10 @@
 //
 //	go run ./internal/tools/fuzzcorpus -cache "$(go env GOCACHE)/fuzz" -o <dir>
 //
-// It writes <dir>/analyze.json from FuzzAnalyze and <dir>/config.json
-// from FuzzCompile. A target without a cached corpus gives a file without
-// inputs.
+// It writes <dir>/analyze.json from FuzzAnalyze, <dir>/config.json from
+// FuzzCompile, and <dir>/sigpattern.json from the FuzzParse of
+// internal/sigpattern. A target without a cached corpus gives a file
+// without inputs.
 package main
 
 import (
@@ -34,6 +35,9 @@ var targets = []struct {
 }{
 	{"analyze", "internal/analyzer", "FuzzAnalyze", fuzzvec.NewInput},
 	{"config", "internal/config", "FuzzCompile", configInput},
+	{"sigpattern", "internal/sigpattern", "FuzzParse", func(b []byte) fuzzvec.Input {
+		return fuzzvec.NewInput([]byte(fuzzvec.PatternConfig(string(b))))
+	}},
 }
 
 func main() {

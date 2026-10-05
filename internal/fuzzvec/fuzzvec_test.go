@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -55,5 +56,19 @@ func TestNewInput(t *testing.T) {
 	b, err := File{Inputs: []Input{NewInput(nil), NewInput([]byte("<"))}}.Marshal()
 	if want := "{\n  \"inputs\": [\n    {\n      \"text\": \"\"\n    },\n    {\n      \"text\": \"<\"\n    }\n  ]\n}\n"; err != nil || string(b) != want {
 		t.Errorf("Marshal = %q, %v; want %q", b, err, want)
+	}
+}
+
+func TestPatternConfig(t *testing.T) {
+	got := PatternConfig("func F(\"a\\b\")\t\x00\ufeff\xff é")
+	want := `version: 1
+rules:
+  - id: p
+    func: "func F(\"a\\b\")\U00000009\U00000000\U0000FEFF` + "� é\"\n"
+	if got != want {
+		t.Errorf("PatternConfig = %q, want %q", got, want)
+	}
+	if !strings.HasPrefix(PatternConfig(""), "version: 1\n") {
+		t.Error("PatternConfig(\"\") has no version")
 	}
 }
