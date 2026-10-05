@@ -6,19 +6,6 @@ import (
 	"testing"
 )
 
-func (s *testSettings) validate() []problem {
-	out := s.FuncCommon.validate()
-	if s.Level != nil && *s.Level < 1 {
-		out = append(out, problem{"level", -1, "must be at least 1"})
-	}
-	for i, tag := range s.Tags {
-		if tag == "bad" {
-			out = append(out, problem{"tags", i, "bad tag"})
-		}
-	}
-	return out
-}
-
 func TestDecodeErrorString(t *testing.T) {
 	tests := []struct {
 		err  DecodeError
@@ -37,22 +24,20 @@ func TestDecodeErrorString(t *testing.T) {
 }
 
 func TestCheckSettings(t *testing.T) {
-	s := testPreset.NewSettings().(*testSettings)
-	if got, err := checkSettings[testSettings]("test", s); err != nil || got != s {
+	p, _ := Lookup("getter")
+	s := p.NewSettings().(*GetterSettings)
+	if got, err := checkSettings[GetterSettings]("getter", s); err != nil || got != s {
 		t.Errorf("checkSettings(defaults) = %v, %v", got, err)
 	}
-	for _, bad := range []any{nil, (*testSettings)(nil), testSettings{}, &FuncCommon{}} {
-		if _, err := checkSettings[testSettings]("test", bad); err == nil {
+	for _, bad := range []any{nil, (*GetterSettings)(nil), GetterSettings{}, &NoopSettings{}} {
+		if _, err := checkSettings[GetterSettings]("getter", bad); err == nil {
 			t.Errorf("checkSettings(%#v) succeeded", bad)
 		}
 	}
 
-	level := 0
-	s.Level = &level
 	s.Paths = []string{"ok/**", "bad/["}
 	s.ExcludePaths = []string{"x/[", "y/**"}
-	s.Tags = []string{"bad"}
-	_, err := checkSettings[testSettings]("test", s)
+	_, err := checkSettings[GetterSettings]("getter", s)
 	var got []string
 	for _, e := range unwrapAll(err) {
 		var de *DecodeError
@@ -64,8 +49,6 @@ func TestCheckSettings(t *testing.T) {
 	want := []string{
 		`paths[1]: invalid glob "bad/["`,
 		`exclude_paths[0]: invalid glob "x/["`,
-		"level: must be at least 1",
-		"tags[0]: bad tag",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("errors =\n%q\nwant\n%q", got, want)

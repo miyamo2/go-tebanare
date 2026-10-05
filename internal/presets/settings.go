@@ -1,81 +1,31 @@
 package presets
 
 import (
-	"reflect"
-	"strings"
-
 	"github.com/miyamo2/go-tebanare/internal/result"
 	"github.com/miyamo2/go-tebanare/internal/rule"
 )
 
-// Settings structs declare each setting as a field with these tags:
-//
-//	yaml:"name"          the key in the config
-//	default:"text"       the default as shown in docs: YAML text of the
-//	                     value, or a word such as "none" when the field is nil
-//	doc:"sentence"       one sentence for the docs
-//	enum:"a,b"           the allowed values of a string setting
-//
-// Settings reads the tags, and Decode uses them to check keys and types.
-// A test checks that each default tag agrees with NewSettings.
+// The settings structs of the presets, their defaults, and their decoders
+// are generated from the schema (see settings_gen.go and dev/gogen). The
+// schema, schema/gotebanare.schema.json, is the source of truth for the
+// settings: their names, types, defaults, descriptions, and constraints.
 
-// FuncCommon holds the settings shared by func presets. Presets embed it
-// first with `yaml:",inline"`.
-type FuncCommon struct {
-	Paths        []string `yaml:"paths" default:"none" doc:"Globs that limit the files this preset applies to, on top of 'files.include' and 'files.exclude'."`
-	ExcludePaths []string `yaml:"exclude_paths" default:"none" doc:"Globs of files this preset skips, on top of 'files.exclude'."`
-	IncludeDoc   *bool    `yaml:"include_doc" default:"true" doc:"Hide the doc comment together with the function."`
-}
-
-// StmtCommon holds the settings shared by stmt presets. Presets embed it
-// first with `yaml:",inline"`.
-type StmtCommon struct {
-	Paths        []string `yaml:"paths" default:"none" doc:"Globs that limit the files this preset applies to, on top of 'files.include' and 'files.exclude'."`
-	ExcludePaths []string `yaml:"exclude_paths" default:"none" doc:"Globs of files this preset skips, on top of 'files.exclude'."`
-}
-
-func newFuncCommon() FuncCommon {
-	includeDoc := true
-	return FuncCommon{IncludeDoc: &includeDoc}
-}
-
-// includeDoc returns the include_doc setting. nil means the default, true.
-func (c *FuncCommon) includeDoc() bool {
-	return c.IncludeDoc == nil || *c.IncludeDoc
-}
-
-// newRule returns the func rule of the preset with the given name.
-func (c *FuncCommon) newRule(name, summary string, m rule.FuncMatcher) *rule.Rule {
-	return &rule.Rule{
-		ID:           name,
-		Description:  summary,
-		Preset:       name,
-		Target:       result.TargetFunc,
-		Paths:        c.Paths,
-		ExcludePaths: c.ExcludePaths,
-		IncludeDoc:   c.includeDoc(),
-		Func:         m,
-	}
-}
-
-// newRule returns the stmt rule of the preset with the given name.
-func (c *StmtCommon) newRule(name, summary string, m rule.NodeMatcher) *rule.Rule {
-	return &rule.Rule{
-		ID:           name,
-		Description:  summary,
-		Preset:       name,
-		Target:       result.TargetStmt,
-		Paths:        c.Paths,
-		ExcludePaths: c.ExcludePaths,
-		Node:         m,
-	}
+// settingsSpec holds the generated code for the settings of one preset.
+type settingsSpec struct {
+	// new returns a pointer to a new settings struct that holds the
+	// defaults.
+	new func() any
+	// decode reads a settings value that passed the schema.
+	decode func(map[string]any) any
+	// infos describes the settings in schema order.
+	infos []SettingInfo
 }
 
 // SettingInfo describes one setting of a preset.
 type SettingInfo struct {
 	Name string `json:"name"`
-	// Type is "bool", "int", "string", or "[]string". Decode accepts int
-	// values from -2147483648 to 2147483647 (the int32 range).
+	// Type is "bool", "int", "string", or "[]string". The schema accepts
+	// int values from -2147483648 to 2147483647 (the int32 range).
 	Type string `json:"type"`
 	// Default is the default value as shown in docs, such as "true",
 	// "[err]", or "none".
@@ -85,66 +35,35 @@ type SettingInfo struct {
 	Enum []string `json:"enum,omitempty"`
 }
 
-// Settings describes the settings of p in declaration order. The common
-// settings come first.
+// Settings describes the settings of p in schema order. The settings that
+// all presets of the kind share come first.
 func Settings(p *Preset) []SettingInfo {
-	return settingInfos(reflect.TypeOf(p.NewSettings()))
+	return schemaPresets[p.Name].infos
 }
 
-func settingInfos(t reflect.Type) []SettingInfo {
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
+// funcRule returns the func rule of the preset with the given name.
+func funcRule(name, summary string, paths, excludePaths []string, includeDoc bool, m rule.FuncMatcher) *rule.Rule {
+	return &rule.Rule{
+		ID:           name,
+		Description:  summary,
+		Preset:       name,
+		Target:       result.TargetFunc,
+		Paths:        paths,
+		ExcludePaths: excludePaths,
+		IncludeDoc:   includeDoc,
+		Func:         m,
 	}
-	if t.Kind() != reflect.Struct {
-		return nil
-	}
-	var out []SettingInfo
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
-		name, opts, _ := strings.Cut(f.Tag.Get("yaml"), ",")
-		if opts == "inline" {
-			out = append(out, settingInfos(f.Type)...)
-			continue
-		}
-		if name == "" || name == "-" {
-			continue
-		}
-		info := SettingInfo{
-			Name:        name,
-			Type:        typeName(f.Type),
-			Default:     f.Tag.Get("default"),
-			Description: docText(f.Tag.Get("doc")),
-		}
-		if e := f.Tag.Get("enum"); e != "" {
-			info.Enum = strings.Split(e, ",")
-		}
-		out = append(out, info)
-	}
-	return out
 }
 
-func typeName(t reflect.Type) string {
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
+// stmtRule returns the stmt rule of the preset with the given name.
+func stmtRule(name, summary string, paths, excludePaths []string, m rule.NodeMatcher) *rule.Rule {
+	return &rule.Rule{
+		ID:           name,
+		Description:  summary,
+		Preset:       name,
+		Target:       result.TargetStmt,
+		Paths:        paths,
+		ExcludePaths: excludePaths,
+		Node:         m,
 	}
-	switch t.Kind() {
-	case reflect.Bool:
-		return "bool"
-	case reflect.Int:
-		return "int"
-	case reflect.String:
-		return "string"
-	case reflect.Slice:
-		if t.Elem().Kind() == reflect.String {
-			return "[]string"
-		}
-	}
-	return t.String()
-}
-
-// docText turns the single-quoted code spans of a doc tag into Markdown code
-// spans. Struct tags cannot contain backquotes, so doc tags write code as
-// 'u.name' and never use apostrophes.
-func docText(tag string) string {
-	return strings.ReplaceAll(tag, "'", "`")
 }

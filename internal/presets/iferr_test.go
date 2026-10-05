@@ -107,37 +107,12 @@ func TestIferrCases(t *testing.T) {
 	}
 }
 
-func TestIferrDecodeErrors(t *testing.T) {
+func TestIferrCompileErrors(t *testing.T) {
 	p, _ := Lookup("iferr")
-	tests := []struct{ src, want string }{
-		{"names: []", "1:8: names: at least one name is required"},
-		{"names: [err, a-b]", `1:14: names[1]: invalid name "a-b": use letters, digits, "_", "*", and "?"`},
-		{"names: [a-b, 1]", `1:9: names[0]: invalid name "a-b": use letters, digits, "_", "*", and "?"` +
-			"\n1:14: names[1]: expected a string, found integer 1"},
-		{"names: [1]", "1:9: names[0]: expected a string, found integer 1"},
-		{"names: !!str [err]", "1:8: names: expected a list of strings, found a list tagged !!str"},
-		{"names: err", `1:8: names: expected a list of strings, found string "err"`},
-		{"init: fold", `1:7: init: unknown value "fold" (valid values: exclude, fold-body)`},
-		{"include_doc: true", `1:1: include_doc: unknown setting "include_doc" (available settings: ` +
-			`paths, exclude_paths, names, allow_comments, init, allow_bare_return, allow_calls_in_results)`},
-	}
-	for _, tt := range tests {
-		_, err := decodeYAML(t, p, tt.src)
-		if err == nil || err.Error() != tt.want {
-			t.Errorf("Decode(%q) error = %v, want %q", tt.src, err, tt.want)
-		}
-	}
-
-	for _, change := range []func(*IferrSettings){
-		func(s *IferrSettings) { s.Init = "" },
-		func(s *IferrSettings) { s.Names = nil },
-		func(s *IferrSettings) { s.Paths = []string{"["} },
-	} {
-		s := p.NewSettings().(*IferrSettings)
-		change(s)
-		if _, err := p.Compile(s); err == nil {
-			t.Errorf("Compile(%+v) succeeded", s)
-		}
+	s := p.NewSettings().(*IferrSettings)
+	s.Paths = []string{"["}
+	if _, err := p.Compile(s); err == nil {
+		t.Errorf("Compile(%+v) succeeded", s)
 	}
 }
 

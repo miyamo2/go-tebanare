@@ -8,11 +8,8 @@ import (
 
 const noopSummary = "Methods that take no parameters, return nothing, and have an empty body."
 
-// NoopSettings holds the settings of the noop preset.
-type NoopSettings struct {
-	FuncCommon       `yaml:",inline"`
-	AllowComments    bool `yaml:"allow_comments" default:"true" doc:"Hide the method even when a comment other than the doc comment is on its lines."`
-	IncludeFunctions bool `yaml:"include_functions" default:"false" doc:"Also hide empty functions that are not methods, such as 'func noop() {}'."`
+func (s *NoopSettings) validate() []problem {
+	return validatePaths(s.Paths, s.ExcludePaths)
 }
 
 func init() {
@@ -25,10 +22,7 @@ func init() {
 			"It has no results.",
 			"It has a body, and the body holds no statements (`{}`). Comments in the body are allowed and hidden with it. A declaration without a body, such as a method implemented in assembly, does not match.",
 		},
-		Kind: FuncKind,
-		NewSettings: func() any {
-			return &NoopSettings{FuncCommon: newFuncCommon(), AllowComments: true}
-		},
+		Kind:     FuncKind,
 		Compile:  compileNoop,
 		Examples: noopExamples,
 	})
@@ -57,7 +51,7 @@ func compileNoop(settings any) (*rule.Rule, error) {
 		return nil, err
 	}
 	m := &noopMatcher{allowComments: s.AllowComments, includeFunctions: s.IncludeFunctions}
-	return s.newRule("noop", noopSummary, m), nil
+	return funcRule("noop", noopSummary, s.Paths, s.ExcludePaths, s.IncludeDoc, m), nil
 }
 
 type noopMatcher struct {

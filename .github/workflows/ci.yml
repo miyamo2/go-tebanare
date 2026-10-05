@@ -44,7 +44,8 @@ jobs:
       # and fails when the result differs from the committed files or when a
       # generated file is untracked.
       - run: make constants-check
-      - run: make schema-check
+      # Checks the Go types generated from schema/gotebanare.schema.json.
+      - run: make generate-check
       # The parity, ts, and e2e jobs wait for the wasm job, so this build
       # runs here.
       - run: make wasm-wasip1

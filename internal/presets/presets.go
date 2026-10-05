@@ -52,7 +52,8 @@ type Preset struct {
 	Criteria []string
 	Kind     Kind
 	// NewSettings returns a pointer to a new settings struct that holds
-	// the default values.
+	// the default values. register sets it from the code generated from
+	// the schema.
 	NewSettings func() any
 	// Compile validates settings (a value returned by NewSettings or
 	// Decode) and builds the rule. The rule's ID and Preset are Name. An
@@ -79,7 +80,12 @@ type Example struct {
 var registry []*Preset
 
 // register adds p to the registry. Each preset file calls it from init.
+// It sets p.NewSettings from the settings that the schema declares for a
+// preset of that name.
 func register(p *Preset) {
+	if spec, ok := schemaPresets[p.Name]; ok && p.NewSettings == nil {
+		p.NewSettings = spec.new
+	}
 	i, _ := slices.BinarySearchFunc(registry, p.Name, func(q *Preset, name string) int {
 		return strings.Compare(q.Name, name)
 	})

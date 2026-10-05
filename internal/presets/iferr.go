@@ -1,7 +1,6 @@
 package presets
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
 
@@ -10,38 +9,14 @@ import (
 
 const iferrSummary = "`if err != nil` blocks that return the error unchanged."
 
-// Values of the iferr init setting.
+// Values of the iferr init setting (see the enum in the schema).
 const (
 	InitExclude  = "exclude"
 	InitFoldBody = "fold-body"
 )
 
-// IferrSettings holds the settings of the iferr preset.
-type IferrSettings struct {
-	StmtCommon          `yaml:",inline"`
-	Names               []string `yaml:"names" default:"[err]" doc:"Names of error variables, as globs matched against the whole name, where '*' matches any run of characters and '?' matches one."`
-	AllowComments       bool     `yaml:"allow_comments" default:"false" doc:"Hide the statement even when a comment is on the hidden lines."`
-	Init                string   `yaml:"init" default:"exclude" enum:"exclude,fold-body" doc:"How to treat if statements with an init statement: 'exclude' keeps them visible; 'fold-body' hides the lines from 'return' to the closing brace and keeps the header line visible."`
-	AllowBareReturn     bool     `yaml:"allow_bare_return" default:"false" doc:"Also hide a bare return."`
-	AllowCallsInResults bool     `yaml:"allow_calls_in_results" default:"false" doc:"Allow function calls in the results before the error; function literals and channel receives still do not match."`
-}
-
 func (s *IferrSettings) validate() []problem {
-	out := s.StmtCommon.validate()
-	if len(s.Names) == 0 {
-		out = append(out, problem{"names", -1, "at least one name is required"})
-	}
-	for i, n := range s.Names {
-		if !validNameGlob(n) {
-			out = append(out, problem{"names", i, fmt.Sprintf(
-				"invalid name %q: use letters, digits, \"_\", \"*\", and \"?\"", n)})
-		}
-	}
-	if s.Init != InitExclude && s.Init != InitFoldBody {
-		out = append(out, problem{"init", -1, fmt.Sprintf("unknown value %q (valid values: %s, %s)",
-			s.Init, InitExclude, InitFoldBody)})
-	}
-	return out
+	return validatePaths(s.Paths, s.ExcludePaths)
 }
 
 func init() {
@@ -55,10 +30,7 @@ func init() {
 			"No comment is on the hidden lines, including a comment after the closing brace.",
 			"The other results hold no function call (except the builtin `new`), no function literal, and no channel receive. A bare return does not match.",
 		},
-		Kind: StmtKind,
-		NewSettings: func() any {
-			return &IferrSettings{Names: []string{"err"}, Init: InitExclude}
-		},
+		Kind:     StmtKind,
 		Compile:  compileIferr,
 		Examples: iferrExamples,
 	})
@@ -99,7 +71,7 @@ func compileIferr(settings any) (*rule.Rule, error) {
 		bareReturn:    s.AllowBareReturn,
 		calls:         s.AllowCallsInResults,
 	}
-	return s.newRule("iferr", iferrSummary, m), nil
+	return stmtRule("iferr", iferrSummary, s.Paths, s.ExcludePaths, m), nil
 }
 
 type iferrMatcher struct {

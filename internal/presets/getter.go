@@ -1,7 +1,6 @@
 package presets
 
 import (
-	"fmt"
 	"go/ast"
 
 	"github.com/miyamo2/go-tebanare/internal/rule"
@@ -9,18 +8,8 @@ import (
 
 const getterSummary = "Methods that only return a field of the receiver."
 
-// GetterSettings holds the settings of the getter preset.
-type GetterSettings struct {
-	FuncCommon `yaml:",inline"`
-	MaxDepth   *int `yaml:"max_depth" default:"unlimited" doc:"The maximum number of fields in the returned chain: with 1, 'u.name' matches and 'u.cfg.timeout' does not."`
-}
-
 func (s *GetterSettings) validate() []problem {
-	out := s.FuncCommon.validate()
-	if s.MaxDepth != nil && *s.MaxDepth < 1 {
-		out = append(out, problem{"max_depth", -1, fmt.Sprintf("must be at least 1, found %d", *s.MaxDepth)})
-	}
-	return out
+	return validatePaths(s.Paths, s.ExcludePaths)
 }
 
 func init() {
@@ -35,10 +24,9 @@ func init() {
 			"The first field after the receiver (`x` in `u.x`) is not the name of a method that the same file declares on the same type, since `u.x` would then be a method value.",
 			"No comment other than the doc comment is on the lines of the declaration.",
 		},
-		Kind:        FuncKind,
-		NewSettings: func() any { return &GetterSettings{FuncCommon: newFuncCommon()} },
-		Compile:     compileGetter,
-		Examples:    getterExamples,
+		Kind:     FuncKind,
+		Compile:  compileGetter,
+		Examples: getterExamples,
 	})
 }
 
@@ -73,7 +61,7 @@ func compileGetter(settings any) (*rule.Rule, error) {
 	if s.MaxDepth != nil {
 		m.maxDepth = *s.MaxDepth
 	}
-	return s.newRule("getter", getterSummary, m), nil
+	return funcRule("getter", getterSummary, s.Paths, s.ExcludePaths, s.IncludeDoc, m), nil
 }
 
 type getterMatcher struct {

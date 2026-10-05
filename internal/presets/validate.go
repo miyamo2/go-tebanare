@@ -8,14 +8,16 @@ import (
 	"github.com/bmatcuk/doublestar/v4"
 )
 
-// DecodeError describes an invalid preset setting.
+// DecodeError describes an invalid preset setting: one that passed the
+// schema but fails a check that the schema cannot express, such as an
+// invalid glob.
 type DecodeError struct {
 	// Line and Column give the 1-based position in the YAML source. Both
-	// are 0 when the settings did not come from YAML.
+	// are 0 when the error has no position.
 	Line   int
 	Column int
-	// Field is the setting, such as "max_depth" or "names[1]". It is
-	// empty when the error concerns the settings as a whole.
+	// Field is the setting, such as "paths" or "paths[1]". It is empty
+	// when the error concerns the settings as a whole.
 	Field string
 	Msg   string
 }
@@ -55,7 +57,8 @@ type validator interface {
 	validate() []problem
 }
 
-// checkSettings validates settings for Compile. It returns the settings as
+// checkSettings validates settings for Compile. The schema checks the
+// types, ranges, and patterns; validate methods check the rest. It returns the settings as
 // *T, or an error that wraps one *DecodeError per problem.
 func checkSettings[T any](preset string, settings any) (*T, error) {
 	s, ok := settings.(*T)
@@ -72,14 +75,6 @@ func checkSettings[T any](preset string, settings any) (*T, error) {
 		return nil, errors.Join(errs...)
 	}
 	return s, nil
-}
-
-func (c *FuncCommon) validate() []problem {
-	return validatePaths(c.Paths, c.ExcludePaths)
-}
-
-func (c *StmtCommon) validate() []problem {
-	return validatePaths(c.Paths, c.ExcludePaths)
 }
 
 func validatePaths(paths, excludePaths []string) []problem {

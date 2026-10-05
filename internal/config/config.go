@@ -1,20 +1,15 @@
 package config
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 
-	"go.yaml.in/yaml/v3"
+	"github.com/bmatcuk/doublestar/v4"
 
 	"github.com/miyamo2/go-tebanare/internal/result"
 	"github.com/miyamo2/go-tebanare/internal/rule"
 )
-
-// supportedVersion is the only valid value of `version`.
-const supportedVersion = 1
-
-// topKeys lists the top-level keys of a config.
-var topKeys = []string{"version", "files", "presets"}
 
 // Error is an invalid configuration.
 type Error struct {
@@ -63,53 +58,37 @@ func (c *compiler) compile(src []byte) *rule.Set {
 	if !ok || !c.checkAliases(root) {
 		return nil
 	}
-	es, ok := c.mapping(root, "", topKeys...)
-	if !ok {
+	c.root = root
+	v, ok := c.value(root, nil)
+	if !ok || !c.validate(v) {
 		return nil
 	}
-	c.version(es, root)
+	// The value passed the schema, so it is a mapping of the generated
+	// types' shape.
+	f := decodeFile(v.(map[string]any))
 	set := &rule.Set{}
-	if fe, ok := es.get("files"); ok {
-		set.Include, set.Exclude = c.files(fe)
+	if f.Files != nil {
+		set.Include = c.globs(f.Files.Include, "files", "include")
+		set.Exclude = c.globs(f.Files.Exclude, "files", "exclude")
 	}
-	if pe, ok := es.get("presets"); ok {
-		set.Rules = c.presets(pe)
-	}
+	set.Rules = c.presets(f.Presets)
 	return set
 }
 
-// version checks that `version` is set to the supported version.
-func (c *compiler) version(es entries, root *yaml.Node) {
-	e, ok := es.get("version")
-	if !ok {
-		c.errorf(root, "", "missing required key %q", "version")
-		return
+// globs checks a list of doublestar patterns, the value at path, and
+// returns the valid ones. The schema cannot check the pattern syntax.
+func (c *compiler) globs(globs []string, path ...string) []string {
+	if globs == nil {
+		return nil
 	}
-	n := resolve(e.value)
-	if n.Kind != yaml.ScalarNode || effectiveTag(n) != "!!int" {
-		c.errorf(e.value, e.field, "expected an integer, found %s", describe(n))
-		return
+	out := make([]string, 0, len(globs))
+	for i, g := range globs {
+		if !doublestar.ValidatePattern(g) {
+			at := append(slices.Clone(path), strconv.Itoa(i))
+			c.errorf(c.nodeAt(at), c.fieldOf(at), "invalid glob %q", g)
+			continue
+		}
+		out = append(out, g)
 	}
-	// yaml.v3 reads integers the same way: underscores removed, then
-	// strconv with base prefixes.
-	v, err := strconv.ParseInt(strings.ReplaceAll(n.Value, "_", ""), 0, 64)
-	if err != nil || v != supportedVersion {
-		c.errorf(e.value, e.field, "unsupported version %s (supported versions: %d)", n.Value, supportedVersion)
-	}
-}
-
-// files decodes `files`. An empty or missing include list means
-// rule.DefaultInclude.
-func (c *compiler) files(e entry) (include, exclude []string) {
-	es, ok := c.mapping(e.value, e.field, "include", "exclude")
-	if !ok {
-		return nil, nil
-	}
-	if ie, ok := es.get("include"); ok {
-		include = c.globs(ie)
-	}
-	if xe, ok := es.get("exclude"); ok {
-		exclude = c.globs(xe)
-	}
-	return include, exclude
+	return out
 }

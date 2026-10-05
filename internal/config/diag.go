@@ -39,6 +39,8 @@ func (f field) named(name string) field {
 
 // compiler collects the diagnostics of one Compile call.
 type compiler struct {
+	// root is the node of the config document's content.
+	root  *yaml.Node
 	errs  []result.Diagnostic
 	warns []result.Diagnostic
 	// ruleID is the name of the preset being decoded. Diagnostics carry

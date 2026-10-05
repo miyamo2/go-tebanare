@@ -2,67 +2,57 @@ package config
 
 import (
 	"errors"
+	"strconv"
 	"strings"
-
-	"go.yaml.in/yaml/v3"
 
 	"github.com/miyamo2/go-tebanare/internal/presets"
 	"github.com/miyamo2/go-tebanare/internal/rule"
 )
 
-// enabledPresets maps each preset listed under `presets` to the line of
-// its name.
-type enabledPresets map[string]int
-
-// presets decodes the `presets` list. It returns the rules of the valid
-// entries in list order.
-func (c *compiler) presets(e entry) []*rule.Rule {
-	enabled := enabledPresets{}
-	items, ok := c.sequence(e.value, e.field)
-	if !ok {
-		return nil
-	}
+// presets compiles the items of `presets`, which passed the schema: each
+// is a preset name, or a mapping from the name to its settings. It returns
+// the rules of the valid items in list order.
+func (c *compiler) presets(items []any) []*rule.Rule {
+	// enabled maps each preset listed so far to the line of its name.
+	enabled := map[string]int{}
 	var rules []*rule.Rule
-	for i, raw := range items {
-		if r := c.preset(raw, e.field.index(i), enabled); r != nil {
+	for i, item := range items {
+		if r := c.preset(i, item, enabled); r != nil {
 			rules = append(rules, r)
 		}
 	}
 	return rules
 }
 
-// preset decodes one entry of `presets`: a name, or a mapping with one
-// key, the name, whose value holds the settings.
-func (c *compiler) preset(raw *yaml.Node, f field, enabled enabledPresets) *rule.Rule {
-	n := resolve(raw)
-	nameNode, settings := raw, (*yaml.Node)(nil)
-	switch {
-	case isString(n):
-		// A name alone enables the preset with its defaults.
-	case isMapping(n) && len(n.Content) == 2 && isString(resolve(n.Content[0])):
-		nameNode, settings = n.Content[0], n.Content[1]
-	case isMapping(n) && len(n.Content) == 2:
-		c.errorf(n.Content[0], f, "expected a preset name as the key, found %s", describe(resolve(n.Content[0])))
-		return nil
-	case isMapping(n):
-		c.errorf(raw, f, "expected a mapping with one key, the preset name, found %d keys", len(n.Content)/2)
-		return nil
-	default:
-		c.errorf(raw, f, "expected a preset name or a mapping from a preset name to its settings, found %s", describe(n))
-		return nil
+func (c *compiler) preset(i int, item any, enabled map[string]int) *rule.Rule {
+	itemPath := []string{"presets", strconv.Itoa(i)}
+	var name string
+	var settings any
+	settingsPath := itemPath
+	switch v := item.(type) {
+	case string:
+		name = v
+	case map[string]any:
+		for k, s := range v {
+			name, settings = k, s
+		}
+		settingsPath = append(itemPath, name)
 	}
-
-	name := resolve(nameNode).Value
-	f = f.named(name)
 	p, ok := presets.Lookup(name)
 	if !ok {
-		c.errorf(nameNode, f, "unknown preset %q (available presets: %s)", name, strings.Join(presets.Names(), ", "))
+		// The schema lists the preset names; a preset without code is a
+		// bug.
+		c.errorf(c.nodeAt(itemPath), c.fieldOf(itemPath), "preset %q is in the schema but not built in", name)
 		return nil
+	}
+	nameNode := c.nodeAt(itemPath)
+	if settingsPath[len(settingsPath)-1] == name {
+		nameNode = keyNode(nameNode, name)
 	}
 	c.ruleID = name
 	defer func() { c.ruleID = "" }()
 	if line, dup := enabled[name]; dup {
-		c.errorf(nameNode, f, "preset %q is already enabled on line %d", name, line)
+		c.errorf(nameNode, c.fieldOf(itemPath), "preset %q is already enabled on line %d", name, line)
 		return nil
 	}
 	enabled[name] = nameNode.Line
@@ -74,31 +64,34 @@ func (c *compiler) preset(raw *yaml.Node, f field, enabled enabledPresets) *rule
 			return r
 		}
 	}
-	at := settings
-	if at == nil {
-		at = nameNode
-	}
-	c.presetErrors(err, at, f)
+	c.presetErrors(err, settingsPath)
 	return nil
 }
 
-// presetErrors reports the errors of presets.Decode and Preset.Compile.
-// Errors without a position are reported at the position of at.
-func (c *compiler) presetErrors(err error, at *yaml.Node, f field) {
+// presetErrors reports the errors of presets.Decode and Preset.Compile for
+// the settings at path. A *presets.DecodeError names a setting such as
+// "paths[1]", which locates the error.
+func (c *compiler) presetErrors(err error, path []string) {
 	for _, e := range unwrapAll(err) {
 		var de *presets.DecodeError
 		if !errors.As(e, &de) {
-			c.errorf(at, f, "%s", e.Error())
+			c.errorf(c.nodeAt(path), c.fieldOf(path), "%s", e.Error())
 			continue
 		}
-		ef := f
-		if de.Field != "" {
-			ef = f.key(de.Field)
-		}
-		pos := at
-		if de.Line > 0 {
-			pos = &yaml.Node{Line: de.Line, Column: de.Column}
-		}
-		c.errorf(pos, ef, "%s", de.Msg)
+		at := append(path[:len(path):len(path)], settingPath(de.Field)...)
+		c.errorf(c.nodeAt(at), c.fieldOf(at), "%s", de.Msg)
 	}
+}
+
+// settingPath splits a setting field such as "paths[1]" into path
+// segments.
+func settingPath(f string) []string {
+	if f == "" {
+		return nil
+	}
+	name, idx, ok := strings.Cut(strings.TrimSuffix(f, "]"), "[")
+	if !ok {
+		return []string{f}
+	}
+	return []string{name, idx}
 }

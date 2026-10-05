@@ -35,14 +35,3 @@ func TestMatchGlob(t *testing.T) {
 		}
 	}
 }
-
-func TestValidNameGlob(t *testing.T) {
-	for g, want := range map[string]bool{
-		"err": true, "*Err": true, "e?": true, "_x1": true, "é": true,
-		"": false, "a-b": false, "a.b": false, "a b": false, "[a]": false,
-	} {
-		if got := validNameGlob(g); got != want {
-			t.Errorf("validNameGlob(%q) = %v, want %v", g, got, want)
-		}
-	}
-}

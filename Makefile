@@ -8,7 +8,7 @@ FUZZTIME ?= 10s
 # short run: FuzzCompile stops executing inputs after a few seconds.
 FUZZMINIMIZETIME ?= 1s
 
-.PHONY: all test vet lint fmt-check fuzz-smoke schema schema-check constants constants-check
+.PHONY: all test vet lint fmt-check fuzz-smoke generate generate-check constants constants-check
 
 all: vet test
 
@@ -25,14 +25,16 @@ lint:
 # module, so that their dependencies stay out of the root go.mod.
 DEV_MODULE := dev
 
-# Regenerates schema/gotebanare.schema.json from the preset declarations.
-schema:
-	cd $(DEV_MODULE) && $(GO) test ./schemagen -run '^TestSchemaUpToDate$$' -update
+# Regenerates the Go types of the configuration (internal/config/config_gen.go
+# and internal/presets/settings_gen.go) from schema/gotebanare.schema.json,
+# the source of truth.
+generate:
+	cd $(DEV_MODULE) && $(GO) test ./gogen -run '^TestGeneratedUpToDate$$' -update
 
-# Checks that the schema is up to date and agrees with the configuration
-# validation. It runs every test in the dev module, so it also compares
-# the TypeScript constants with the Go declarations.
-schema-check:
+# Checks that the generated Go files are up to date with the schema. It
+# runs every test in the dev module, so it also compares the TypeScript
+# constants with the Go declarations.
+generate-check:
 	cd $(DEV_MODULE) && $(GO) vet ./... && $(GO) test ./...
 
 # Regenerates packages/engine/src/generated/constants.ts from the Go

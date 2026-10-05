@@ -59,30 +59,12 @@ func (u, v *U) Pair() int { return u.a }
 	})
 }
 
-func TestGetterDecodeErrors(t *testing.T) {
+func TestGetterCompileErrors(t *testing.T) {
 	p, _ := Lookup("getter")
-	for _, src := range []string{"max_depth: 0", "max_depth: -2", "max_depth: two", "maxdepth: 1"} {
-		if _, err := decodeYAML(t, p, src); err == nil {
-			t.Errorf("Decode(%q) succeeded", src)
-		}
-	}
-	for src, want := range map[string]string{
-		"max_depth: 0": "1:12: max_depth: must be at least 1, found 0",
-		// Native builds reject the same values as the wasm build, where
-		// int has 32 bits.
-		"max_depth: 2147483648": "1:12: max_depth: expected an integer from -2147483648 to 2147483647, found integer 2147483648",
-	} {
-		if _, err := decodeYAML(t, p, src); err == nil || err.Error() != want {
-			t.Errorf("Decode(%q) error = %v, want %q", src, err, want)
-		}
-	}
-	if s, err := decodeYAML(t, p, "max_depth: 2147483647"); err != nil || *s.(*GetterSettings).MaxDepth != 2147483647 {
-		t.Errorf("Decode(max_depth: 2147483647) = %+v, %v", s, err)
-	}
 	s := p.NewSettings().(*GetterSettings)
-	s.MaxDepth = ptr(0)
+	s.ExcludePaths = []string{"["}
 	if _, err := p.Compile(s); err == nil {
-		t.Error("Compile(max_depth 0) succeeded")
+		t.Error("Compile(exclude_paths [) succeeded")
 	}
 }
 

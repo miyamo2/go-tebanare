@@ -49,12 +49,12 @@ func Params(x int) {}
 	}
 }
 
-func TestNoopDecodeErrors(t *testing.T) {
+func TestNoopCompileErrors(t *testing.T) {
 	p, _ := Lookup("noop")
-	for _, src := range []string{"allow_comments: no", "include_functions: 1", "max_depth: 1"} {
-		if _, err := decodeYAML(t, p, src); err == nil {
-			t.Errorf("Decode(%q) succeeded", src)
-		}
+	s := p.NewSettings().(*NoopSettings)
+	s.Paths = []string{"["}
+	if _, err := p.Compile(s); err == nil {
+		t.Errorf("Compile(%+v) succeeded", s)
 	}
 }
 

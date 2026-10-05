@@ -1,23 +1,6 @@
 package presets
 
-import (
-	"unicode"
-	"unicode/utf8"
-)
-
-// validNameGlob reports whether g is a non-empty glob of identifier
-// characters, "*", and "?".
-func validNameGlob(g string) bool {
-	if g == "" {
-		return false
-	}
-	for _, r := range g {
-		if r != '*' && r != '?' && r != '_' && !unicode.IsLetter(r) && !unicode.IsDigit(r) {
-			return false
-		}
-	}
-	return true
-}
+import "unicode/utf8"
 
 // matchGlob reports whether the whole of name matches the glob g, where
 // "*" matches any run of runes and "?" matches one rune.

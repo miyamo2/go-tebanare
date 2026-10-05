@@ -11,18 +11,25 @@ import (
 	"github.com/miyamo2/go-tebanare/internal/rule"
 )
 
+// decodeYAML decodes the settings of p from YAML ("" for defaults). The
+// YAML must hold valid settings: the schema checks them in internal/config.
+func decodeYAML(t *testing.T, p *Preset, settings string) (any, error) {
+	t.Helper()
+	var value any
+	if settings != "" {
+		var m map[string]any
+		if err := yaml.Unmarshal([]byte(settings), &m); err != nil {
+			t.Fatalf("settings %q: %v", settings, err)
+		}
+		value = m
+	}
+	return Decode(p, value)
+}
+
 // compileYAML decodes settings from YAML ("" for defaults) and compiles p.
 func compileYAML(t *testing.T, p *Preset, settings string) *rule.Rule {
 	t.Helper()
-	var node *yaml.Node
-	if settings != "" {
-		var doc yaml.Node
-		if err := yaml.Unmarshal([]byte(settings), &doc); err != nil {
-			t.Fatalf("settings %q: %v", settings, err)
-		}
-		node = &doc
-	}
-	s, err := Decode(p, node)
+	s, err := decodeYAML(t, p, settings)
 	if err != nil {
 		t.Fatalf("Decode(%q): %v", settings, err)
 	}
@@ -71,3 +78,5 @@ func checkResults(t *testing.T, got, want map[string]bool) {
 		}
 	}
 }
+
+func ptr[T any](v T) *T { return &v }
