@@ -7,6 +7,7 @@ import (
 
 	"github.com/bmatcuk/doublestar/v4"
 
+	"github.com/miyamo2/go-tebanare/internal/configschema"
 	"github.com/miyamo2/go-tebanare/internal/result"
 	"github.com/miyamo2/go-tebanare/internal/rule"
 )
@@ -63,15 +64,22 @@ func (c *compiler) compile(src []byte) *rule.Set {
 	if !ok || !c.validate(v) {
 		return nil
 	}
-	// The value passed the schema, so it is a mapping of the generated
-	// types' shape.
-	f := decodeFile(v.(map[string]any))
-	set := &rule.Set{}
-	if f.Files != nil {
-		set.Include = c.globs(f.Files.Include, "files", "include")
-		set.Exclude = c.globs(f.Files.Exclude, "files", "exclude")
+	// The value passed the schema, so it has the shape of the generated
+	// types.
+	cfg, err := configschema.DecodeConfig(v)
+	if err != nil {
+		c.errorf(c.root, "", "%v", err)
+		return nil
 	}
-	set.Rules = c.presets(f.Presets)
+	set := &rule.Set{}
+	if cfg.Files != nil {
+		set.Include = c.globs(cfg.Files.Include, "files", "include")
+		set.Exclude = c.globs(cfg.Files.Exclude, "files", "exclude")
+	}
+	// The items of `presets` are read from v: a generated PresetElement
+	// does not tell which preset a mapping with null settings names.
+	items, _ := v.(map[string]any)["presets"].([]any)
+	set.Rules = c.presets(items)
 	return set
 }
 

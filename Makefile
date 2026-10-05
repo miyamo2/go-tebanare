@@ -25,17 +25,23 @@ lint:
 # module, so that their dependencies stay out of the root go.mod.
 DEV_MODULE := dev
 
-# Regenerates the Go types of the configuration (internal/config/config_gen.go
-# and internal/presets/settings_gen.go) from schema/gotebanare.schema.json,
-# the source of truth.
-generate:
-	cd $(DEV_MODULE) && $(GO) test ./gogen -run '^TestGeneratedUpToDate$$' -update
+CONFIG_SCHEMA := schema/gotebanare.schema.json
+CONFIG_TYPES := internal/configschema/types_gen.go
 
-# Checks that the generated Go files are up to date with the schema. It
-# runs every test in the dev module, so it also compares the TypeScript
-# constants with the Go declarations.
-generate-check:
-	cd $(DEV_MODULE) && $(GO) vet ./... && $(GO) test ./...
+# Regenerates the Go types of the configuration from the JSON Schema, the
+# source of truth, with quicktype (a devDependency in package.json; run
+# bun install first).
+generate:
+	bunx quicktype --src-lang schema --lang go --package configschema \
+		--top-level Config -o $(CONFIG_TYPES) $(CONFIG_SCHEMA)
+	gofmt -w $(CONFIG_TYPES)
+
+# Regenerates the Go types and fails when the result differs from the
+# committed file or when it is untracked.
+generate-check: generate
+	@git diff --exit-code -- $(CONFIG_TYPES) || { echo "$(CONFIG_TYPES) is out of date: run make generate and commit the result"; exit 1; }
+	@untracked=$$(git ls-files --others --exclude-standard -- $(CONFIG_TYPES)); \
+	if [ -n "$$untracked" ]; then echo "not committed:"; echo "$$untracked"; exit 1; fi
 
 # Regenerates packages/engine/src/generated/constants.ts from the Go
 # constants in internal/result and tebanare.ConfigFileNames.

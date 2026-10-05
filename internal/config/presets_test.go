@@ -11,18 +11,23 @@ import (
 	"github.com/miyamo2/go-tebanare/internal/rule"
 )
 
-// decodePresets decodes the `presets` list of src.
+// decodePresets compiles src, a config without its `version` line, with
+// "version: 1" before it. It returns the compiler, with the lines of the
+// diagnostics counted in src, and the rules.
 func decodePresets(t *testing.T, src string) (*compiler, []*rule.Rule) {
 	t.Helper()
 	c := &compiler{}
-	es, _ := c.mapping(parseYAML(t, src), "", "presets")
-	e, ok := es.get("presets")
-	if !ok {
-		t.Fatalf("no presets in %q", src)
+	set := c.compile([]byte("version: 1\n" + src))
+	for i := range c.errs {
+		if c.errs[i].Line > 0 {
+			c.errs[i].Line--
+		}
 	}
-	rules := c.presets(e)
 	sortByPosition(c.errs)
-	return c, rules
+	if set == nil {
+		return c, nil
+	}
+	return c, set.Rules
 }
 
 // firstIf parses src, a function body, and returns its first if statement.
@@ -125,10 +130,12 @@ presets:
 }
 
 func TestPresetsDefaults(t *testing.T) {
-	c, rules := decodePresets(t, "presets: [getter, 'noop', iferr: , noop2: ~]")
+	c, _ := decodePresets(t, "presets: [getter, 'noop', iferr: , noop2: ~]")
 	checkDiags(t, "errors", c.errs, []string{
 		`1:36: presets[3](noop2): unknown preset "noop2" (available presets: getter, iferr, noop)`,
 	})
+	c, rules := decodePresets(t, "presets: [getter, 'noop', iferr: ]")
+	checkDiags(t, "errors", c.errs, nil)
 	if len(rules) != 3 || !rules[0].IncludeDoc || !rules[1].IncludeDoc {
 		t.Fatalf("rules = %v", rules)
 	}
@@ -156,13 +163,15 @@ func TestPresetsErrors(t *testing.T) {
 			"1:11: presets[0]: expected a mapping with one key, the preset name, found 0 keys",
 		}},
 		{"key that is not a string", "presets: [{1: {}}]", []string{
-			"1:12: presets[0]: expected a preset name as the key, found integer 1",
+			"1:12: presets[0]: keys must be strings, found integer 1",
 		}},
 		{"unknown preset", "presets: [getter, gettr]", []string{
 			`1:19: presets[1](gettr): unknown preset "gettr" (available presets: getter, iferr, noop)`,
 		}},
 		{"duplicate preset", "presets:\n  - getter\n  - noop\n  - getter: {max_depth: 1}", []string{
-			`4:5: presets[2](getter): preset "getter" is already enabled on line 2`,
+			// The message counts the "version: 1" line that decodePresets
+			// adds.
+			`4:5: presets[2](getter): preset "getter" is already enabled on line 3`,
 		}},
 		{"unknown setting", "presets:\n  - iferr:\n      nmes: [err]", []string{
 			`3:7: presets[0](iferr).nmes: unknown setting "nmes" (available settings: ` +
@@ -175,8 +184,7 @@ func TestPresetsErrors(t *testing.T) {
 		{"invalid settings", "presets:\n  - getter: {max_depth: 0}\n  - iferr: {init: fold, names: ['a b'], paths: ['[']}", []string{
 			"2:25: presets[0](getter).max_depth: must be at least 1, found 0",
 			`3:19: presets[1](iferr).init: unknown value "fold" (valid values: exclude, fold-body)`,
-			`3:33: presets[1](iferr).names[0]: invalid name "a b": use letters, digits, "_", "*", and "?"`,
-			`3:49: presets[1](iferr).paths[0]: invalid glob "["`,
+			`3:33: presets[1](iferr).names[0]: invalid value "a b": it must match the pattern ^[\p{L}\p{Nd}_*?]+$`,
 		}},
 		{"settings that are not a mapping", "presets:\n  - noop: [x]", []string{
 			"2:11: presets[0](noop): settings must be a mapping, found a list",

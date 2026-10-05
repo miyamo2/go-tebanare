@@ -2,8 +2,8 @@ package config
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	"reflect"
 	"slices"
 	"strconv"
 	"strings"
@@ -15,6 +15,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
+	"github.com/miyamo2/go-tebanare/internal/configschema"
 	"github.com/miyamo2/go-tebanare/internal/presets"
 	"github.com/miyamo2/go-tebanare/schema"
 )
@@ -56,8 +57,8 @@ func (c *compiler) validate(v any) bool {
 	if err == nil {
 		return true
 	}
-	ve, ok := err.(*jsonschema.ValidationError)
-	if !ok {
+	var ve *jsonschema.ValidationError
+	if !errors.As(err, &ve) {
 		c.errorf(nil, "", "%v", err)
 		return false
 	}
@@ -129,7 +130,12 @@ func (c *compiler) report(path []string, k jsonschema.ErrorKind) {
 			c.errorf(n, f, "expected a preset name or a mapping from a preset name to its settings, found %s", describe(resolve(n)))
 			return
 		}
-		c.errorf(n, f, "expected %s, found %s", typeWords(k.Want), describe(resolve(n)))
+		want := typeWords(k.Want)
+		if want == "a list" && !slices.Equal(path, []string{"presets"}) {
+			// Every list in the config but `presets` is a list of strings.
+			want = "a list of strings"
+		}
+		c.errorf(n, f, "expected %s, found %s", want, describe(resolve(n)))
 	case *kind.Required:
 		for _, name := range k.Missing {
 			c.errorf(n, f, "missing required key %q", name)
@@ -139,7 +145,8 @@ func (c *compiler) report(path []string, k jsonschema.ErrorKind) {
 			key := keyNode(n, name)
 			switch {
 			case presetItem:
-				c.errorf(key, f.named(name), "unknown preset %q (available presets: %s)", name, strings.Join(presets.Names(), ", "))
+				// f already names the preset: the item has this one key.
+				c.errorf(key, f, "unknown preset %q (available presets: %s)", name, strings.Join(presets.Names(), ", "))
 			case len(path) == 3 && path[0] == "presets":
 				var names []string
 				if p, ok := presets.Lookup(path[2]); ok {
@@ -215,37 +222,10 @@ func plural(n int, word string) string {
 	return word + "s"
 }
 
-// allowedKeys returns the keys of the mapping at path, from the yaml
-// tags of the generated types (see config_gen.go).
+// allowedKeys returns the keys of the mapping at path, in schema order.
 func allowedKeys(path []string) []string {
-	t := reflect.TypeOf(File{})
-	for _, seg := range path {
-		f, ok := fieldByTag(t, seg)
-		if !ok {
-			return nil
-		}
-		t = f.Type
-		for t.Kind() == reflect.Pointer {
-			t = t.Elem()
-		}
-		if t.Kind() != reflect.Struct {
-			return nil
-		}
-	}
-	var keys []string
-	for i := 0; i < t.NumField(); i++ {
-		keys = append(keys, t.Field(i).Tag.Get("yaml"))
-	}
+	keys, _ := configschema.Keys(path...)
 	return keys
-}
-
-func fieldByTag(t reflect.Type, tag string) (reflect.StructField, bool) {
-	for i := 0; i < t.NumField(); i++ {
-		if t.Field(i).Tag.Get("yaml") == tag {
-			return t.Field(i), true
-		}
-	}
-	return reflect.StructField{}, false
 }
 
 // nodeAt returns the node of the value at path, or the deepest node on the

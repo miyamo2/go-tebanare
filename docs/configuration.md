@@ -44,7 +44,7 @@ To apply it without the comment, map the file names to the schema in the editor 
 }
 ```
 
-The schema accepts every valid configuration, but go-tebanare remains the authority: it also reports errors that the schema cannot express, such as a preset listed twice, an invalid glob, a duplicate key, or a merge key (`<<`).
+The schema is the source of truth for the keys, types, defaults, and constraints of the configuration: go-tebanare validates every configuration against the same schema, embedded in the engine of each release (see [ADR 0006](adr/0006-schema-source-of-truth.md)). go-tebanare also reports errors that the schema cannot express, such as a preset listed twice, an invalid glob, a duplicate key, or a merge key (`<<`).
 
 ## Keys
 
@@ -111,10 +111,16 @@ Settings shared by the presets:
 
 ## Validation
 
-go-tebanare decodes the configuration strictly and reports every error it finds, each with its position. These are errors:
+go-tebanare checks the configuration in three steps and stops after a step that finds errors; each step reports every error it finds, each with its position:
 
-- A YAML syntax error, a document that is not a mapping, or a second YAML document with content. Empty documents, such as the one after a trailing `---`, are skipped.
-- An unknown key at any level, such as `preset` for `presets` (the message lists the allowed keys), a key set twice, a merge key (`<<`), or a value of the wrong type. A `null` value counts as unset.
+1. The YAML: a syntax error, a second YAML document with content, a key set twice, a merge key (`<<`), a key that is not a string, a value with a tag other than the standard ones (such as `!!binary`) or with a tag that does not fit it (such as `!!int x`), and aliases that copy more than 64 KiB in total or an alias inside the value it refers to. Empty documents, such as the one after a trailing `---`, are skipped.
+2. The [schema](#editor-support): a document that is not a mapping, an unknown key at any level, such as `preset` for `presets` (the message lists the allowed keys), a missing `version` or a `version` other than `1`, a value of the wrong type, an unknown preset, and invalid settings. A `null` value counts as unset, except for `version`. As in JSON Schema, a number with no fraction, such as `1.0`, is an integer.
+3. What the schema cannot express: an invalid glob in `files`, `paths`, or `exclude_paths`, and a preset listed twice.
+
+In short, these are errors:
+
+- A YAML syntax error, a document that is not a mapping, or a second YAML document with content.
+- An unknown key at any level, a key set twice, a merge key (`<<`), or a value of the wrong type.
 - A missing `version`, or a `version` other than `1`.
 - An invalid glob in `files`, `paths`, or `exclude_paths`.
 - In `presets`: an unknown preset, a preset listed twice, or invalid settings.

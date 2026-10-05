@@ -12,3 +12,4 @@ add a new record that supersedes the old one and link the two.
 | [0003 Fetch sources with the browser's GitHub session](0003-fetch-with-session.md) | Accepted |
 | [0004 Match on the syntax of the changed file only](0004-syntax-only-matching.md) | Accepted |
 | [0005 Support GitHub diff views through isolated UI variants](0005-diff-ui-variants.md) | Accepted |
+| [0006 Make the JSON Schema the source of truth for the configuration](0006-schema-source-of-truth.md) | Accepted |

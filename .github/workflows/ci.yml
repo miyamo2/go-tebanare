@@ -44,7 +44,12 @@ jobs:
       # and fails when the result differs from the committed files or when a
       # generated file is untracked.
       - run: make constants-check
-      # Checks the Go types generated from schema/gotebanare.schema.json.
+      # Regenerates the Go types from schema/gotebanare.schema.json with
+      # quicktype and fails when the result differs from the committed file.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
       - run: make generate-check
       # The parity, ts, and e2e jobs wait for the wasm job, so this build
       # runs here.

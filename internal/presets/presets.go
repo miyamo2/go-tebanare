@@ -1,9 +1,10 @@
 // Package presets holds the built-in presets: named rules that a config
 // enables by listing them under `presets`.
 //
-// Each preset has a settings struct with defaults (see Settings and
-// Decode), criteria written for people, examples, and a Compile function
-// that turns validated settings into a rule.Rule.
+// Each preset has a settings type generated from the JSON Schema of the
+// configuration, which declares the settings and their defaults (see
+// Settings and Decode), criteria written for people, examples, and a
+// Compile function that turns validated settings into a rule.Rule.
 //
 // A change to a preset never makes it hide more code. A broader rule ships
 // as a new preset, or as a new setting whose default keeps the current
@@ -52,9 +53,11 @@ type Preset struct {
 	Criteria []string
 	Kind     Kind
 	// NewSettings returns a pointer to a new settings struct that holds
-	// the default values. register sets it from the code generated from
-	// the schema.
+	// the default values from the schema. register sets it.
 	NewSettings func() any
+	// newSettings returns a pointer to a zero value of the settings type
+	// generated from the schema.
+	newSettings func() any
 	// Compile validates settings (a value returned by NewSettings or
 	// Decode) and builds the rule. The rule's ID and Preset are Name. An
 	// invalid value gives an error that wraps one *DecodeError per
@@ -80,11 +83,13 @@ type Example struct {
 var registry []*Preset
 
 // register adds p to the registry. Each preset file calls it from init.
-// It sets p.NewSettings from the settings that the schema declares for a
-// preset of that name.
+// It sets p.NewSettings to decode the defaults from the schema.
 func register(p *Preset) {
-	if spec, ok := schemaPresets[p.Name]; ok && p.NewSettings == nil {
-		p.NewSettings = spec.new
+	if p.NewSettings == nil && p.newSettings != nil {
+		p.NewSettings = func() any {
+			s, _ := Decode(p, nil)
+			return s
+		}
 	}
 	i, _ := slices.BinarySearchFunc(registry, p.Name, func(q *Preset, name string) int {
 		return strings.Compare(q.Name, name)

@@ -1,25 +1,19 @@
 package presets
 
 import (
+	"github.com/miyamo2/go-tebanare/internal/configschema"
 	"github.com/miyamo2/go-tebanare/internal/result"
 	"github.com/miyamo2/go-tebanare/internal/rule"
 )
 
-// The settings structs of the presets, their defaults, and their decoders
-// are generated from the schema (see settings_gen.go and dev/gogen). The
-// schema, schema/gotebanare.schema.json, is the source of truth for the
-// settings: their names, types, defaults, descriptions, and constraints.
-
-// settingsSpec holds the generated code for the settings of one preset.
-type settingsSpec struct {
-	// new returns a pointer to a new settings struct that holds the
-	// defaults.
-	new func() any
-	// decode reads a settings value that passed the schema.
-	decode func(map[string]any) any
-	// infos describes the settings in schema order.
-	infos []SettingInfo
-}
+// The settings types of the presets are generated from the schema, the
+// source of truth for the settings: their names, types, defaults,
+// descriptions, and constraints (see internal/configschema).
+type (
+	GetterSettings = configschema.GetterSettings
+	IferrSettings  = configschema.IferrSettings
+	NoopSettings   = configschema.NoopSettings
+)
 
 // SettingInfo describes one setting of a preset.
 type SettingInfo struct {
@@ -36,9 +30,28 @@ type SettingInfo struct {
 }
 
 // Settings describes the settings of p in schema order. The settings that
-// all presets of the kind share come first.
+// all presets of the kind share come first. It returns nil for a preset
+// that the schema does not declare.
 func Settings(p *Preset) []SettingInfo {
-	return schemaPresets[p.Name].infos
+	settings, err := configschema.Settings(p.Name)
+	if err != nil {
+		return nil
+	}
+	out := make([]SettingInfo, len(settings))
+	for i, s := range settings {
+		out[i] = SettingInfo{Name: s.Name, Type: s.Type, Default: s.Default, Description: s.Description, Enum: s.Enum}
+	}
+	return out
+}
+
+// Values of the settings, which the schema fills with their defaults.
+func boolValue(p *bool) bool { return p != nil && *p }
+
+func intValue(p *int64) int {
+	if p == nil {
+		return 0
+	}
+	return int(*p)
 }
 
 // funcRule returns the func rule of the preset with the given name.

@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/token"
 
+	"github.com/miyamo2/go-tebanare/internal/configschema"
 	"github.com/miyamo2/go-tebanare/internal/rule"
 )
 
@@ -11,13 +12,9 @@ const iferrSummary = "`if err != nil` blocks that return the error unchanged."
 
 // Values of the iferr init setting (see the enum in the schema).
 const (
-	InitExclude  = "exclude"
-	InitFoldBody = "fold-body"
+	InitExclude  = configschema.Exclude
+	InitFoldBody = configschema.FoldBody
 )
-
-func (s *IferrSettings) validate() []problem {
-	return validatePaths(s.Paths, s.ExcludePaths)
-}
 
 func init() {
 	register(&Preset{
@@ -30,9 +27,10 @@ func init() {
 			"No comment is on the hidden lines, including a comment after the closing brace.",
 			"The other results hold no function call (except the builtin `new`), no function literal, and no channel receive. A bare return does not match.",
 		},
-		Kind:     StmtKind,
-		Compile:  compileIferr,
-		Examples: iferrExamples,
+		Kind:        StmtKind,
+		newSettings: func() any { return new(IferrSettings) },
+		Compile:     compileIferr,
+		Examples:    iferrExamples,
 	})
 }
 
@@ -60,16 +58,18 @@ var iferrExamples = []Example{
 }
 
 func compileIferr(settings any) (*rule.Rule, error) {
-	s, err := checkSettings[IferrSettings]("iferr", settings)
+	s, err := checkSettings("iferr", settings, func(s *IferrSettings) []problem {
+		return validatePaths(s.Paths, s.ExcludePaths)
+	})
 	if err != nil {
 		return nil, err
 	}
 	m := &iferrMatcher{
 		names:         s.Names,
-		allowComments: s.AllowComments,
-		foldBody:      s.Init == InitFoldBody,
-		bareReturn:    s.AllowBareReturn,
-		calls:         s.AllowCallsInResults,
+		allowComments: boolValue(s.AllowComments),
+		foldBody:      s.Init != nil && *s.Init == InitFoldBody,
+		bareReturn:    boolValue(s.AllowBareReturn),
+		calls:         boolValue(s.AllowCallsInResults),
 	}
 	return stmtRule("iferr", iferrSummary, s.Paths, s.ExcludePaths, m), nil
 }

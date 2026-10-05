@@ -8,8 +8,6 @@ go 1.25.0
 require (
 	github.com/coder/guts v1.7.1
 	github.com/miyamo2/go-tebanare v0.0.0-00010101000000-000000000000
-	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2
-	go.yaml.in/yaml/v3 v3.0.5
 	golang.org/x/tools v0.40.0
 )
 
@@ -20,6 +18,8 @@ require (
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/mod v0.31.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/text v0.32.0 // indirect

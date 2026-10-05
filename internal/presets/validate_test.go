@@ -26,18 +26,19 @@ func TestDecodeErrorString(t *testing.T) {
 func TestCheckSettings(t *testing.T) {
 	p, _ := Lookup("getter")
 	s := p.NewSettings().(*GetterSettings)
-	if got, err := checkSettings[GetterSettings]("getter", s); err != nil || got != s {
+	check := func(s *GetterSettings) []problem { return validatePaths(s.Paths, s.ExcludePaths) }
+	if got, err := checkSettings("getter", s, check); err != nil || got != s {
 		t.Errorf("checkSettings(defaults) = %v, %v", got, err)
 	}
 	for _, bad := range []any{nil, (*GetterSettings)(nil), GetterSettings{}, &NoopSettings{}} {
-		if _, err := checkSettings[GetterSettings]("getter", bad); err == nil {
+		if _, err := checkSettings("getter", bad, check); err == nil {
 			t.Errorf("checkSettings(%#v) succeeded", bad)
 		}
 	}
 
 	s.Paths = []string{"ok/**", "bad/["}
 	s.ExcludePaths = []string{"x/[", "y/**"}
-	_, err := checkSettings[GetterSettings]("getter", s)
+	_, err := checkSettings("getter", s, check)
 	var got []string
 	for _, e := range unwrapAll(err) {
 		var de *DecodeError

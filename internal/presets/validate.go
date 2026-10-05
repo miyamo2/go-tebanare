@@ -51,25 +51,18 @@ func (p problem) field() string {
 	return fmt.Sprintf("%s[%d]", p.key, p.index)
 }
 
-// validator checks the values of a settings struct. Each settings struct
-// implements it.
-type validator interface {
-	validate() []problem
-}
-
 // checkSettings validates settings for Compile. The schema checks the
-// types, ranges, and patterns; validate methods check the rest. It returns the settings as
-// *T, or an error that wraps one *DecodeError per problem.
-func checkSettings[T any](preset string, settings any) (*T, error) {
+// types, ranges, and patterns of the settings; check reports the rest. It
+// returns the settings as *T, or an error that wraps one *DecodeError per
+// problem.
+func checkSettings[T any](preset string, settings any, check func(*T) []problem) (*T, error) {
 	s, ok := settings.(*T)
 	if !ok || s == nil {
 		return nil, fmt.Errorf("presets: %s: settings have type %T, want %T", preset, settings, s)
 	}
 	var errs []error
-	if v, ok := settings.(validator); ok {
-		for _, p := range v.validate() {
-			errs = append(errs, &DecodeError{Field: p.field(), Msg: p.msg})
-		}
+	for _, p := range check(s) {
+		errs = append(errs, &DecodeError{Field: p.field(), Msg: p.msg})
 	}
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)

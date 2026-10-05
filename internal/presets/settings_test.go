@@ -1,7 +1,6 @@
 package presets
 
 import (
-	"maps"
 	"reflect"
 	"slices"
 	"strings"
@@ -9,18 +8,26 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
+	"github.com/miyamo2/go-tebanare/internal/configschema"
 	"github.com/miyamo2/go-tebanare/internal/result"
 )
 
 // TestSchemaPresets checks that the presets in the schema and the
 // registered presets are the same.
 func TestSchemaPresets(t *testing.T) {
-	if got, want := Names(), slices.Sorted(maps.Keys(schemaPresets)); !slices.Equal(got, want) {
+	names, err := configschema.PresetNames()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := Names(), slices.Sorted(slices.Values(names)); !slices.Equal(got, want) {
 		t.Errorf("registered presets %q, presets in the schema %q", got, want)
 	}
 	for _, p := range All() {
-		if p.NewSettings == nil {
-			t.Errorf("%s: NewSettings is nil", p.Name)
+		if p.NewSettings == nil || p.newSettings == nil {
+			t.Errorf("%s: no settings type", p.Name)
+		}
+		if len(Settings(p)) == 0 {
+			t.Errorf("%s: no settings in the schema", p.Name)
 		}
 	}
 }
@@ -50,8 +57,9 @@ func TestCommonSettings(t *testing.T) {
 	}
 }
 
-// TestDefaults checks that the default of every setting describes the
-// value that NewSettings returns. A nil value is described by a word.
+// TestDefaults checks that the default of every setting, as the schema
+// describes it, is the value that NewSettings returns. A nil value is
+// described by a word.
 func TestDefaults(t *testing.T) {
 	for _, p := range All() {
 		v := reflect.ValueOf(p.NewSettings()).Elem()
@@ -59,34 +67,47 @@ func TestDefaults(t *testing.T) {
 		if v.NumField() != len(infos) {
 			t.Fatalf("%s: %d fields, %d settings", p.Name, v.NumField(), len(infos))
 		}
-		for i, info := range infos {
-			f := v.Type().Field(i)
-			if f.Tag.Get("yaml") != info.Name {
-				t.Errorf("%s: field %s has yaml tag %q, want %q", p.Name, f.Name, f.Tag.Get("yaml"), info.Name)
-			}
+		for _, info := range infos {
 			if info.Description == "" {
 				t.Errorf("%s.%s: no description", p.Name, info.Name)
 			}
 			if len(info.Enum) > 0 && !slices.Contains(info.Enum, info.Default) {
 				t.Errorf("%s.%s: default %q is not in enum %q", p.Name, info.Name, info.Default, info.Enum)
 			}
-			fv := v.Field(i)
-			if (fv.Kind() == reflect.Ptr || fv.Kind() == reflect.Slice) && fv.IsNil() {
+			f, ok := fieldByJSON(v, info.Name)
+			if !ok {
+				t.Errorf("%s.%s: no field", p.Name, info.Name)
+				continue
+			}
+			if f.IsNil() {
 				if info.Default != "none" && info.Default != "unlimited" {
 					t.Errorf("%s.%s: value is nil, default is %q", p.Name, info.Name, info.Default)
 				}
 				continue
 			}
-			want := reflect.New(f.Type)
+			if f.Kind() == reflect.Pointer {
+				f = f.Elem()
+			}
+			want := reflect.New(f.Type())
 			if err := yaml.Unmarshal([]byte(info.Default), want.Interface()); err != nil {
 				t.Errorf("%s.%s: default %q: %v", p.Name, info.Name, info.Default, err)
 				continue
 			}
-			if !reflect.DeepEqual(want.Elem().Interface(), fv.Interface()) {
-				t.Errorf("%s.%s: default %q, NewSettings has %v", p.Name, info.Name, info.Default, fv)
+			if !reflect.DeepEqual(want.Elem().Interface(), f.Interface()) {
+				t.Errorf("%s.%s: default %q, NewSettings has %v", p.Name, info.Name, info.Default, f)
 			}
 		}
 	}
+}
+
+// fieldByJSON returns the field of the struct v whose json tag names key.
+func fieldByJSON(v reflect.Value, key string) (reflect.Value, bool) {
+	for i := 0; i < v.NumField(); i++ {
+		if name, _, _ := strings.Cut(v.Type().Field(i).Tag.Get("json"), ","); name == key {
+			return v.Field(i), true
+		}
+	}
+	return reflect.Value{}, false
 }
 
 func TestDecode(t *testing.T) {
@@ -95,7 +116,9 @@ func TestDecode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := &IferrSettings{Names: []string{"e", "*Err"}, Init: InitExclude, AllowComments: true}
+	init := InitExclude
+	want := &IferrSettings{Names: []string{"e", "*Err"}, Init: &init, AllowComments: ptr(true),
+		AllowBareReturn: ptr(false), AllowCallsInResults: ptr(false)}
 	if !reflect.DeepEqual(s, want) {
 		t.Errorf("Decode = %+v, want %+v", s, want)
 	}
@@ -113,6 +136,9 @@ func TestDecode(t *testing.T) {
 		t.Error("Decode(a list) succeeded")
 	}
 	if _, err := Decode(&Preset{Name: "nope"}, nil); err == nil {
+		t.Error("Decode of a preset without a settings type succeeded")
+	}
+	if _, err := Decode(&Preset{Name: "nope", newSettings: func() any { return new(GetterSettings) }}, nil); err == nil {
 		t.Error("Decode of a preset without settings in the schema succeeded")
 	}
 }

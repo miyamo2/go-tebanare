@@ -8,10 +8,6 @@ import (
 
 const getterSummary = "Methods that only return a field of the receiver."
 
-func (s *GetterSettings) validate() []problem {
-	return validatePaths(s.Paths, s.ExcludePaths)
-}
-
 func init() {
 	register(&Preset{
 		Name:    "getter",
@@ -24,9 +20,10 @@ func init() {
 			"The first field after the receiver (`x` in `u.x`) is not the name of a method that the same file declares on the same type, since `u.x` would then be a method value.",
 			"No comment other than the doc comment is on the lines of the declaration.",
 		},
-		Kind:     FuncKind,
-		Compile:  compileGetter,
-		Examples: getterExamples,
+		Kind:        FuncKind,
+		newSettings: func() any { return new(GetterSettings) },
+		Compile:     compileGetter,
+		Examples:    getterExamples,
 	})
 }
 
@@ -53,15 +50,15 @@ var getterExamples = []Example{
 }
 
 func compileGetter(settings any) (*rule.Rule, error) {
-	s, err := checkSettings[GetterSettings]("getter", settings)
+	s, err := checkSettings("getter", settings, func(s *GetterSettings) []problem {
+		return validatePaths(s.Paths, s.ExcludePaths)
+	})
 	if err != nil {
 		return nil, err
 	}
 	m := &getterMatcher{}
-	if s.MaxDepth != nil {
-		m.maxDepth = *s.MaxDepth
-	}
-	return funcRule("getter", getterSummary, s.Paths, s.ExcludePaths, s.IncludeDoc, m), nil
+	m.maxDepth = intValue(s.MaxDepth)
+	return funcRule("getter", getterSummary, s.Paths, s.ExcludePaths, boolValue(s.IncludeDoc), m), nil
 }
 
 type getterMatcher struct {

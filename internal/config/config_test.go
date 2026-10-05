@@ -95,8 +95,8 @@ func TestCompileErrors(t *testing.T) {
 		{"unknown key", "version: 1\nrule: []", []string{
 			`2:1: rule: unknown key "rule" (allowed keys: version, files, presets)`,
 		}},
+		// The schema errors stop the compiler, so the glob is not checked.
 		{"files", "version: 1\nfiles:\n  include: ['[']\n  exclude: '**'\n  excludes: []", []string{
-			`3:13: files.include[0]: invalid glob "["`,
 			`4:12: files.exclude: expected a list of strings, found string "**"`,
 			`5:3: files.excludes: unknown key "excludes" (allowed keys: include, exclude)`,
 		}},

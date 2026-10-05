@@ -8,10 +8,6 @@ import (
 
 const noopSummary = "Methods that take no parameters, return nothing, and have an empty body."
 
-func (s *NoopSettings) validate() []problem {
-	return validatePaths(s.Paths, s.ExcludePaths)
-}
-
 func init() {
 	register(&Preset{
 		Name:    "noop",
@@ -22,9 +18,10 @@ func init() {
 			"It has no results.",
 			"It has a body, and the body holds no statements (`{}`). Comments in the body are allowed and hidden with it. A declaration without a body, such as a method implemented in assembly, does not match.",
 		},
-		Kind:     FuncKind,
-		Compile:  compileNoop,
-		Examples: noopExamples,
+		Kind:        FuncKind,
+		newSettings: func() any { return new(NoopSettings) },
+		Compile:     compileNoop,
+		Examples:    noopExamples,
 	})
 }
 
@@ -46,12 +43,14 @@ var noopExamples = []Example{
 }
 
 func compileNoop(settings any) (*rule.Rule, error) {
-	s, err := checkSettings[NoopSettings]("noop", settings)
+	s, err := checkSettings("noop", settings, func(s *NoopSettings) []problem {
+		return validatePaths(s.Paths, s.ExcludePaths)
+	})
 	if err != nil {
 		return nil, err
 	}
-	m := &noopMatcher{allowComments: s.AllowComments, includeFunctions: s.IncludeFunctions}
-	return funcRule("noop", noopSummary, s.Paths, s.ExcludePaths, s.IncludeDoc, m), nil
+	m := &noopMatcher{allowComments: boolValue(s.AllowComments), includeFunctions: boolValue(s.IncludeFunctions)}
+	return funcRule("noop", noopSummary, s.Paths, s.ExcludePaths, boolValue(s.IncludeDoc), m), nil
 }
 
 type noopMatcher struct {

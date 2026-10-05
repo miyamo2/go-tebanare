@@ -37,14 +37,6 @@
           {
             "severity": "error",
             "code": "config-invalid",
-            "message": "invalid glob \"[\"",
-            "field": "files.exclude[0]",
-            "line": 3,
-            "column": 13
-          },
-          {
-            "severity": "error",
-            "code": "config-invalid",
             "message": "must be at least 1, found 0",
             "field": "presets[0](getter).max_depth",
             "ruleId": "getter",
@@ -61,7 +53,7 @@
           }
         ],
         "rules": [],
-        "error": "3:13: files.exclude[0]: invalid glob \"[\""
+        "error": "5:25: presets[0](getter).max_depth: must be at least 1, found 0"
       }
     }
   ]
