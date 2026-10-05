@@ -6,7 +6,8 @@
 // expressions that the rules match, and keeps a match only when its lines
 // hold no other code. AnalyzeChange analyzes both sides of a change and
 // pairs the func rule matches of the two sides by declaration key, so a
-// function whose match state changed stays visible.
+// function whose match state changed stays visible. Explain lists the
+// nodes on one line with their normalized text and matching rules.
 //
 // Every line number is a line of the file itself: //line directives are
 // ignored.
