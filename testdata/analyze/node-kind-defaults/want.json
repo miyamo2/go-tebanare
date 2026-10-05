@@ -1,0 +1,43 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 4,
+      "end": 6,
+      "hits": [
+        {
+          "ruleId": "block-explicit",
+          "target": "stmt",
+          "node": "BlockStmt",
+          "label": "{ x++ }"
+        }
+      ]
+    },
+    {
+      "start": 8,
+      "end": 8,
+      "hits": [
+        {
+          "ruleId": "leaf-explicit",
+          "target": "expr",
+          "node": "Ident",
+          "label": "debugMode"
+        }
+      ]
+    },
+    {
+      "start": 11,
+      "end": 11,
+      "hits": [
+        {
+          "ruleId": "leaf-explicit",
+          "target": "expr",
+          "node": "BasicLit",
+          "label": "\"debug\""
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

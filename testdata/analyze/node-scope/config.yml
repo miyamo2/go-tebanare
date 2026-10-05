@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: len-abc
+    expr:
+      kind: CallExpr
+      regex: '^len\("abc"\)$'
+  - id: debug-call
+    stmt:
+      kind: ExprStmt
+      regex: '^debug\(\)$'

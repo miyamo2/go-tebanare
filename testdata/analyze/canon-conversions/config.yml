@@ -1,0 +1,14 @@
+version: 1
+rules:
+  - id: find-log
+    expr:
+      kind: CallExpr
+      regex: '^log\.Printf\("find %s", id\)$'
+  - id: check-wrap
+    stmt:
+      kind: IfStmt
+      regex: '^if err := r\.check\(ctx\); err != nil \{ return \*new\(T\), fmt\.Errorf\("check: %w", err\) \}$'
+  - id: config-literal
+    stmt:
+      kind: AssignStmt
+      regex: '^v := Config\{A: 1, B: \[\]int\{1, 2\}\}$'

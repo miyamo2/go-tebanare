@@ -1,0 +1,16 @@
+version: 1
+rules:
+  - id: block-default
+    stmt:
+      regex: '^\{ x\+\+ \}$'
+  - id: block-explicit
+    stmt:
+      kind: BlockStmt
+      regex: '^\{ x\+\+ \}$'
+  - id: leaf-default
+    expr:
+      regex: ['^debugMode$', '^"debug"$']
+  - id: leaf-explicit
+    expr:
+      kind: [Ident, BasicLit]
+      regex: ['^debugMode$', '^"debug"$']
