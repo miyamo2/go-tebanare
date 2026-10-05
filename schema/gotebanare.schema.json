@@ -90,10 +90,397 @@
           }
         ]
       }
+    },
+    "rules": {
+      "description": "User rules. Each rule hides the function declarations (`func`), statements (`stmt`), or expressions (`expr`) that it matches.",
+      "markdownDescription": "User rules. Each rule hides the function declarations (`func`), statements (`stmt`), or expressions (`expr`) that it matches.",
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/definitions/rule"
+      }
     }
   },
   "additionalProperties": false,
   "definitions": {
+    "rule": {
+      "description": "A user rule. It has an `id` and exactly one of `func`, `stmt`, and `expr` set to a value other than null.",
+      "markdownDescription": "A user rule. It has an `id` and exactly one of `func`, `stmt`, and `expr` set to a value other than null.",
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "description": "Unique id of the rule, shown in the UI and in diagnostics. It must differ from the name of every enabled preset.",
+          "markdownDescription": "Unique id of the rule, shown in the UI and in diagnostics. It must differ from the name of every enabled preset.",
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "description": "Text shown in the tooltip of the code that the rule hides.",
+          "markdownDescription": "Text shown in the tooltip of the code that the rule hides.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "func": {
+          "description": "Signature pattern of the functions and methods to hide, such as `func (_) String() string`. A list matches when any of its patterns matches.",
+          "markdownDescription": "Signature pattern of the functions and methods to hide, such as `func (_) String() string`. A list matches when any of its patterns matches.",
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stmt": {
+          "$ref": "#/definitions/stmtRule"
+        },
+        "expr": {
+          "$ref": "#/definitions/exprRule"
+        },
+        "paths": {
+          "description": "Globs that limit the files this rule applies to, on top of `files.include` and `files.exclude`.",
+          "markdownDescription": "Globs that limit the files this rule applies to, on top of `files.include` and `files.exclude`.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclude_paths": {
+          "description": "Globs of files this rule skips, on top of `files.exclude`.",
+          "markdownDescription": "Globs of files this rule skips, on top of `files.exclude`.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "include_doc": {
+          "description": "Hide the doc comment together with the function. Only `func` rules have this key.",
+          "markdownDescription": "Hide the doc comment together with the function. Only `func` rules have this key.",
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": true
+        },
+        "enabled": {
+          "description": "Set to `false` to turn the rule off. A rule that is off is still checked for errors.",
+          "markdownDescription": "Set to `false` to turn the rule off. A rule that is off is still checked for errors.",
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": true
+        }
+      },
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "func"
+          ],
+          "properties": {
+            "func": {
+              "type": [
+                "string",
+                "array"
+              ]
+            }
+          }
+        },
+        {
+          "required": [
+            "stmt"
+          ],
+          "properties": {
+            "stmt": {
+              "type": [
+                "object"
+              ]
+            }
+          }
+        },
+        {
+          "required": [
+            "expr"
+          ],
+          "properties": {
+            "expr": {
+              "type": [
+                "object"
+              ]
+            }
+          }
+        }
+      ],
+      "if": {
+        "required": [
+          "include_doc"
+        ],
+        "properties": {
+          "include_doc": {
+            "type": [
+              "boolean"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "func"
+        ],
+        "properties": {
+          "func": {
+            "type": [
+              "string",
+              "array"
+            ]
+          }
+        }
+      }
+    },
+    "stmtRule": {
+      "description": "Statement rule: hides the statements whose normalized text matches `regex` and no `not_regex`.",
+      "markdownDescription": "Statement rule: hides the statements whose normalized text matches `regex` and no `not_regex`.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "regex"
+      ],
+      "properties": {
+        "kind": {
+          "description": "`go/ast` statement types to consider, such as `IfStmt` or `AssignStmt`. Default: every statement type except `BlockStmt` and `EmptyStmt`.",
+          "markdownDescription": "`go/ast` statement types to consider, such as `IfStmt` or `AssignStmt`. Default: every statement type except `BlockStmt` and `EmptyStmt`.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/stmtKind"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/stmtKind"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "regex": {
+          "description": "RE2 regular expression searched for in the normalized text of the node: its `go/printer` output without comments, with every run of whitespace replaced by one space. A list matches when any of its expressions matches. An expression gives a warning unless it starts with `^` or `\\A` or ends with `$` or `\\z`. In an alternation, every branch needs an anchor at the same end.",
+          "markdownDescription": "RE2 regular expression searched for in the normalized text of the node: its `go/printer` output without comments, with every run of whitespace replaced by one space. A list matches when any of its expressions matches. An expression gives a warning unless it starts with `^` or `\\A` or ends with `$` or `\\z`. In an alternation, every branch needs an anchor at the same end.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "not_regex": {
+          "description": "RE2 regular expression, or a list of them. A node whose normalized text matches any of them stays visible.",
+          "markdownDescription": "RE2 regular expression, or a list of them. A node whose normalized text matches any of them stays visible.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "include_leading_comments": {
+          "description": "Also hide the comment lines right above the node, when no blank line comes between them.",
+          "markdownDescription": "Also hide the comment lines right above the node, when no blank line comes between them.",
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "exprRule": {
+      "description": "Expression rule: hides the expressions whose normalized text matches `regex` and no `not_regex`.",
+      "markdownDescription": "Expression rule: hides the expressions whose normalized text matches `regex` and no `not_regex`.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "regex"
+      ],
+      "properties": {
+        "kind": {
+          "description": "`go/ast` expression types to consider, such as `CallExpr` or `CompositeLit`. Default: every expression type except `BasicLit` and `Ident`.",
+          "markdownDescription": "`go/ast` expression types to consider, such as `CallExpr` or `CompositeLit`. Default: every expression type except `BasicLit` and `Ident`.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/exprKind"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/exprKind"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "regex": {
+          "description": "RE2 regular expression searched for in the normalized text of the node: its `go/printer` output without comments, with every run of whitespace replaced by one space. A list matches when any of its expressions matches. An expression gives a warning unless it starts with `^` or `\\A` or ends with `$` or `\\z`. In an alternation, every branch needs an anchor at the same end.",
+          "markdownDescription": "RE2 regular expression searched for in the normalized text of the node: its `go/printer` output without comments, with every run of whitespace replaced by one space. A list matches when any of its expressions matches. An expression gives a warning unless it starts with `^` or `\\A` or ends with `$` or `\\z`. In an alternation, every branch needs an anchor at the same end.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "not_regex": {
+          "description": "RE2 regular expression, or a list of them. A node whose normalized text matches any of them stays visible.",
+          "markdownDescription": "RE2 regular expression, or a list of them. A node whose normalized text matches any of them stays visible.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "hide": {
+          "description": "The lines to hide. `self` hides the lines of the expression when no other code is on them. `statement` hides the innermost statement around the expression when it is a simple statement whose other parts are identifiers, `_`, or literals.",
+          "markdownDescription": "The lines to hide. `self` hides the lines of the expression when no other code is on them. `statement` hides the innermost statement around the expression when it is a simple statement whose other parts are identifiers, `_`, or literals.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "self",
+            "statement",
+            null
+          ],
+          "default": "self"
+        },
+        "include_leading_comments": {
+          "description": "Also hide the comment lines right above the node, when no blank line comes between them.",
+          "markdownDescription": "Also hide the comment lines right above the node, when no blank line comes between them.",
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "stmtKind": {
+      "description": "Name of a `go/ast` statement type.",
+      "markdownDescription": "Name of a `go/ast` statement type.",
+      "type": "string",
+      "enum": [
+        "AssignStmt",
+        "BlockStmt",
+        "BranchStmt",
+        "CaseClause",
+        "CommClause",
+        "DeclStmt",
+        "DeferStmt",
+        "EmptyStmt",
+        "ExprStmt",
+        "ForStmt",
+        "GoStmt",
+        "IfStmt",
+        "IncDecStmt",
+        "LabeledStmt",
+        "RangeStmt",
+        "ReturnStmt",
+        "SelectStmt",
+        "SendStmt",
+        "SwitchStmt",
+        "TypeSwitchStmt"
+      ]
+    },
+    "exprKind": {
+      "description": "Name of a `go/ast` expression type.",
+      "markdownDescription": "Name of a `go/ast` expression type.",
+      "type": "string",
+      "enum": [
+        "ArrayType",
+        "BasicLit",
+        "BinaryExpr",
+        "CallExpr",
+        "ChanType",
+        "CompositeLit",
+        "Ellipsis",
+        "FuncLit",
+        "FuncType",
+        "Ident",
+        "IndexExpr",
+        "IndexListExpr",
+        "InterfaceType",
+        "KeyValueExpr",
+        "MapType",
+        "ParenExpr",
+        "SelectorExpr",
+        "SliceExpr",
+        "StarExpr",
+        "StructType",
+        "TypeAssertExpr",
+        "UnaryExpr"
+      ]
+    },
     "getterSettings": {
       "description": "Settings of the `getter` preset. Methods that only return a field of the receiver. Settings left out keep their defaults. See https://github.com/miyamo2/go-tebanare/blob/main/docs/presets.md#getter.",
       "markdownDescription": "Settings of the `getter` preset. Methods that only return a field of the receiver. Settings left out keep their defaults. See https://github.com/miyamo2/go-tebanare/blob/main/docs/presets.md#getter.",

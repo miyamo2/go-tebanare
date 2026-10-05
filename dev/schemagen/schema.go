@@ -7,10 +7,13 @@ import (
 	"encoding/json"
 	"math"
 	"slices"
+	"strings"
 
 	"go.yaml.in/yaml/v3"
 
 	tebanare "github.com/miyamo2/go-tebanare"
+	"github.com/miyamo2/go-tebanare/internal/result"
+	"github.com/miyamo2/go-tebanare/internal/rule"
 )
 
 // SchemaID is the URL where the JSON Schema of the configuration is
@@ -46,6 +49,7 @@ type schema struct {
 	Default              any       `json:"default,omitempty"`
 	Minimum              *int64    `json:"minimum,omitempty"`
 	Maximum              *int64    `json:"maximum,omitempty"`
+	MinLength            *int      `json:"minLength,omitempty"`
 	Pattern              string    `json:"pattern,omitempty"`
 	Items                *schema   `json:"items,omitempty"`
 	MinItems             *int      `json:"minItems,omitempty"`
@@ -55,6 +59,9 @@ type schema struct {
 	MinProperties        *int      `json:"minProperties,omitempty"`
 	MaxProperties        *int      `json:"maxProperties,omitempty"`
 	AnyOf                []*schema `json:"anyOf,omitempty"`
+	OneOf                []*schema `json:"oneOf,omitempty"`
+	If                   *schema   `json:"if,omitempty"`
+	Then                 *schema   `json:"then,omitempty"`
 	Definitions          props     `json:"definitions,omitempty"`
 }
 
@@ -136,7 +143,13 @@ func jsonSchema(ps []tebanare.PresetInfo) string {
 		}).describe(text)
 	}
 
-	var defs props
+	defs := props{
+		{"rule", ruleSchema(globs)},
+		{"stmtRule", nodeSchema(result.TargetStmt)},
+		{"exprRule", nodeSchema(result.TargetExpr)},
+		{"stmtKind", (&schema{Type: "string", Enum: anys(rule.StmtKinds)}).describe("Name of a `go/ast` statement type.")},
+		{"exprKind", (&schema{Type: "string", Enum: anys(rule.ExprKinds)}).describe("Name of a `go/ast` expression type.")},
+	}
 	var byName props
 	for _, p := range ps {
 		def := p.Name + "Settings"
@@ -176,6 +189,10 @@ func jsonSchema(ps []tebanare.PresetInfo) string {
 					},
 				}).describe("A preset name, or `name: settings` to change its settings."),
 			}).describe("Built-in presets to enable. Listing a preset twice is an error.")},
+			{"rules", (&schema{
+				Type:  nullable("array"),
+				Items: &schema{Ref: "#/definitions/rule"},
+			}).describe("User rules. Each rule hides the function declarations (`func`), statements (`stmt`), or expressions (`expr`) that it matches.")},
 		},
 		Definitions: defs,
 	}
@@ -186,6 +203,100 @@ func jsonSchema(ps []tebanare.PresetInfo) string {
 		panic(err) // the schema holds only encodable values
 	}
 	return string(b) + "\n"
+}
+
+// ruleSchema returns the schema of one entry of `rules`. globs builds the
+// schema of a list of globs.
+func ruleSchema(globs func(string) *schema) *schema {
+	pattern := &schema{Type: "string", MinLength: ptr(1)}
+	return (&schema{
+		Type:                 "object",
+		Required:             []string{"id"},
+		AdditionalProperties: ptr(false),
+		Properties: props{
+			{"id", (&schema{Type: "string", MinLength: ptr(1)}).describe("Unique id of the rule, shown in the UI and in diagnostics. It must differ from the name of every enabled preset.")},
+			{"description", (&schema{Type: nullable("string")}).describe("Text shown in the tooltip of the code that the rule hides.")},
+			{"func", (&schema{
+				AnyOf: []*schema{
+					pattern,
+					{Type: "array", Items: pattern, MinItems: ptr(1)},
+					{Type: "null"},
+				},
+			}).describe("Signature pattern of the functions and methods to hide, such as `func (_) String() string`. A list matches when any of its patterns matches.")},
+			{"stmt", &schema{Ref: "#/definitions/stmtRule"}},
+			{"expr", &schema{Ref: "#/definitions/exprRule"}},
+			{"paths", globs("Globs that limit the files this rule applies to, on top of `files.include` and `files.exclude`.")},
+			{"exclude_paths", globs("Globs of files this rule skips, on top of `files.exclude`.")},
+			{"include_doc", (&schema{Type: nullable("boolean"), Default: true}).describe("Hide the doc comment together with the function. Only `func` rules have this key.")},
+			{"enabled", (&schema{Type: nullable("boolean"), Default: true}).describe("Set to `false` to turn the rule off. A rule that is off is still checked for errors.")},
+		},
+		// A key set to null counts as unset, so these checks also look at
+		// the type of the value.
+		OneOf: []*schema{present("func", "string", "array"), present("stmt", "object"), present("expr", "object")},
+		If:    present("include_doc", "boolean"),
+		Then:  present("func", "string", "array"),
+	}).describe("A user rule. It has an `id` and exactly one of `func`, `stmt`, and `expr` set to a value other than null.")
+}
+
+// nodeSchema returns the schema of the stmt or expr key of a rule.
+func nodeSchema(target result.Target) *schema {
+	kinds, defaults, kindDef := rule.StmtKinds, rule.DefaultStmtKinds, "#/definitions/stmtKind"
+	desc := "Statement rule: hides the statements whose normalized text matches `regex` and no `not_regex`."
+	kindDesc := "`go/ast` statement types to consider, such as `IfStmt` or `AssignStmt`."
+	allKinds := "every statement type"
+	if target == result.TargetExpr {
+		kinds, defaults, kindDef = rule.ExprKinds, rule.DefaultExprKinds, "#/definitions/exprKind"
+		desc = "Expression rule: hides the expressions whose normalized text matches `regex` and no `not_regex`."
+		kindDesc = "`go/ast` expression types to consider, such as `CallExpr` or `CompositeLit`."
+		allKinds = "every expression type"
+	}
+	var left []string
+	for _, k := range kinds {
+		if !slices.Contains(defaults, k) {
+			left = append(left, "`"+k+"`")
+		}
+	}
+	if len(left) > 0 {
+		kindDesc += " Default: " + allKinds + " except " + strings.Join(left, " and ") + "."
+	}
+	str := &schema{Type: "string"}
+
+	ps := props{
+		{"kind", (&schema{
+			AnyOf: []*schema{
+				{Ref: kindDef},
+				{Type: "array", Items: &schema{Ref: kindDef}},
+				{Type: "null"},
+			},
+		}).describe(kindDesc)},
+		{"regex", (&schema{
+			AnyOf: []*schema{str, {Type: "array", Items: str, MinItems: ptr(1)}},
+		}).describe("RE2 regular expression searched for in the normalized text of the node: its `go/printer` output without comments, with every run of whitespace replaced by one space. A list matches when any of its expressions matches. An expression gives a warning unless it starts with `^` or `\\A` or ends with `$` or `\\z`. In an alternation, every branch needs an anchor at the same end.")},
+		{"not_regex", (&schema{
+			AnyOf: []*schema{str, {Type: "array", Items: str}, {Type: "null"}},
+		}).describe("RE2 regular expression, or a list of them. A node whose normalized text matches any of them stays visible.")},
+	}
+	if target == result.TargetExpr {
+		ps = append(ps, prop{"hide", (&schema{
+			Type:    nullable("string"),
+			Enum:    []any{"self", "statement", nil},
+			Default: "self",
+		}).describe("The lines to hide. `self` hides the lines of the expression when no other code is on them. `statement` hides the innermost statement around the expression when it is a simple statement whose other parts are identifiers, `_`, or literals.")})
+	}
+	ps = append(ps, prop{"include_leading_comments", (&schema{Type: nullable("boolean"), Default: false}).describe("Also hide the comment lines right above the node, when no blank line comes between them.")})
+
+	return (&schema{
+		Type:                 nullable("object"),
+		Required:             []string{"regex"},
+		AdditionalProperties: ptr(false),
+		Properties:           ps,
+	}).describe(desc)
+}
+
+// present returns a schema that requires key to be set to a value of one
+// of types. A key set to null counts as unset.
+func present(key string, types ...string) *schema {
+	return &schema{Required: []string{key}, Properties: props{{key, &schema{Type: types}}}}
 }
 
 // presetSettings returns the schema of the settings of p.

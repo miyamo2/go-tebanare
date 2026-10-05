@@ -121,9 +121,32 @@ func TestSchemaAgreesWithCompile(t *testing.T) {
 		{"invalid name", "version: 1\npresets:\n  - iferr: {names: [\"e.rr\"]}\n", false, false},
 		{"empty name", "version: 1\npresets:\n  - iferr: {names: [\"\"]}\n", false, false},
 		{"non-string name", "version: 1\npresets:\n  - iferr: {names: [1]}\n", false, false},
+		{"rules", "version: 1\nrules:\n" +
+			"  - {id: stringer, description: d, func: \"func (_) String() string\", include_doc: false, paths: [\"a/**\"], exclude_paths: [\"b/**\"]}\n" +
+			"  - {id: closers, func: [\"func (_) Close() error\", \"func (*_) Close()\"]}\n" +
+			"  - {id: tracing, stmt: {kind: [AssignStmt, DeferStmt], regex: [\"^a$\", \"^b$\"], not_regex: \"c\", include_leading_comments: true}}\n" +
+			"  - {id: debug, expr: {kind: CallExpr, regex: \"^log\\\\.Debug\\\\(\", hide: statement}, enabled: false}\n", true, true},
+		{"rule null values", "version: 1\nrules:\n  - {id: a, func: \"func F()\", stmt: null, description: null, include_doc: null, enabled: null}\n" +
+			"  - {id: b, expr: {regex: \"^x$\", kind: null, not_regex: null, hide: null, include_leading_comments: null}}\n", true, true},
+		{"null rules", "version: 1\nrules:\n", true, true},
+		{"rule without id", "version: 1\nrules:\n  - {func: \"func F()\"}\n", false, false},
+		{"empty id", "version: 1\nrules:\n  - {id: \"\", func: \"func F()\"}\n", false, false},
+		{"rule without target", "version: 1\nrules:\n  - {id: a}\n", false, false},
+		{"two targets", "version: 1\nrules:\n  - {id: a, func: \"func F()\", stmt: {regex: \"^x$\"}}\n", false, false},
+		{"unknown rule key", "version: 1\nrules:\n  - {id: a, func: \"func F()\", hide: self}\n", false, false},
+		{"include_doc on stmt", "version: 1\nrules:\n  - {id: a, stmt: {regex: \"^x$\"}, include_doc: true}\n", false, false},
+		{"empty func list", "version: 1\nrules:\n  - {id: a, func: []}\n", false, false},
+		{"stmt without regex", "version: 1\nrules:\n  - {id: a, stmt: {kind: IfStmt}}\n", false, false},
+		{"empty regex list", "version: 1\nrules:\n  - {id: a, stmt: {regex: []}}\n", false, false},
+		{"expr kind on stmt", "version: 1\nrules:\n  - {id: a, stmt: {kind: CallExpr, regex: \"^x$\"}}\n", false, false},
+		{"hide on stmt", "version: 1\nrules:\n  - {id: a, stmt: {regex: \"^x$\", hide: self}}\n", false, false},
+		{"unknown hide", "version: 1\nrules:\n  - {id: a, expr: {regex: \"^x$\", hide: line}}\n", false, false},
 		// Beyond the schema.
 		{"duplicate preset", "version: 1\npresets: [getter, getter]\n", false, true},
 		{"invalid glob", "version: 1\nfiles: {exclude: [\"[\"]}\n", false, true},
+		{"duplicate rule id", "version: 1\nrules:\n  - {id: a, func: \"func F()\"}\n  - {id: a, func: \"func G()\"}\n", false, true},
+		{"invalid pattern", "version: 1\nrules:\n  - {id: a, func: \"func (\"}\n", false, true},
+		{"invalid regex", "version: 1\nrules:\n  - {id: a, stmt: {regex: \"(\"}}\n", false, true},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := compiles(tt.src); got != tt.valid {
