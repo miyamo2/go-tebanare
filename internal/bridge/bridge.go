@@ -2,7 +2,7 @@
 // cmd/gotebanare-wasm. It turns byte inputs into calls on the public
 // tebanare API and every result into JSON, so it can be tested natively.
 // No method panics on bad input: errors are reported in the JSON. The one
-// exception is a YAML syntax error in the TinyGo build (see Compile).
+// exception is a YAML error in the TinyGo build (see Compile).
 package bridge
 
 import (
@@ -62,13 +62,19 @@ type compileJSON struct {
 // the warnings, and the rules. On failure the handle is 0, diagnostics hold
 // the errors followed by the warnings, and error holds the first error.
 //
-// yaml.v3 reports YAML syntax errors by panicking, and the TinyGo build
-// cannot recover, so a syntax error stops the module with a trap. Compile
-// first parses src while it counts the bytes the parser reads (see
-// YAMLProgress), so that the host can tell where the parser stopped.
+// yaml.v3 reports YAML syntax errors, and some values it cannot decode
+// (see tebanare.Compile), by panicking, and the TinyGo build cannot
+// recover, so such an error stops the module with a trap. Compile first
+// parses src while it counts the bytes the parser reads (see
+// YAMLProgress), so that the host can tell where the parser stopped. The
+// count stays until tebanare.Compile returns, so a trap while yaml.v3
+// decodes the config points at the end of the YAML that the parser read.
 func (b *Bridge) Compile(src []byte) []byte {
-	b.scanYAML(src)
+	parsed := b.scanYAML(src)
 	rs, warnings, err := tebanare.Compile(src)
+	if parsed {
+		b.yamlRead = YAMLDone
+	}
 	out := compileJSON{Diagnostics: []tebanare.Diagnostic{}, Rules: []tebanare.RuleInfo{}}
 	if err != nil {
 		var ce *tebanare.ConfigError
@@ -92,11 +98,12 @@ func (b *Bridge) Compile(src []byte) []byte {
 }
 
 // YAMLProgress returns the counter that Compile sets while yaml.v3 parses
-// the config: the number of bytes the parser has read, or YAMLDone when no
-// parse is in progress and the last one found no YAML error. After a trap
-// inside the compile export, the host reads the counter from linear
-// memory: a value other than YAMLDone means that the parser stopped at a
-// syntax error after reading that many bytes.
+// and decodes the config: the number of bytes the parser has read, or
+// YAMLDone when no Compile call is in progress and the last one found no
+// YAML syntax error. After a trap inside the compile export, the host
+// reads the counter from linear memory: a value other than YAMLDone means
+// that yaml.v3 stopped, the parser at a syntax error after reading that
+// many bytes or the decoder on a value it cannot decode.
 func (b *Bridge) YAMLProgress() *uint32 {
 	return &b.yamlRead
 }
@@ -104,10 +111,10 @@ func (b *Bridge) YAMLProgress() *uint32 {
 // scanYAML parses the documents in src with yaml.v3, handing the parser
 // one byte per read, and counts the bytes read in b.yamlRead. Like
 // tebanare.Compile, it stops after the second document with content, so a
-// syntax error after that document traps neither build. It sets YAMLDone
-// when the documents it parsed have no YAML error and leaves the count
-// when they have one.
-func (b *Bridge) scanYAML(src []byte) {
+// syntax error after that document traps neither build. It leaves the
+// count in b.yamlRead and reports whether the documents it parsed have no
+// YAML syntax error.
+func (b *Bridge) scanYAML(src []byte) bool {
 	b.yamlRead = 0
 	dec := yaml.NewDecoder(&byteReader{src: src, n: &b.yamlRead})
 	for withContent := 0; withContent < 2; {
@@ -117,13 +124,13 @@ func (b *Bridge) scanYAML(src []byte) {
 			break
 		}
 		if err != nil {
-			return
+			return false
 		}
 		if tbconfig.HasContent(&doc) {
 			withContent++
 		}
 	}
-	b.yamlRead = YAMLDone
+	return true
 }
 
 // byteReader returns src one byte per Read call. *n is the number of

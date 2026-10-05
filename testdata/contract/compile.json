@@ -38,9 +38,7 @@
             "severity": "error",
             "code": "config-invalid",
             "message": "invalid glob \"[\"",
-            "field": "files.exclude[0]",
-            "line": 3,
-            "column": 13
+            "field": "files.exclude[0]"
           },
           {
             "severity": "error",
@@ -61,7 +59,7 @@
           }
         ],
         "rules": [],
-        "error": "3:13: files.exclude[0]: invalid glob \"[\""
+        "error": "files.exclude[0]: invalid glob \"[\""
       }
     }
   ]

@@ -43,7 +43,7 @@ func TestCompile(t *testing.T) {
 		{
 			name:    "errors in two sections",
 			src:     "version: 2\npresets: [nope]\n",
-			wantErr: []string{"1:10 version", "2:11 presets[0](nope)"},
+			wantErr: []string{"0:0 version", "2:11 presets[0](nope)"},
 		},
 	}
 	for _, tt := range tests {

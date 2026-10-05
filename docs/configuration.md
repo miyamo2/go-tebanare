@@ -44,7 +44,7 @@ To apply it without the comment, map the file names to the schema in the editor 
 }
 ```
 
-The schema accepts every valid configuration, but go-tebanare remains the authority: it also reports errors that the schema cannot express, such as a preset listed twice, an invalid glob, a duplicate key, or a merge key (`<<`).
+The schema accepts every valid configuration, but go-tebanare remains the authority: it also reports errors that the schema cannot express, such as a preset listed twice, an invalid glob, or a duplicate key.
 
 ## Keys
 
@@ -111,22 +111,22 @@ Settings shared by the presets:
 
 ## Validation
 
-go-tebanare decodes the configuration strictly and reports every error it finds, each with its position. These are errors:
+go-tebanare decodes the configuration strictly. These are errors:
 
-- A YAML syntax error, a document that is not a mapping, or a second YAML document with content. Empty documents, such as the one after a trailing `---`, are skipped.
-- An unknown key at any level, such as `preset` for `presets` (the message lists the allowed keys), a key set twice, a merge key (`<<`), or a value of the wrong type. A `null` value counts as unset.
+- A YAML syntax error, or a second YAML document with content. Empty documents, such as the one after a trailing `---`, are skipped.
+- A document that is not a mapping, an unknown key at any level, such as `preset` for `presets`, a key set twice, or a value of the wrong type. A `null` value counts as unset. Merge keys (`<<`) work in the top-level mapping and in `files`, but not in `presets`.
 - A missing `version`, or a `version` other than `1`.
 - An invalid glob in `files`, `paths`, or `exclude_paths`.
 - In `presets`: an unknown preset, a preset listed twice, or invalid settings.
 - Aliases that copy more than 64 KiB in total, or an alias inside the value it refers to.
 
-Most errors have the form `file:line:column: field: message`. Errors about the whole file leave out the field, and a YAML syntax error gives only the line. With `getter` misspelled as `geter` in the [example](#example), the error reads:
+The decoder reports errors in the YAML structure outside `presets`, such as an unknown key or a value of the wrong type, with their line only, in the form `file:line: message`, and go-tebanare stops there. Otherwise it reports every error it finds. Errors in `version` and `files` give the field without a position, and errors in `presets` give the line, the column, and the field. With `getter` misspelled as `geter` in the [example](#example), the error reads:
 
 ```text
 .gotebanare.yml:9:5: presets[0](geter): unknown preset "geter" (available presets: getter, iferr, noop)
 ```
 
-The Chrome extension cannot show the parser's message for a YAML syntax error. yaml.v3 reports syntax errors by panicking, and the WebAssembly build of the engine stops instead of recovering. The extension reports a `config-syntax` error on the line where the parser stopped and hides nothing.
+The Chrome extension cannot show the parser's message for a YAML syntax error. yaml.v3 reports syntax errors by panicking, and the WebAssembly build of the engine stops instead of recovering. The extension reports a `config-syntax` error on the line where the parser stopped and hides nothing. yaml.v3 also panics on some values while it decodes them, such as a scalar whose explicit tag does not fit its value (`version: !!int x`), an invalid `!!binary` value, or a merge key whose value is not a mapping; go-tebanare reports these as `config-syntax` errors, and the extension reports them on the last line of the configuration.
 
 ## What gets hidden
 

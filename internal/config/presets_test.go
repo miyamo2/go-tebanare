@@ -7,6 +7,8 @@ import (
 	"slices"
 	"testing"
 
+	"go.yaml.in/yaml/v3"
+
 	"github.com/miyamo2/go-tebanare/internal/result"
 	"github.com/miyamo2/go-tebanare/internal/rule"
 )
@@ -14,13 +16,12 @@ import (
 // decodePresets decodes the `presets` list of src.
 func decodePresets(t *testing.T, src string) (*compiler, []*rule.Rule) {
 	t.Helper()
-	c := &compiler{}
-	es, _ := c.mapping(parseYAML(t, src), "", "presets")
-	e, ok := es.get("presets")
-	if !ok {
-		t.Fatalf("no presets in %q", src)
+	var f File
+	if err := yaml.Unmarshal([]byte(src), &f); err != nil || f.Presets == nil {
+		t.Fatalf("yaml.Unmarshal(%q) = %v, presets %v", src, err, f.Presets)
 	}
-	rules := c.presets(e)
+	c := &compiler{}
+	rules := c.presets(f.Presets)
 	sortByPosition(c.errs)
 	return c, rules
 }
@@ -144,7 +145,6 @@ func TestPresetsErrors(t *testing.T) {
 		src  string
 		want []string
 	}{
-		{"not a list", "presets: getter", []string{`1:10: presets: expected a list, found string "getter"`}},
 		{"entry of the wrong type", "presets: [1, [getter]]", []string{
 			"1:11: presets[0]: expected a preset name or a mapping from a preset name to its settings, found integer 1",
 			"1:14: presets[1]: expected a preset name or a mapping from a preset name to its settings, found a list",

@@ -66,11 +66,21 @@ describe.skipIf(!haveWasm)('engine', () => {
 
   it('rejects an invalid config with positions', async () => {
     engine = await loadEngine();
-    const err = await engine.compile('version: 2\n').catch((e: unknown) => e);
+    const err = await engine.compile('version: 1\npresets: [nope]\n').catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ConfigError);
     const d = (err as ConfigError).diagnostics[0];
     expect(d?.severity).toBe('error');
-    expect(d?.line).toBe(1);
+    expect(d?.line).toBe(2);
+    expect(d?.column).toBe(11);
+  });
+
+  it('reports a trap while yaml.v3 decodes the config as config-syntax', async () => {
+    engine = await loadEngine();
+    const err = await engine.compile('version: 1\nfiles: {include: [!!binary "@"]}\n').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ConfigError);
+    expect((err as ConfigError).diagnostics).toEqual([
+      { severity: 'error', code: 'config-syntax', message: yamlSyntaxMessage, line: 2 },
+    ]);
   });
 
   it('maps a YAML syntax error trap to config-syntax and recovers', async () => {

@@ -16,13 +16,13 @@ import (
 const emptyConfig = `the config is empty; it needs at least "version: 1"`
 
 // parse reads the YAML stream in src and returns the root node of the
-// document with content. Documents that are empty or hold only null are
-// skipped, so a trailing "---" is fine. A stream without a document with
-// content, or with two of them, is an error.
-func (c *compiler) parse(src []byte) (*yaml.Node, bool) {
+// document with content, and the number of documents before it. Documents
+// that are empty or hold only null are skipped, so a trailing "---" is
+// fine. A stream without a document with content, or with two of them, is
+// an error.
+func (c *compiler) parse(src []byte) (root *yaml.Node, skip int, ok bool) {
 	dec := yaml.NewDecoder(bytes.NewReader(src))
-	var root *yaml.Node
-	for {
+	for docs := 0; ; docs++ {
 		var doc yaml.Node
 		err := dec.Decode(&doc)
 		if errors.Is(err, io.EOF) {
@@ -30,22 +30,22 @@ func (c *compiler) parse(src []byte) (*yaml.Node, bool) {
 		}
 		if err != nil {
 			c.syntaxError(err)
-			return nil, false
+			return nil, 0, false
 		}
 		if !HasContent(&doc) {
 			continue
 		}
 		if root != nil {
 			c.errorf(&doc, "", "the config must be one YAML document, and another document starts here")
-			return nil, false
+			return nil, 0, false
 		}
-		root = resolve(&doc)
+		root, skip = resolve(&doc), docs
 	}
 	if root == nil {
 		c.errorf(nil, "", emptyConfig)
-		return nil, false
+		return nil, 0, false
 	}
-	return root, true
+	return root, skip, true
 }
 
 // HasContent reports whether doc, a node that yaml.v3 decoded from one

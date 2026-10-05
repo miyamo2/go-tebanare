@@ -145,7 +145,7 @@ func TestDumpErrors(t *testing.T) {
 		stderr []string
 	}{
 		{[]string{"-config", bad, "-root", dir}, 1,
-			[]string{bad + ":1:10: version: unsupported version 2", "corpusdump: " + bad + " is invalid"}},
+			[]string{bad + ": version: unsupported version 2", "corpusdump: " + bad + " is invalid"}},
 		{[]string{"-config", filepath.Join(dir, "none.yml"), "-root", dir}, 1, []string{"corpusdump: open "}},
 		{[]string{"-root", dir}, 2, []string{"usage: corpusdump"}},
 		{[]string{"-config", ok}, 2, []string{"usage: corpusdump"}},

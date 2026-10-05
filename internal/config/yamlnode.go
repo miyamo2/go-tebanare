@@ -35,10 +35,6 @@ func isString(n *yaml.Node) bool {
 	return n != nil && n.Kind == yaml.ScalarNode && effectiveTag(n) == "!!str"
 }
 
-func isSequence(n *yaml.Node) bool {
-	return n != nil && n.Kind == yaml.SequenceNode && n.ShortTag() == "!!seq"
-}
-
 func isNull(n *yaml.Node) bool {
 	return n != nil && n.Kind == yaml.ScalarNode && effectiveTag(n) == "!!null"
 }

@@ -92,11 +92,11 @@ func TestCompile(t *testing.T) {
 }
 
 func TestCompileError(t *testing.T) {
-	out := decode[compileJSON](t, New().Compile([]byte("version: 2\n")))
+	out := decode[compileJSON](t, New().Compile([]byte("version: 1\npresets: [nope]\n")))
 	if out.Handle != 0 || out.Error == "" || len(out.Diagnostics) == 0 || out.Rules == nil {
-		t.Fatalf("Compile(version 2) = %+v", out)
+		t.Fatalf("Compile(unknown preset) = %+v", out)
 	}
-	if d := out.Diagnostics[0]; d.Severity != "error" || d.Line != 1 {
+	if d := out.Diagnostics[0]; d.Severity != "error" || d.Line != 2 {
 		t.Errorf("first diagnostic = %+v", d)
 	}
 }

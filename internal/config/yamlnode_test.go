@@ -53,24 +53,24 @@ func TestPredicates(t *testing.T) {
 		return nil
 	}
 	tests := []struct {
-		key                          string
-		mapping, sequence, str, null bool
+		key                string
+		mapping, str, null bool
 	}{
-		{"m", true, false, false, false},
-		{"l", false, true, false, false},
-		{"s", false, false, true, false},
-		{"q", false, false, true, false},
-		{"n", false, false, false, true},
-		{"t", false, false, false, false},
-		{"r", false, true, false, false},
+		{"m", true, false, false},
+		{"l", false, false, false},
+		{"s", false, true, false},
+		{"q", false, true, false},
+		{"n", false, false, true},
+		{"t", false, false, false},
+		{"r", false, false, false},
 	}
 	for _, tt := range tests {
 		n := get(tt.key)
-		if isMapping(n) != tt.mapping || isSequence(n) != tt.sequence || isString(n) != tt.str || isNull(n) != tt.null {
-			t.Errorf("%s: mapping %v, sequence %v, string %v, null %v", tt.key, isMapping(n), isSequence(n), isString(n), isNull(n))
+		if isMapping(n) != tt.mapping || isString(n) != tt.str || isNull(n) != tt.null {
+			t.Errorf("%s: mapping %v, string %v, null %v", tt.key, isMapping(n), isString(n), isNull(n))
 		}
 	}
-	if isMapping(nil) || isSequence(nil) || isString(nil) || isNull(nil) {
+	if isMapping(nil) || isString(nil) || isNull(nil) {
 		t.Error("a predicate accepts nil")
 	}
 }

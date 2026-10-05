@@ -118,7 +118,7 @@ func TestCheckAliasesQuadratic(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &compiler{}
-			root, ok := c.parse([]byte(tt.src))
+			root, _, ok := c.parse([]byte(tt.src))
 			if !ok {
 				t.Fatalf("parse: %q", format(c.errs))
 			}

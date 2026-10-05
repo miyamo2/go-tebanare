@@ -89,7 +89,7 @@ Core `internal/` packages:
 
 Errors normally come back as JSON rather than as traps; the next paragraph covers the exception. Full details: `docs/design.md`.
 
-TinyGo cannot `recover` on wasm, so any panic traps and kills the instance. `@go-tebanare/engine` treats a trap as "hide nothing": `analyzeChange` resolves with an `engine-crashed` diagnostic, `compile` rejects with a `ConfigError` (for a YAML syntax panic, engine.wasm counts bytes read so it can report the line) or the trap's error otherwise. Because of this, code on the analysis path must not rely on `recover`: `go/parser` runs with `AllErrors`, and the analyzer checks bracket depth, `else if` chain length, and AST depth before recursing to avoid overflowing TinyGo's 8 MB stack.
+TinyGo cannot `recover` on wasm, so any panic traps and kills the instance. `@go-tebanare/engine` treats a trap as "hide nothing": `analyzeChange` resolves with an `engine-crashed` diagnostic, `compile` rejects with a `ConfigError` (for a YAML syntax panic, engine.wasm counts bytes read so it can report the line; a panic while yaml.v3 decodes the config into `config.File` is reported the same way, on the last line the parser read) or the trap's error otherwise. Because of this, code on the analysis path must not rely on `recover`: `go/parser` runs with `AllErrors`, and the analyzer checks bracket depth, `else if` chain length, and AST depth before recursing to avoid overflowing TinyGo's 8 MB stack.
 
 ### Cross-boundary test contracts
 

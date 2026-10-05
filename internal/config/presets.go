@@ -14,17 +14,13 @@ import (
 // its name.
 type enabledPresets map[string]int
 
-// presets decodes the `presets` list. It returns the rules of the valid
-// entries in list order.
-func (c *compiler) presets(e entry) []*rule.Rule {
+// presets decodes the items of the `presets` list. It returns the rules of
+// the valid items in list order.
+func (c *compiler) presets(items []yaml.Node) []*rule.Rule {
 	enabled := enabledPresets{}
-	items, ok := c.sequence(e.value, e.field)
-	if !ok {
-		return nil
-	}
 	var rules []*rule.Rule
-	for i, raw := range items {
-		if r := c.preset(raw, e.field.index(i), enabled); r != nil {
+	for i := range items {
+		if r := c.preset(&items[i], field("presets").index(i), enabled); r != nil {
 			rules = append(rules, r)
 		}
 	}

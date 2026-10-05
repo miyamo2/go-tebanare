@@ -47,7 +47,7 @@ func TestParse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &compiler{}
-			root, ok := c.parse([]byte(tt.src))
+			root, _, ok := c.parse([]byte(tt.src))
 			if ok != (len(tt.want) == 0) || (root != nil) != ok {
 				t.Errorf("parse = %v, %v", root, ok)
 			}
