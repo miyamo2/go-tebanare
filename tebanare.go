@@ -32,6 +32,8 @@ type (
 	SkipReason = result.SkipReason
 	// ChangeResult is the outcome of analyzing one changed file.
 	ChangeResult = result.ChangeResult
+	// NodeInfo describes one syntax node for Explain.
+	NodeInfo = analyzer.NodeInfo
 )
 
 // ConfigError is the error Compile returns for an invalid configuration.
@@ -55,9 +57,10 @@ type Ruleset struct {
 // Compile validates configYAML, the content of a configuration file, and
 // compiles it into a Ruleset.
 //
-// The returned diagnostics are warnings. Compile returns them for valid
-// and invalid configurations. When the configuration is invalid, Compile
-// returns a nil Ruleset and a *ConfigError.
+// The returned diagnostics are warnings, such as regular expressions that
+// are not anchored. Compile returns them for valid and invalid
+// configurations. When the configuration is invalid, Compile returns a nil
+// Ruleset and a *ConfigError.
 //
 // yaml.v3 reports YAML syntax errors by panicking and recovering inside
 // its parser. In a build without recover, such as TinyGo for
@@ -84,12 +87,12 @@ func (rs *Ruleset) ruleSet() *rule.Set {
 //
 // When a present side is not a target of the configuration, or when either
 // side is skipped (too large, nested too deeply, or not parseable), nothing
-// is hidden on either side and Skipped says why. The matches of stmt rules
-// count on each side on its own. A func rule match is hidden
+// is hidden on either side and Skipped says why. The matches of stmt and
+// expr rules count on each side on its own. A func rule match is hidden
 // when the declaration matches on both sides or exists on one side only.
 // When one side matches and the other side declares the same function
 // without matching (a declaration in a file that the paths or
-// exclude_paths of the preset leave out never matches), both stay visible
+// exclude_paths of the rule leave out never matches), both stay visible
 // and a match-changed diagnostic reports it. When one side declares the
 // same function or method twice, neither side hides it and a
 // duplicate-decl diagnostic reports it.
@@ -102,18 +105,29 @@ func (rs *Ruleset) AnalyzeChange(ch FileChange) ChangeResult {
 	return res
 }
 
+// Explain lists the function declarations, statements, and expressions
+// that start on line of src, outermost first, with their normalized text
+// and the ids of the rules that match them. It ignores the line occupancy
+// check and the pairing of AnalyzeChange. The error says why the file was
+// not analyzed: it is not a target, it is too large or nested too deeply,
+// or it does not parse.
+func (rs *Ruleset) Explain(path string, src []byte, line int) ([]NodeInfo, error) {
+	return analyzer.Explain(rs.ruleSet(), path, src, line, analyzer.DefaultOptions())
+}
+
 // RuleInfo describes one enabled rule for tooltips and listings.
 type RuleInfo struct {
 	ID          string `json:"id"`
 	Description string `json:"description,omitempty"`
-	// Target is "func" or "stmt".
+	// Target is "func", "stmt", or "expr".
 	Target string `json:"target"`
 	// Preset is the preset name when the rule comes from `presets`.
 	Preset string `json:"preset,omitempty"`
 }
 
-// Rules returns one RuleInfo per enabled preset, in the order of the
-// `presets` list.
+// Rules returns one RuleInfo per enabled rule: the user rules in file
+// order, then the presets in the order of the `presets` list. Disabled
+// rules are left out.
 func (rs *Ruleset) Rules() []RuleInfo {
 	out := []RuleInfo{}
 	set := rs.ruleSet()
