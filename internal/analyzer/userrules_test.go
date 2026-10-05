@@ -58,3 +58,13 @@ func exprRule(t testing.TB, id, kind, regex string) *rule.Rule {
 	t.Helper()
 	return nodeRule(t, id, result.TargetExpr, kind, regex)
 }
+
+func hideStatement(r *rule.Rule) *rule.Rule {
+	r.Hide = rule.HideStatement
+	return r
+}
+
+func withLeadingComments(r *rule.Rule) *rule.Rule {
+	r.IncludeLeadingComments = true
+	return r
+}

@@ -44,7 +44,7 @@ func candidates(t *testing.T, src string) []string {
 		t.Fatal(err)
 	}
 	var got []string
-	walk(file, func(n ast.Node, sc scope, bodyBlock bool) bool {
+	walk(file, func(n ast.Node, sc scope, bodyBlock bool, _ []ast.Node) bool {
 		if _, ok := n.(*ast.Ident); ok {
 			return true
 		}
@@ -91,4 +91,36 @@ func join(lines []string) string {
 		s += "\t" + l + "\n"
 	}
 	return s
+}
+
+func TestInnermostStmt(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\tif ok() {\n\t\tx := g(h())\n\t}\n}\n\nvar v = h()\n"
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "x.go", src, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]string{}
+	walk(file, func(n ast.Node, _ scope, _ bool, ancestors []ast.Node) bool {
+		if call, ok := n.(*ast.CallExpr); ok {
+			s := innermostStmt(ancestors)
+			text := "<nil>"
+			if s != nil {
+				text = rule.KindOf(s)
+			}
+			got[canon.Normalize(call)+fmt.Sprint(fset.Position(call.Pos()).Line)] = text
+		}
+		return true
+	})
+	want := map[string]string{
+		"ok()4":   "IfStmt",
+		"g(h())5": "AssignStmt",
+		"h()5":    "AssignStmt",
+		"h()9":    "<nil>",
+	}
+	for k, v := range want {
+		if got[k] != v {
+			t.Errorf("%s: got %q, want %q", k, got[k], v)
+		}
+	}
 }
