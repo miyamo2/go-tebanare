@@ -1,0 +1,6 @@
+version: 1
+presets:
+  - iferr
+rules:
+  - id: byte-loaders
+    func: "func load(string) ([]byte, error)"

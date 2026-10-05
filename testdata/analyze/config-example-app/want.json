@@ -1,0 +1,94 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 9,
+      "end": 14,
+      "hits": [
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) Name",
+          "preset": "getter"
+        },
+        {
+          "ruleId": "noop",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*User) Validate",
+          "preset": "noop"
+        },
+        {
+          "ruleId": "stringer",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (User) String"
+        }
+      ]
+    },
+    {
+      "start": 20,
+      "end": 20,
+      "hits": [
+        {
+          "ruleId": "generic-repo-finders",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Repository[T]) FindByID"
+        }
+      ]
+    },
+    {
+      "start": 25,
+      "end": 27,
+      "hits": [
+        {
+          "ruleId": "tracing",
+          "target": "stmt",
+          "node": "AssignStmt",
+          "label": "ctx, span := tracer.Start(ctx, \"Save\")"
+        },
+        {
+          "ruleId": "tracing",
+          "target": "stmt",
+          "node": "DeferStmt",
+          "label": "defer span.End()"
+        },
+        {
+          "ruleId": "debug-log",
+          "target": "expr",
+          "node": "CallExpr",
+          "label": "slog.DebugContext(ctx, \"save\", \"value\", v)"
+        }
+      ]
+    },
+    {
+      "start": 31,
+      "end": 33,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if encodeErr != nil { return encodeErr }",
+          "preset": "iferr"
+        }
+      ]
+    },
+    {
+      "start": 37,
+      "end": 42,
+      "hits": [
+        {
+          "ruleId": "must",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func Must[T any]"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

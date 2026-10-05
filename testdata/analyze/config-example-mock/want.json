@@ -1,0 +1,38 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 18,
+      "end": 36,
+      "hits": [
+        {
+          "ruleId": "gomock",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*MockUserRepo) EXPECT"
+        },
+        {
+          "ruleId": "getter",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*MockUserRepo) EXPECT",
+          "preset": "getter"
+        },
+        {
+          "ruleId": "gomock",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*MockUserRepo) Get"
+        },
+        {
+          "ruleId": "gomock",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*MockUserRepoMockRecorder) Get"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

@@ -1,0 +1,56 @@
+{
+  "old": [
+    {
+      "start": 7,
+      "end": 9,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if err != nil { return nil, err }",
+          "preset": "iferr"
+        }
+      ]
+    },
+    {
+      "start": 15,
+      "end": 17,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if err != nil { return err }",
+          "preset": "iferr"
+        }
+      ]
+    }
+  ],
+  "new": [
+    {
+      "start": 10,
+      "end": 12,
+      "hits": [
+        {
+          "ruleId": "iferr",
+          "target": "stmt",
+          "node": "IfStmt",
+          "label": "if err != nil { return nil, err }",
+          "preset": "iferr"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "match-changed",
+      "message": "rule \"byte-loaders\" matches load only on the old side, so both sides stay visible",
+      "side": "old",
+      "ruleId": "byte-loaders",
+      "line": 5
+    }
+  ],
+  "skipped": ""
+}
