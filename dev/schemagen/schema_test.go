@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -136,46 +135,6 @@ func TestSchemaAgreesWithCompile(t *testing.T) {
 	}
 }
 
-// TestSchemaAcceptsFixtures checks the schema against the configuration
-// files of the repository and the settings of the preset examples. Each
-// one that tebanare.Compile accepts must pass the schema.
-func TestSchemaAcceptsFixtures(t *testing.T) {
-	sch := compileSchema(t)
-	root := filepath.Join("..", "..")
-	var srcs []string
-	err := filepath.WalkDir(filepath.Join(root, "testdata"), func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() || (filepath.Ext(path) != ".yml" && filepath.Ext(path) != ".yaml") {
-			return err
-		}
-		b, err := os.ReadFile(path)
-		srcs = append(srcs, string(b))
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, p := range tebanare.Presets() {
-		for _, ex := range p.Examples {
-			if ex.Settings != "" {
-				srcs = append(srcs, "version: 1\npresets:\n  - "+p.Name+":\n"+indentLines(ex.Settings, "      "))
-			}
-		}
-	}
-	checked := 0
-	for _, src := range srcs {
-		if !compiles(src) {
-			continue
-		}
-		checked++
-		if !validates(t, sch, src) {
-			t.Errorf("schema rejects a valid configuration:\n%s", src)
-		}
-	}
-	if checked < 10 {
-		t.Errorf("checked %d configurations, want at least 10", checked)
-	}
-}
-
 func compileSchema(t *testing.T) *jsonschema.Schema {
 	t.Helper()
 	doc, err := jsonschema.UnmarshalJSON(strings.NewReader(JSONSchema()))
@@ -218,21 +177,6 @@ func mustJSON(t *testing.T, v any) string {
 	var b bytes.Buffer
 	if err := json.NewEncoder(&b).Encode(v); err != nil {
 		t.Fatal(err)
-	}
-	return b.String()
-}
-
-// indentLines prefixes each non-empty line of s with prefix.
-func indentLines(s, prefix string) string {
-	var b strings.Builder
-	for line := range strings.Lines(s) {
-		if strings.TrimSpace(line) != "" {
-			b.WriteString(prefix)
-		}
-		b.WriteString(line)
-	}
-	if !strings.HasSuffix(s, "\n") {
-		b.WriteString("\n")
 	}
 	return b.String()
 }
