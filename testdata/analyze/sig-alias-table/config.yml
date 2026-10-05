@@ -1,0 +1,4 @@
+version: 1
+rules:
+  - id: context-handlers
+    func: "func Handle*(context.Context) error"

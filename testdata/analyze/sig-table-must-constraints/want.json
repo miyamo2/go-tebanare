@@ -1,0 +1,32 @@
+{
+  "old": [
+    {
+      "start": 3,
+      "end": 3,
+      "hits": [
+        {
+          "ruleId": "must",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func Must[V any]"
+        }
+      ]
+    }
+  ],
+  "new": [
+    {
+      "start": 3,
+      "end": 3,
+      "hits": [
+        {
+          "ruleId": "must",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func Must[V comparable]"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

@@ -1,0 +1,12 @@
+version: 1
+rules:
+  - id: close-no-results
+    func: "func (_) Close()"
+  - id: close-any-results
+    func: "func (_) Close() ..."
+  - id: map-any-type-params
+    func: "func Map(...) ..."
+  - id: wrap-two-types
+    func: "func Wrap*(_, error)"
+  - id: wrap-named-error
+    func: "func Wrap*(_ error)"

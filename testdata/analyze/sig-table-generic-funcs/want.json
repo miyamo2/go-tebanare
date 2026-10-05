@@ -1,0 +1,49 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 5,
+      "end": 15,
+      "hits": [
+        {
+          "ruleId": "repo-save",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Repository[E]) Save"
+        },
+        {
+          "ruleId": "map",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func Map[A, B any]"
+        },
+        {
+          "ruleId": "must",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func Must[V any]"
+        },
+        {
+          "ruleId": "pair",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func Pair[A, B comparable]"
+        },
+        {
+          "ruleId": "constructors",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func New"
+        },
+        {
+          "ruleId": "constructors",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func NewRepository[T any]"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

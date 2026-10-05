@@ -1,0 +1,4 @@
+version: 1
+rules:
+  - id: ctx2-handlers
+    func: "func Handle*(ctx2.Context) error"

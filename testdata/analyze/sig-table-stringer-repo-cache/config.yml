@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: stringer
+    func: "func (_) String() string"
+  - id: repo-finders
+    func: "func (*Repository[_]) Find*(context.Context, ...) (_, error)"
+  - id: cache-two-params
+    func: "func (*Cache[_, _]) *"
+  - id: cache-any
+    func: "func (*Cache) *"

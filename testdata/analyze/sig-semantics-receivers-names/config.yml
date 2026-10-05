@@ -1,0 +1,8 @@
+version: 1
+rules:
+  - id: any-pointer-lock
+    func: "func (*_) Lock()"
+  - id: get-one-rune
+    func: "func (_) Get?() string"
+  - id: get-set-regexp
+    func: "func (_) /^(Get|Set)[A-Z]/"

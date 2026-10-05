@@ -1,0 +1,62 @@
+{
+  "old": [
+    {
+      "start": 3,
+      "end": 3,
+      "hits": [
+        {
+          "ruleId": "map-any-type-params",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func Map"
+        }
+      ]
+    }
+  ],
+  "new": [
+    {
+      "start": 3,
+      "end": 11,
+      "hits": [
+        {
+          "ruleId": "map-any-type-params",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func Map[T, U any]"
+        },
+        {
+          "ruleId": "close-no-results",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Conn) Close"
+        },
+        {
+          "ruleId": "close-any-results",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Conn) Close"
+        },
+        {
+          "ruleId": "close-any-results",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*File) Close"
+        },
+        {
+          "ruleId": "wrap-two-types",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func WrapMsg"
+        },
+        {
+          "ruleId": "wrap-named-error",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func WrapErr"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

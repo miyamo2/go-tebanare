@@ -1,0 +1,28 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 11,
+      "end": 11,
+      "hits": [
+        {
+          "ruleId": "context-handlers",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func HandleA"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "alias-not-resolved",
+      "message": "func HandleB would match rule \"context-handlers\" if its import aliases were resolved; patterns compare package qualifiers as written",
+      "side": "new",
+      "ruleId": "context-handlers",
+      "line": 13
+    }
+  ],
+  "skipped": ""
+}

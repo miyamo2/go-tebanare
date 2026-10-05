@@ -1,0 +1,19 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 10,
+      "end": 10,
+      "hits": [
+        {
+          "ruleId": "ctx2-handlers",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func HandleB"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

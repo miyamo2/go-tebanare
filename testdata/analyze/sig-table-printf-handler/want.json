@@ -1,0 +1,43 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 5,
+      "end": 13,
+      "hits": [
+        {
+          "ruleId": "printf-one-arg",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Logger) Printf"
+        },
+        {
+          "ruleId": "printf-variadic",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Tracer) Printf"
+        },
+        {
+          "ruleId": "printf-one-arg",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Recorder) Printf"
+        },
+        {
+          "ruleId": "handler-pointer",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*apiHandler) ServeHTTP"
+        },
+        {
+          "ruleId": "handler-value",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (adminHandler) ServeHTTP"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

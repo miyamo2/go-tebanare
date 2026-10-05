@@ -1,0 +1,79 @@
+{
+  "old": [],
+  "new": [
+    {
+      "start": 5,
+      "end": 5,
+      "hits": [
+        {
+          "ruleId": "stringer",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (User) String"
+        }
+      ]
+    },
+    {
+      "start": 9,
+      "end": 9,
+      "hits": [
+        {
+          "ruleId": "stringer",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Point) String"
+        }
+      ]
+    },
+    {
+      "start": 13,
+      "end": 15,
+      "hits": [
+        {
+          "ruleId": "repo-finders",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Repository[T]) FindAll"
+        },
+        {
+          "ruleId": "repo-finders",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Repository[T]) FindByID"
+        }
+      ]
+    },
+    {
+      "start": 21,
+      "end": 25,
+      "hits": [
+        {
+          "ruleId": "cache-two-params",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Cache[K, V]) Put"
+        },
+        {
+          "ruleId": "cache-any",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Cache[K, V]) Put"
+        },
+        {
+          "ruleId": "cache-any",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Cache[T]) Get"
+        },
+        {
+          "ruleId": "cache-any",
+          "target": "func",
+          "node": "FuncDecl",
+          "label": "func (*Cache) Len"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "skipped": ""
+}

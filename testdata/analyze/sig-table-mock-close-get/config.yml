@@ -1,0 +1,8 @@
+version: 1
+rules:
+  - id: gomock
+    func: "func (*Mock*) *"
+  - id: close
+    func: "func (_) Close()"
+  - id: get-named-type
+    func: "func (_) Get(T) T"
