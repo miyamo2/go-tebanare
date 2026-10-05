@@ -62,6 +62,11 @@ func analyzeChange(handle, metaPtr, metaLen, oldPtr, oldLen, newPtr, newLen uint
 	return result(engine.AnalyzeChange(handle, input(metaPtr, metaLen), input(oldPtr, oldLen), input(newPtr, newLen)))
 }
 
+//go:wasmexport explain
+func explain(handle, metaPtr, metaLen, srcPtr, srcLen uint32) uint32 {
+	return result(engine.Explain(handle, input(metaPtr, metaLen), input(srcPtr, srcLen)))
+}
+
 //go:wasmexport release
 func release(handle uint32) {
 	engine.Release(handle)

@@ -25,6 +25,20 @@ presets:
   - nope
 `
 
+// invalidRules has rule errors of several kinds and a warning.
+const invalidRules = `version: 1
+presets: [getter]
+rules:
+  - id: bad-regex
+    stmt:
+      regex: '^x($'
+  - id: bad-pattern
+    func: "func (_ String()"
+  - id: loose
+    expr:
+      regex: foo
+`
+
 type compileCase struct {
 	Name string          `json:"name"`
 	YAML string          `json:"yaml"`
@@ -55,7 +69,9 @@ func TestContractCompile(t *testing.T) {
 	var compiles []compileCase
 	for _, c := range []struct{ name, yaml string }{
 		{"preset settings example", string(sampleConfig(t, "preset-settings.yml"))},
+		{"plan example", string(sampleConfig(t, "plan-example.yml"))},
 		{"errors", invalidConfig},
+		{"rule errors and a warning", invalidRules},
 	} {
 		compiles = append(compiles, compileCase{c.name, c.yaml, New().Compile([]byte(c.yaml))})
 	}

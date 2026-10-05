@@ -1,0 +1,253 @@
+{
+  "cases": [
+    {
+      "path": "p.go",
+      "line": 6,
+      "want": {
+        "nodes": [
+          {
+            "kind": "FuncDecl",
+            "line": 6,
+            "endLine": 6,
+            "text": "func (u *User) Name() string { return u.name }",
+            "inScope": false,
+            "rules": [
+              "getter"
+            ]
+          },
+          {
+            "kind": "Ident",
+            "line": 6,
+            "endLine": 6,
+            "text": "u",
+            "inScope": false,
+            "rules": []
+          },
+          {
+            "kind": "StarExpr",
+            "line": 6,
+            "endLine": 6,
+            "text": "*User",
+            "inScope": false,
+            "rules": []
+          },
+          {
+            "kind": "Ident",
+            "line": 6,
+            "endLine": 6,
+            "text": "User",
+            "inScope": false,
+            "rules": []
+          },
+          {
+            "kind": "Ident",
+            "line": 6,
+            "endLine": 6,
+            "text": "Name",
+            "inScope": false,
+            "rules": []
+          },
+          {
+            "kind": "FuncType",
+            "line": 6,
+            "endLine": 6,
+            "text": "func() string",
+            "inScope": false,
+            "rules": []
+          },
+          {
+            "kind": "Ident",
+            "line": 6,
+            "endLine": 6,
+            "text": "string",
+            "inScope": false,
+            "rules": []
+          },
+          {
+            "kind": "BlockStmt",
+            "line": 6,
+            "endLine": 6,
+            "text": "{ return u.name }",
+            "inScope": false,
+            "rules": []
+          },
+          {
+            "kind": "ReturnStmt",
+            "line": 6,
+            "endLine": 6,
+            "text": "return u.name",
+            "inScope": true,
+            "rules": []
+          },
+          {
+            "kind": "SelectorExpr",
+            "line": 6,
+            "endLine": 6,
+            "text": "u.name",
+            "inScope": true,
+            "rules": []
+          },
+          {
+            "kind": "Ident",
+            "line": 6,
+            "endLine": 6,
+            "text": "u",
+            "inScope": true,
+            "rules": []
+          },
+          {
+            "kind": "Ident",
+            "line": 6,
+            "endLine": 6,
+            "text": "name",
+            "inScope": true,
+            "rules": []
+          }
+        ]
+      }
+    },
+    {
+      "path": "p.go",
+      "line": 9,
+      "want": {
+        "nodes": [
+          {
+            "kind": "ExprStmt",
+            "line": 9,
+            "endLine": 9,
+            "text": "log.Debug(\"do\", \"id\", id)",
+            "inScope": true,
+            "rules": []
+          },
+          {
+            "kind": "CallExpr",
+            "line": 9,
+            "endLine": 9,
+            "text": "log.Debug(\"do\", \"id\", id)",
+            "inScope": true,
+            "rules": [
+              "debug-log"
+            ]
+          },
+          {
+            "kind": "SelectorExpr",
+            "line": 9,
+            "endLine": 9,
+            "text": "log.Debug",
+            "inScope": true,
+            "rules": []
+          },
+          {
+            "kind": "Ident",
+            "line": 9,
+            "endLine": 9,
+            "text": "log",
+            "inScope": true,
+            "rules": []
+          },
+          {
+            "kind": "Ident",
+            "line": 9,
+            "endLine": 9,
+            "text": "Debug",
+            "inScope": true,
+            "rules": []
+          },
+          {
+            "kind": "BasicLit",
+            "line": 9,
+            "endLine": 9,
+            "text": "\"do\"",
+            "inScope": true,
+            "rules": []
+          },
+          {
+            "kind": "BasicLit",
+            "line": 9,
+            "endLine": 9,
+            "text": "\"id\"",
+            "inScope": true,
+            "rules": []
+          },
+          {
+            "kind": "Ident",
+            "line": 9,
+            "endLine": 9,
+            "text": "id",
+            "inScope": true,
+            "rules": []
+          }
+        ]
+      }
+    },
+    {
+      "path": "p.go",
+      "line": 11,
+      "want": {
+        "nodes": [
+          {
+            "kind": "IfStmt",
+            "line": 11,
+            "endLine": 13,
+            "text": "if err != nil { return err }",
+            "inScope": true,
+            "rules": [
+              "iferr"
+            ]
+          },
+          {
+            "kind": "BinaryExpr",
+            "line": 11,
+            "endLine": 11,
+            "text": "err != nil",
+            "inScope": true,
+            "rules": []
+          },
+          {
+            "kind": "Ident",
+            "line": 11,
+            "endLine": 11,
+            "text": "err",
+            "inScope": true,
+            "rules": []
+          },
+          {
+            "kind": "Ident",
+            "line": 11,
+            "endLine": 11,
+            "text": "nil",
+            "inScope": true,
+            "rules": []
+          },
+          {
+            "kind": "BlockStmt",
+            "line": 11,
+            "endLine": 13,
+            "text": "{ return err }",
+            "inScope": true,
+            "rules": []
+          }
+        ]
+      }
+    },
+    {
+      "path": "p.go",
+      "line": 2,
+      "want": {
+        "nodes": []
+      }
+    },
+    {
+      "path": "bad.go",
+      "line": 1,
+      "want": {
+        "error": "parse-error: 1:8: expected ';', found 'EOF'"
+      }
+    }
+  ],
+  "sources": {
+    "bad.go": "package",
+    "p.go": "package p\n\nimport \"context\"\n\n// Name returns the name.\nfunc (u *User) Name() string { return u.name }\n\nfunc (s *Service) Do(ctx context.Context, id string) error {\n\tlog.Debug(\"do\", \"id\", id)\n\terr := s.save(ctx)\n\tif err != nil {\n\t\treturn err\n\t}\n\treturn nil\n}\n"
+  },
+  "yaml": "# The example configuration of plan 4.2.\nversion: 1\n\nfiles:                      # include defaults to [\"**/*.go\"]\n  include: [\"**/*.go\"]\n  exclude: [\"vendor/**\", \"third_party/**\"]\n\npresets:                    # built-in rules, enabled by name (plan 4.5)\n  - getter\n  - noop\n  - iferr:                  # \"name: settings\" changes the settings of a preset\n      names: [err, \"*Err\"]\n\nrules:\n  # Functions and methods (signature patterns, plan 4.3)\n  - id: stringer\n    description: fmt.Stringer implementations need no review\n    func: \"func (_) String() string\"\n\n  - id: gomock\n    description: mocks generated by gomock\n    func: \"func (*Mock*) *\"\n    paths: [\"**/mock_*.go\"]\n\n  - id: generic-repo-finders\n    func: \"func (*Repository[_]) Find*(context.Context, ...) (_, error)\"\n\n  - id: must\n    func: \"func Must[T](T, error) T\"\n\n  # Statements (plan 4.6)\n  - id: tracing\n    stmt:\n      kind: [AssignStmt, DeferStmt]\n      regex:\n        - '^ctx, span := \\w+\\.Start\\(ctx, .+\\)$'\n        - '^defer span\\.End\\(\\)$'\n\n  # Expressions (plan 4.6)\n  - id: debug-log\n    expr:\n      kind: CallExpr\n      regex: '^(log|slog|logger)\\.Debug\\w*\\('\n      not_regex: '(?i)password|token|secret'   # logs that may hold secrets stay visible\n"
+}
